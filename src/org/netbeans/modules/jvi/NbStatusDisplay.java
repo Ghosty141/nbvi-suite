@@ -14,11 +14,15 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
+import java.awt.Color;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import org.netbeans.editor.Coloring;
+import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
 import org.netbeans.editor.Utilities;
 
@@ -36,6 +40,7 @@ public class NbStatusDisplay implements ViStatusDisplay {
 
     public static final String CELL_MODE = "vi-mode";
     public static final String CELL_COMMAND = "vi-command";
+    private static Coloring red = new Coloring(null, Color.red, null);
 
     // NEEDSWORK: UU status
     public static final String CELL_UU = "vi-uu";
@@ -51,6 +56,13 @@ public class NbStatusDisplay implements ViStatusDisplay {
                 if(evt.getKey().equals(Options.classicUndoOption)) {
                     adjustUU();
                 }
+            }
+        });
+        
+        // wait until things settle
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+		adjustUU();
             }
         });
     }
@@ -102,7 +114,7 @@ public class NbStatusDisplay implements ViStatusDisplay {
 
     public void displayErrorMessage(String text) {
 	// NEEDSWORK: add color
-	setText(StatusBar.CELL_MAIN, text);
+	setText(StatusBar.CELL_MAIN, text, red);
     }
 
     public void clearMessage() {
@@ -116,16 +128,28 @@ public class NbStatusDisplay implements ViStatusDisplay {
 	}
     }
 
-    private StatusBar getStatusBar() {
-	StatusBar sb = Utilities.getEditorUI(editorPane).getStatusBar();
-	if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
-	    int pos = sb.getCellCount(); // should position at end
-	    sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
-	    // sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
-            
-            // NEEDSWORK: undo status.
-            sb.addCell(1, CELL_UU, new String[] {UU_UU, UU_LOCK});
+    private void setText(String cellName, String text, Coloring coloring) {
+	StatusBar sb = getStatusBar();
+	if(sb != null) {
+	    sb.setText(cellName, text, coloring);
 	}
+    }
+
+    private StatusBar getStatusBar() {
+	EditorUI ui = Utilities.getEditorUI(editorPane);
+	StatusBar sb = null;
+        if(ui != null) {
+	    sb = ui.getStatusBar();
+            // If the StatusBar does not have nbvi stuff, then add it
+	    if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
+		int pos = sb.getCellCount(); // should position at end
+		sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
+		// sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
+		
+		// NEEDSWORK: undo status.
+		sb.addCell(1, CELL_UU, new String[] {UU_UU, UU_LOCK});
+	    }
+        }
 	return sb;
     }
 }

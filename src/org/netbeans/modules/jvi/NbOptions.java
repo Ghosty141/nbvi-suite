@@ -314,4 +314,12 @@ public class NbOptions extends SimpleBeanInfo {
     public boolean getViDbgCache() {
 	return getboolean("viDbgCache");
     }
+
+    public void setViDbgEditorActivation(boolean arg) {
+        put("viDbgEditorActivation", arg);
+    }
+
+    public boolean getViDbgEditorActivation() {
+	return getboolean("viDbgEditorActivation");
+    }
 }

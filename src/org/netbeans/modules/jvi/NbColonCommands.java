@@ -28,10 +28,14 @@
  */
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ColonCommands;
+import com.raelity.jvi.Util;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 import com.raelity.jvi.ViManager;
+import org.netbeans.modules.editor.java.JavaFastOpenAction;
+import org.openide.util.actions.SystemAction;
 
 public class NbColonCommands {
   static private ActionListener l;
@@ -54,6 +58,8 @@ public class NbColonCommands {
     //
     // Register some ":" commands
     //
+    ColonCommands.register("ts", "tselect", new GoToClassAction());
+    
     /*
     ColonCommands.register("mak", "make", makeAction);
     ColonCommands.register("bui", "build", buildAction);
@@ -73,6 +79,27 @@ public class NbColonCommands {
     // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
   }
 
+  static private class GoToClassAction implements ActionListener {
+    public void actionPerformed(ActionEvent e) {
+	boolean ok = true;
+	SystemAction sa = null;
+	try {
+	    sa = SystemAction.get(JavaFastOpenAction.class);
+	} catch(IllegalArgumentException ex) {
+	    ok = false;
+	}
+	if(ok) {
+	    if(sa.isEnabled()) {
+		sa.actionPerformed(e);
+	    } else {
+		ok = false;
+	    }
+	}
+	if(!ok) {
+	    Util.vim_beep();
+	}
+    }
+  }
 
   /*
   private static AbbrevLookup toggles = new AbbrevLookup();

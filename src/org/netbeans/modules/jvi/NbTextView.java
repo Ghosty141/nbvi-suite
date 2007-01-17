@@ -5,6 +5,7 @@ import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViStatusDisplay;
+import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import javax.swing.JEditorPane;
 import javax.swing.text.Document;
@@ -88,14 +89,13 @@ public class NbTextView extends TextView
 	    return;
 	}
         // NEEDSWORK: check can undo for beep
-        ops.xact(NbEditorKit.redoAction);
-      /*
+        
 	cache.isUndoChange(); // clears the flag
-        ops.xact(SystemAction.get(RedoAction.class)); // in openide
+        ops.xact(NbEditorKit.redoAction);
 	if(cache.isUndoChange()) {
 	    setCaretPosition(cache.getUndoOffset());
 	}
-	*/
+        // ops.xact(SystemAction.get(RedoAction.class)); // in openide
     }
 
     public void undo() {
@@ -104,31 +104,106 @@ public class NbTextView extends TextView
 	    return;
 	}
         // NEEDSWORK: check can undo for beep
-        ops.xact(NbEditorKit.undoAction);
-      /*
+        
 	cache.isUndoChange(); // clears the flag
-        ops.xact(SystemAction.get(UndoAction.class)); // in openide
+        ops.xact(NbEditorKit.undoAction);
 	if(cache.isUndoChange()) {
 	    setCaretPosition(cache.getUndoOffset());
 	}
-      */
+        // ops.xact(SystemAction.get(UndoAction.class)); // in openide
     }
+    
+    //
+    // Undo handling.
+    // 
+    // With NB, the atomic lock on the document groups undo
+    // so we can always do that for progromatic undo/redo, eg. "3dd".
+    // But for insert mode locking the file has problems, so we
+    // continue to use the classic undow flag
+    //
 
     public void beginUndo() {
         super.beginUndo();
         Document doc = getDoc();
-        if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
+        if(doc instanceof BaseDocument) {
             ((BaseDocument)doc).atomicLock();
         }
     }
     
     public void endUndo() {
         Document doc = getDoc();
-        if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
+        if(doc instanceof BaseDocument) {
             ((BaseDocument)doc).atomicUnlock();
         }
         super.endUndo();
     }
+
+    public void beginInsertUndo() {
+        super.beginInsertUndo();
+        Document doc = getDoc();
+        if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
+            ((BaseDocument)doc).atomicLock();
+        }
+    }
+    
+    public void endInsertUndo() {
+        Document doc = getDoc();
+        if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
+            ((BaseDocument)doc).atomicUnlock();
+        }
+        super.endInsertUndo();
+    }
+    
+    /**
+     * Find matching brace for char at the cursor
+     */
+    public void findMatch() {
+        // NB's match brace action uses the character before the cursor
+        int startingOffset = getCaretPosition();
+        setCaretPosition(startingOffset + 1);
+        ops.xact(NbEditorKit.matchBraceAction);
+        if(getCaretPosition() != startingOffset + 1) {
+            // it moved, success match, need to backup
+            setCaretPosition(getCaretPosition()-1);
+        } else {
+            // match failed, back to original position (is this needed?)
+            setCaretPosition(startingOffset);
+        }
+    }
+    
+    /**
+     * Jump to the definiiton of the identifier unde the cursor.
+     */
+    public void jumpDefinition() {
+        ops.xact(NbEditorKit.gotoDeclarationAction);
+    }
+
+    public void foldOperation(int op) {
+        String action = null;
+        switch(op) {
+            case ViTextView.FOLDOP_CLOSE:
+                action = NbEditorKit.collapseFoldAction;
+                break;
+            case ViTextView.FOLDOP_OPEN:
+                action = NbEditorKit.expandFoldAction;
+                break;
+            case ViTextView.FOLDOP_CLOSE_ALL:
+                action = NbEditorKit.collapseAllFoldsAction;
+                break;
+            case ViTextView.FOLDOP_OPEN_ALL:
+                action = NbEditorKit.expandAllFoldsAction;
+                break;
+        }
+        if(action != null) {
+            ops.xact(action);
+        } else {
+	    Util.vim_beep();
+        }
+    }
+    
+    //
+    // Widow manipulation operations
+    //
 
     public void win_quit() {
         // if split, close this half; otherwise close view

@@ -68,7 +68,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
    *
    * @param e the mouse event
    */
-  /* FUNCTIONALITY NOT AVAILABLE IN NETBEANS
+  /* NEEDSWORK: positionCaret FUNCTIONALITY NOT AVAILABLE IN NETBEANS
   protected void positionCaret(MouseEvent e) {
     viDelegate.positionCaret(e);
   }

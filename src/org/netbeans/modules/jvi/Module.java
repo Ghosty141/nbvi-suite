@@ -37,7 +37,7 @@ public class Module extends ModuleInstall
 
         ViManager.setViFactory(new NbFactory());
         
-        ColonCommands.register("dumpOptions", "dumpOptions", new ActionListener() {
+        ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
                     ViManager.getViFactory().getPreferences().exportSubtree(System.out);
@@ -48,7 +48,7 @@ public class Module extends ModuleInstall
                 }
             }
         });
-        ColonCommands.register("deleteOptions", "deleteOptions", new ActionListener() {
+        ColonCommands.register("optionsDelete", "optionsDelete", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
                     String keys[] = ViManager.getViFactory().getPreferences().keys();
@@ -70,9 +70,11 @@ public class Module extends ModuleInstall
         
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                System.err.println("WM evt = " + evt.getPropertyName() + ": "
-                        + dispName(evt.getOldValue())
-                        + " --> " + dispName(evt.getNewValue()));
+                if(G.dbgEditorActivation.getBoolean()) {
+		    System.err.println("WM evt = " + evt.getPropertyName() + ": "
+			    + dispName(evt.getOldValue())
+			    + " --> " + dispName(evt.getNewValue()));
+                }
             }
         });
         /*TopComponent.getRegistry().addPropertyChangeListener(new PropertyChangeListener() {

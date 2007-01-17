@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.G;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
@@ -107,11 +108,14 @@ public class NbFactory extends DefaultViFactory
         // Monitor activations/opens/closes.
         // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
         //            something like WindowManager.findMode("editor").addPropertyChangeListener
+        //            or org.netbeans.editor.Registry monitoring.
         TopComponent.getRegistry().addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                System.err.println("NbVi REG evt = " + evt.getPropertyName() + ": "
-                        + evt.getOldValue()
-                        + " --> " + evt.getNewValue());
+                if(G.dbgEditorActivation.getBoolean()) {
+		    System.err.println("NbVi REG evt = " + evt.getPropertyName() + ": "
+			    + evt.getOldValue()
+			    + " --> " + evt.getNewValue());
+                }
                 if(evt.getPropertyName().equals(TopComponent.Registry.PROP_ACTIVATED)) {
                     Object thing = getViEditorThing(evt.getOldValue());
                     if(thing != null) {

@@ -9,7 +9,6 @@ import java.beans.PropertyDescriptor;
 import java.beans.SimpleBeanInfo;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.prefs.Preferences;
 
 /**
@@ -51,20 +50,15 @@ public class NbOptions extends SimpleBeanInfo {
     //
     private Preferences prefs = ViManager.getViFactory().getPreferences();
 
-    private Map map = new HashMap();
-
     private void put(String name, String val) {
-	Option opt = Options.getOption(name);
 	prefs.put(name, val);
     }
 
     private void put(String name, int val) {
-	Option opt = Options.getOption(name);
 	prefs.putInt(name, val);
     }
 
     private void put(String name, boolean val) {
-	Option opt = Options.getOption(name);
 	prefs.putBoolean(name, val);
     }
 

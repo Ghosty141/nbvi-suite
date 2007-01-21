@@ -4,12 +4,16 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import javax.swing.JEditorPane;
+import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import org.netbeans.editor.BaseDocument;
+import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
@@ -88,11 +92,16 @@ public class NbTextView extends TextView
 	    Util.vim_beep();
 	    return;
 	}
+	if(isInUndo()||isInInsertUndo()) {
+	    ViManager.dumpStack("Redo while in begin/endUndo");
+            return;
+	}
         // NEEDSWORK: check can undo for beep
         
 	cache.isUndoChange(); // clears the flag
         ops.xact(NbEditorKit.redoAction);
 	if(cache.isUndoChange()) {
+            // NEEDSWORK: check if need newline adjust
 	    setCaretPosition(cache.getUndoOffset());
 	}
         // ops.xact(SystemAction.get(RedoAction.class)); // in openide
@@ -103,11 +112,16 @@ public class NbTextView extends TextView
 	    Util.vim_beep();
 	    return;
 	}
+	if(isInUndo()||isInInsertUndo()) {
+	    ViManager.dumpStack("Undo while in begin/endUndo");
+            return;
+	}
         // NEEDSWORK: check can undo for beep
         
 	cache.isUndoChange(); // clears the flag
         ops.xact(NbEditorKit.undoAction);
 	if(cache.isUndoChange()) {
+            // NEEDSWORK: check if need newline adjust
 	    setCaretPosition(cache.getUndoOffset());
 	}
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
@@ -121,9 +135,23 @@ public class NbTextView extends TextView
     // But for insert mode locking the file has problems, so we
     // continue to use the classic undow flag
     //
+  
+    private boolean fGuardedException;
+    private boolean fException;
+  
+    protected void processTextException(BadLocationException ex) {
+        if(ex instanceof GuardedException) {
+            fGuardedException = true;
+        } else {
+            fException = true;
+        }
+        Util.vim_beep();
+    }
 
     public void beginUndo() {
         super.beginUndo();
+	fGuardedException = false;
+	fException = false;
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
             ((BaseDocument)doc).atomicLock();
@@ -133,7 +161,26 @@ public class NbTextView extends TextView
     public void endUndo() {
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
-            ((BaseDocument)doc).atomicUnlock();
+	    if(fGuardedException || fException) {
+                // get rid of the changes
+		((BaseDocument)doc).breakAtomicLock();
+                
+		// Don't want this message lost, so defer until things
+		// settle down. The change/unlock-undo cause a lot of
+		// action
+
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+			getStatusDisplay().displayErrorMessage(
+			    "No changes made."
+			    + (fGuardedException
+                               ? " Attempt to change guarded text."
+                               : " Document location error."));
+		    }
+		});
+	    }
+            
+	    ((BaseDocument)doc).atomicUnlock();
         }
         super.endUndo();
     }

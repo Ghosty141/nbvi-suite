@@ -34,7 +34,7 @@ public class NbFS implements ViFS
 		if(sc != null) {
                     try {
                         sc.save();
-                        Msg.wmsg(tv.getDisplayFileNameAndSize() + " written");
+                        Msg.smsg(tv.getDisplayFileNameAndSize() + " written");
                     } catch (IOException ex) {
                         Msg.emsg("error writing " + fo.getNameExt());
                     }

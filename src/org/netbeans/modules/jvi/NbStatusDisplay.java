@@ -41,41 +41,9 @@ public class NbStatusDisplay implements ViStatusDisplay {
     public static final String CELL_MODE = "vi-mode";
     public static final String CELL_COMMAND = "vi-command";
     private static Coloring red = new Coloring(null, Color.red, null);
-
-    // NEEDSWORK: UU status
-    public static final String CELL_UU = "vi-uu";
-    public static final String UU_UU = "UMESSY";
-    public static final String UU_LOCK = "ULOCK";
     
     /** Creates a new instance of NbStatusDisplay */
     public NbStatusDisplay() {
-        // NEEDSWORK: UU status, monitor classic undo preference for status
-        Preferences prefs = ViManager.getViFactory().getPreferences();
-        prefs.addPreferenceChangeListener(new PreferenceChangeListener() {
-            public void preferenceChange(PreferenceChangeEvent evt) {
-                if(evt.getKey().equals(Options.classicUndoOption)) {
-                    adjustUU();
-                }
-            }
-        });
-        
-        // wait until things settle
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-		adjustUU();
-            }
-        });
-    }
-    
-    /**
-     * NEEDSWORK: Maintain the LOCK/UU field.
-     */
-    public void adjustUU() {
-        if(G.isClassicUndo.getBoolean()) {
-            setText(CELL_UU, UU_LOCK);
-        } else {
-            setText(CELL_UU, UU_UU);
-        }
     }
 
     /**
@@ -145,9 +113,6 @@ public class NbStatusDisplay implements ViStatusDisplay {
 		int pos = sb.getCellCount(); // should position at end
 		sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
 		// sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
-		
-		// NEEDSWORK: undo status.
-		sb.addCell(1, CELL_UU, new String[] {UU_UU, UU_LOCK});
 	    }
         }
 	return sb;

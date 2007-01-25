@@ -164,6 +164,13 @@ public class NbTextView extends TextView
 	    if(fGuardedException || fException) {
                 // get rid of the changes
 		((BaseDocument)doc).breakAtomicLock();
+	    }
+            
+	    ((BaseDocument)doc).atomicUnlock();
+            
+	    if(fGuardedException || fException) {
+                // This must come *after* atomicUnlock, otherwise it gets
+                // overwritten by a clear message due to scrolling.
                 
 		// Don't want this message lost, so defer until things
 		// settle down. The change/unlock-undo cause a lot of
@@ -178,9 +185,7 @@ public class NbTextView extends TextView
                                : " Document location error."));
 		    }
 		});
-	    }
-            
-	    ((BaseDocument)doc).atomicUnlock();
+            }
         }
         super.endUndo();
     }
@@ -224,6 +229,23 @@ public class NbTextView extends TextView
     public void jumpDefinition() {
         ops.xact(NbEditorKit.gotoDeclarationAction);
     }
+
+  public void jumpList(JLOP op, int count) {
+    switch(op) {
+      case NEXT_CHANGE:
+        ops.xact(NbEditorKit.jumpListNextAction);
+        break;
+          
+      case PREV_CHANGE:
+        ops.xact(NbEditorKit.jumpListPrevAction);
+        break;
+        
+      case NEXT_JUMP:
+      case PREV_JUMP:
+	Util.vim_beep();
+        break;
+    }
+  }
 
     public void foldOperation(int op) {
         String action = null;

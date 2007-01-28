@@ -5,6 +5,7 @@ import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
+import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
@@ -268,6 +269,10 @@ public class NbTextView extends TextView
         } else {
 	    Util.vim_beep();
         }
+    }
+    
+    public ViOutputStream createOutputStream(Object type, Object info) {
+        return new NbOutputStream(this, type.toString(), info.toString());
     }
     
     //

@@ -58,6 +58,7 @@ public class NbFactory extends DefaultViFactory {
     }
     
     public ViTextView getViTextView(JEditorPane editorPane) {
+        // NEEDSWORK: use putClientProperty on editorPane to hold tv weakRef.
         ViTextView tv01 = null;
         WeakReference<ViTextView> ref01 = textViews.get(editorPane);
         if(ref01 != null) {
@@ -78,9 +79,12 @@ public class NbFactory extends DefaultViFactory {
             firstTime = false;
             startupNbVi();
         }
-        if(true) {
+        
+        // Cursor is currently installed by editor kit
+        if(false) {
             super.registerEditorPane(editorPane);
-        } else {
+        } else
+        {
             // install cursor if neeeded
             Caret c = editorPane.getCaret();
             if( ! (c instanceof ViCaret)) {

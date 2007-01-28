@@ -1,10 +1,9 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.BooleanOption;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
-import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
+import com.raelity.jvi.swing.KeyBinding;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -12,6 +11,7 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import org.openide.windows.Mode;
@@ -51,9 +51,15 @@ public class Module extends ModuleInstall
         ColonCommands.register("optionsDelete", "optionsDelete", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    String keys[] = ViManager.getViFactory().getPreferences().keys();
+                    Preferences prefs = ViManager.getViFactory().getPreferences();
+                    String keys[] = prefs.keys();
                     for (String key : keys) {
-                        ViManager.getViFactory().getPreferences().remove(key);
+                        prefs.remove(key);
+                    }
+                    prefs = prefs.node(KeyBinding.PREF_KEYS);
+                    keys = prefs.keys();
+                    for (String key : keys) {
+                        prefs.remove(key);
                     }
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();

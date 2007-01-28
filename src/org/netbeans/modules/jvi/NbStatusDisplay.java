@@ -104,16 +104,18 @@ public class NbStatusDisplay implements ViStatusDisplay {
     }
 
     private StatusBar getStatusBar() {
-	EditorUI ui = Utilities.getEditorUI(editorPane);
 	StatusBar sb = null;
-        if(ui != null) {
-	    sb = ui.getStatusBar();
-            // If the StatusBar does not have nbvi stuff, then add it
-	    if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
-		int pos = sb.getCellCount(); // should position at end
-		sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
-		// sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
-	    }
+        if(editorPane != null) {
+            EditorUI ui = Utilities.getEditorUI(editorPane);
+            if(ui != null) {
+                sb = ui.getStatusBar();
+                // If the StatusBar does not have nbvi stuff, then add it
+                if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
+                    int pos = sb.getCellCount(); // should position at end
+                    sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
+                    // sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
+                }
+            }
         }
 	return sb;
     }

@@ -3,6 +3,7 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.OptionsBean;
 import com.raelity.jvi.swing.KeyBindingBean;
 import java.beans.IntrospectionException;
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,8 +18,33 @@ public class NbOptionsNode extends BeanNode {
     private static final String NODE_KEYBINDINGS = "KeyBindings";
     private static final String NODE_DEBUG = "Debug";
     
+    private static void putEx(PropertyVetoException pve) {
+        String msg = pve.getMessage();
+        RuntimeException iae = new IllegalArgumentException( msg); //NOI18N
+        ErrorManager.getDefault().annotate(iae,
+	        ErrorManager.USER, msg,
+	        msg, pve, new java.util.Date());
+        throw iae;
+    }
+    
     public NbOptionsNode() throws IntrospectionException {
-	super(new OptionsBean.General(), new OptionsSubnodes());
+	super(new OptionsBean.General() {
+                  protected void put(String name, int val) {
+                      try {
+                          super.put(name, val);
+                      } catch (PropertyVetoException pve) {
+                          putEx(pve);
+                      }
+                  }
+                  protected void put(String name, String val) {
+                      try {
+                          super.put(name, val);
+                      } catch (PropertyVetoException pve) {
+                          putEx(pve);
+                      }
+                  }
+              },
+              new OptionsSubnodes());
     }    
     
     private static class OptionsSubnodes extends Children.Keys {
@@ -62,19 +88,64 @@ public class NbOptionsNode extends BeanNode {
     
     private static class MiscNode extends BeanNode {
 	public MiscNode() throws IntrospectionException {
-	    super(new OptionsBean.Misc());
+	    super(new OptionsBean.Misc() {
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
 	}    
     }
     
     private static class CursorWrapNode extends BeanNode {
 	public CursorWrapNode() throws IntrospectionException {
-	    super(new OptionsBean.CursorWrap());
+	    super(new OptionsBean.CursorWrap() {
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
 	}    
     }
     
     private static class DebugNode extends BeanNode {
 	public DebugNode() throws IntrospectionException {
-	    super(new OptionsBean.Debug());
+	    super(new OptionsBean.Debug() {
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
 	}    
     }
 }

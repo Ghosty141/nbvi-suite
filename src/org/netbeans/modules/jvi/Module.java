@@ -2,6 +2,7 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
+import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
 import java.awt.event.ActionEvent;
@@ -36,6 +37,8 @@ public class Module extends ModuleInstall
 	NbColonCommands.init();
 
         ViManager.setViFactory(new NbFactory());
+        
+        Options.getOption(Options.readOnlyHack).setHidden(true);
         
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {

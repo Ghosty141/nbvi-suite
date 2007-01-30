@@ -38,8 +38,6 @@ public class Module extends ModuleInstall
 
         ViManager.setViFactory(new NbFactory());
         
-        Options.getOption(Options.readOnlyHack).setHidden(true);
-        
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {

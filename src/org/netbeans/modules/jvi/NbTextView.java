@@ -26,8 +26,9 @@ import org.openide.windows.TopComponent;
 public class NbTextView extends TextView
 {
     NbTextView(JEditorPane editorPane) {
-	cache = createTextViewCache();
-	statusDisplay = new NbStatusDisplay();
+        super(editorPane);
+        cache = createTextViewCache();
+        statusDisplay = new NbStatusDisplay();
     }
 
     public ViStatusDisplay getStatusDisplay() {

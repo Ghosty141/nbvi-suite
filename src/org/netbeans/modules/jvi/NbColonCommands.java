@@ -38,27 +38,20 @@ import org.netbeans.modules.editor.java.JavaFastOpenAction;
 import org.openide.util.actions.SystemAction;
 
 public class NbColonCommands {
-  static private ActionListener l;
 
   public static void init() {
-    l = new ActionListener() {
-      public void actionPerformed(ActionEvent ev) {
-        setupCommands();
-      }};
-    ViManager.addStartupListener(l);
+      setupCommands();
   }
 
   private NbColonCommands() {
   }
 
+  /** Register some ":" commands */
   static void setupCommands() {
-    System.err.println("NbColonCommands INVOKED");
-    ViManager.removeStartupListener(l);
-    l = null;
-    //
-    // Register some ":" commands
-    //
     ColonCommands.register("ts", "tselect", new GoToClassAction());
+
+    // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
+    // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
     
     /*
     ColonCommands.register("mak", "make", makeAction);
@@ -74,9 +67,6 @@ public class NbColonCommands {
     initToggleCommand();
     ColonCommands.register("tog", "toggle", toggleAction);
     */
-
-    // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
-    // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
   }
 
   static private class GoToClassAction implements ActionListener {

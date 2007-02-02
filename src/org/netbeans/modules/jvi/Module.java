@@ -10,9 +10,11 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import org.netbeans.editor.Registry;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import org.openide.windows.Mode;
@@ -34,18 +36,53 @@ public class Module extends ModuleInstall
     /** called when the module is loaded (at netbeans startup time) */
     public void restored()
     { 
-	NbColonCommands.init();
-
         ViManager.setViFactory(new NbFactory());
         
+        Options.init();
+        NbOptions.init();
+	NbColonCommands.init();
+        
+        // Monitor activations/opens/closes.
+        // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
+        //            WindowManager.findMode("editor").addPropertyChangeListener
+        //            or org.netbeans.editor.Registry monitoring.
+        TopComponent.getRegistry().addPropertyChangeListener(
+                new TopComponentRegistryListener());
+        
+        //
+        // Some debug commands
+        //
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ViManager.getViFactory().getPreferences().exportSubtree(System.out);
+                    ViManager.getViFactory().getPreferences()
+                            .exportSubtree(System.out);
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();
                 } catch (IOException ex) {
                     ex.printStackTrace();
+                }
+            }
+        });
+        ColonCommands.register("buffersDump","buffersDump", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.err.println("Buffers activation:");
+                int i = 1;
+                while(true) {
+                    TopComponent tc = (TopComponent)ViManager.getTextBuffer(i);
+                    if(tc == null)
+                        break;
+                    System.err.println("\t" + tc.getDisplayName());
+                    i++;
+                }
+                System.err.println("Buffers MRU:");
+                i = 0;
+                while(true) {
+                    TopComponent tc = (TopComponent)ViManager.getMruBuffer(i);
+                    if(tc == null)
+                        break;
+                    System.err.println("\t" + tc.getDisplayName());
+                    i++;
                 }
             }
         });
@@ -67,14 +104,24 @@ public class Module extends ModuleInstall
                 }
             }
         });
-        // NEEDSWORK: change the undo strategy, can get rid of this when
-        // undo/filelock issues are resolved. See NbStatusDisplay.java
-        ColonCommands.register("uu", "uu", new ActionListener() {
+        ColonCommands.register("registryDump", "registryDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                G.isClassicUndo.setBoolean(!G.isClassicUndo.getBoolean());
+                System.err.println(Registry.registryToString());
+            }
+        });
+        ColonCommands.register("topcomponentDump", "topcomponentDump", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Set<TopComponent> s = TopComponent.getRegistry().getOpened();
+                System.err.println("TopComponents:");
+                for (TopComponent tc : s) {
+                    if(tc == null) continue;
+                    System.err.print("    tc = " + tc.getDisplayName() );
+                    System.err.println(", " + tc);
+                }
             }
         });
         
+        /*
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 if(G.dbgEditorActivation.getBoolean()) {
@@ -84,51 +131,12 @@ public class Module extends ModuleInstall
                 }
             }
         });
-        /*TopComponent.getRegistry().addPropertyChangeListener(new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-                System.err.println("REG evt = " + evt.getPropertyName() + ": "
-                        + dispName(evt.getOldValue())
-                        + " --> " + dispName(evt.getNewValue()));
-            }
-        });*/
+         */
     } 
-    private String dispName(Object o) {
-        if(o == null) return "null";
-        if(o instanceof Mode) {
-              String oName = o == null ? "nullobj"
-                      : ((Mode)o).getName();
-              return oName;
-        }
-        //return o.getClass().getSimpleName();
-        return o.toString();
-    }
 
     /** called when an editor component is being loaded */
-    private static boolean outputTC = true;
     public static void setupEditorPane( final JEditorPane editorPane )
     { 
-        ViManager.registerEditorPane(editorPane);
-        if(outputTC) {
-            Set<TopComponent> s = TopComponent.getRegistry().getOpened();
-            System.err.println("TopComponents:");
-            for (TopComponent tc : s) {
-                if(tc == null) continue;
-                outputTC = false;
-                System.err.print("    tc = " + tc.getDisplayName() );
-                System.err.println(", " + tc);
-            }
-        }
-        
-        if(false) {
-            Set<Mode> s = WindowManager.getDefault().getModes();
-            System.err.println("Modes: ");
-            for (Mode m : s) {
-                System.err.print("    m = " + m.getName());
-                System.err.println(", " + m);
-            }
-        }
-        
-
         /* This doesn't do anything.  It calls setKeymap() on the JEditorPane,
          * but getKeymap() is overridden in the netbeans editor kit to return
          * a newly constructed MultiKeymap object.  So, we need to subclass
@@ -137,16 +145,97 @@ public class Module extends ModuleInstall
          */
         //ViManager.installKeymap(editorPane);
     } 
-
-    // This does nothing
-    private static void setupEditorListener() {
-        Mode m = WindowManager.getDefault().findMode("editor");
-        if(m != null) {
-            m.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    System.err.println("Editor Mode Event = " + evt );
+    
+    /** This class monitors the TopComponent registry and issues
+     * <ul>
+     * <li> ViManager.activateFile("debuginfo", tc) </li>
+     * <li> ViManager.deactivateFile(ep, tc) </li>
+     * <li> ViManager.exitInputMode() </li>
+     * </ul>
+     */
+    private static class TopComponentRegistryListener
+    implements PropertyChangeListener {
+        public void propertyChange(PropertyChangeEvent evt) {
+            if(false && G.dbgEditorActivation.getBoolean()) {
+                System.err.println("NbVi REG evt = " + evt.getPropertyName() + ": "
+                        + evt.getOldValue()
+                        + " --> " + evt.getNewValue());
+            }
+            //
+            // For NB6 use PROP_TC_OPENED, PROP_TC_CLOSED
+            if(evt.getPropertyName().equals(TopComponent.Registry.PROP_ACTIVATED)) {
+                TopComponent oldTc = getEdTc(evt.getOldValue());
+                TopComponent newTc = getEdTc(evt.getNewValue());
+                
+                if(oldTc != null) {
+                    // Do this so don't hold begin/endUndo
+                    System.err.println("TC Activated old: exit input mode: "
+                                + oldTc.getDisplayName());
+                    ViManager.exitInputMode();
                 }
-            });
+                
+                if(newTc != null)
+                    ViManager.activateFile("P_ACTV", newTc);
+            } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
+                // For each top component we know about, see if it is still
+                // opened.
+                // NEEDSWORK: checking each buffer, this seems wasteful
+                // NEEDSWORK: use the org.netbeans.editor.Registry ??
+                Set<TopComponent> newSet = (Set<TopComponent>)evt.getNewValue();
+                Set<TopComponent> oldSet = (Set<TopComponent>)evt.getOldValue();
+                if(newSet.size() > oldSet.size()) {
+                    // something OPENing
+                    Set<TopComponent> s = (Set<TopComponent>)((HashSet<TopComponent>)newSet).clone();
+                    s.removeAll(oldSet);
+                    if(s.size() != 1) {
+                        System.err.println("TC OPEN: OPEN not size 1");
+                    } else {
+                        TopComponent tc = null;
+                        for (TopComponent t : s) {
+                            tc = t;
+                            break;
+                        }
+                        tc = getEdTc(tc);
+                        if(tc != null)
+                            ViManager.activateFile("P_OPEN", tc);
+                    }
+                } else if(oldSet.size() > newSet.size()) {
+                    // something CLOSEing
+                    Set<TopComponent> s = (Set<TopComponent>)((HashSet<TopComponent>)oldSet).clone();
+                    s.removeAll(newSet);
+                    if(s.size() != 1) {
+                        System.err.println("TC OPEN: CLOSE not size 1");
+                    } else {
+                        TopComponent tc = null;
+                        for (TopComponent t : s) {
+                            tc = t;
+                            break;
+                        }
+                        // tc = getEdTc(tc); does not work, Mode is null
+                        JEditorPane ep = (JEditorPane)tc.getClientProperty(
+                                        NbFactory.PROP_JEP);
+                        // ep is null if never registered the editor pane
+                        ViManager.deactivateFile(ep, tc);
+                    }
+                } else
+                    System.err.println("TC OPEN: SAME SET SIZE");
+            }
         }
+    }
+    
+    /**
+     * Convert a TopComponent we're willing to deal with to a
+     * convenient file object. The TopComponent must be Mode "editor".
+     */
+    private static TopComponent getEdTc(Object o) {
+        if(o instanceof TopComponent) {
+            TopComponent tc = (TopComponent)o;
+            Mode m = WindowManager.getDefault().findMode(tc);
+            String mode = m == null ? "null" : m.getName();
+            if("editor".equals(mode)) {
+                return tc;
+            }
+        }
+        return null;
     }
 }

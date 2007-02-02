@@ -302,11 +302,18 @@ public class NbTextView extends TextView
     }
 
     public void win_close(boolean freeBuf) {
-        System.err.println("Closing " + getDisplayFileName());
-        TopComponent tc = NbEditorUtilities.getTopComponent(getEditorComponent());
-        if(tc != null && tc.close()) {
+        JEditorPane ep = getEditorComponent();
+        TopComponent closeTC = NbFactory.getEditorTopComponent(ep);
+        if(closeTC == null)
             return;
-        }
-        Msg.emsg(getDisplayFileName() + " not closed");
+        
+        // activate the previously active TC
+        TopComponent prevTC = ((TopComponent)ViManager.getMruBuffer(1));
+        if(prevTC != null)
+            prevTC.requestActive();
+        
+        // and close the one requested
+        if(!closeTC.close())
+            Msg.emsg(getDisplayFileName() + " not closed");
     }
 }

@@ -58,11 +58,7 @@ public class NbFS implements ViFS
     public void edit(ViTextView viTextView, int i, boolean force) {
 	CloneableEditor ce = (CloneableEditor)ViManager.getTextBuffer(i);
 	if(ce == null) {
-	  StringBuffer s = new StringBuffer(
-			    "No alternate file name to substitute for '#");
-	  s.append(i);
-	  s.append("'");
-	  Msg.emsg(s.toString());
+	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
 	  return;
 	}
 	ce.requestActive();

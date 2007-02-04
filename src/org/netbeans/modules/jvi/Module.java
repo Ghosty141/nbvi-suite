@@ -5,11 +5,13 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
@@ -22,25 +24,54 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
 /**
- * TODO: selected text (with mouse) doesn't change color
- * TODO: regex integration
- *       jvi was written before jdk1.4, and there are multiple integrations
- *       with different regex libs - add one for the std regex lib
- * TODO: code folding gone away?
- * TODO: hook up actions to line-command mode (:w, etc)
+ * Initialization and various editor kits. Use keybindings in future releases
+ * so we should not need the editor ktis.
+ * <p>
  * TODO: cover all the MIME types
- * TODO: make sure non-vi keybindings still work (CTRL-X for cut, etc)
  */
 public class Module extends ModuleInstall
 {
     /** called when the module is loaded (at netbeans startup time) */
-    public void restored()
-    { 
+    public void restored() {
+        try {
+            EventQueue.invokeAndWait(new Runnable() {
+                public void run() {
+                    initJVi();
+                }
+            });
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        } catch (InvocationTargetException ex) {
+            ex.printStackTrace();
+        }
+    } 
+    
+    private static boolean didInit;
+    /** Return true if have done module initialization */
+    public static boolean isInit() {
+        return didInit;
+    }
+    
+    private static boolean didOptionsInit;
+    /** Somehow NBOptionsl.init() causes java default keybinding to get lost,
+     * if it is run too early. In this class we defer this initialization
+     *  until after the first editor TC gets activated.
+     * <p>This even happens if ieHACK is removed.
+     */
+    private static final void doOptionsInitHack() {
+        if(didOptionsInit)
+            return;
+        didOptionsInit = true;
+        NbOptions.init(); // HORROR STORY
+    }
+    
+    private void initJVi() {
+        didInit = true;
         ViManager.setViFactory(new NbFactory());
         
         Options.init();
-        NbOptions.init();
 	NbColonCommands.init();
+        // NbOptions.init(); HORROR STORY
         
         // Monitor activations/opens/closes.
         // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
@@ -132,7 +163,7 @@ public class Module extends ModuleInstall
             }
         });
          */
-    } 
+    }
 
     /** called when an editor component is being loaded */
     public static void setupEditorPane( final JEditorPane editorPane )
@@ -174,8 +205,10 @@ public class Module extends ModuleInstall
                     ViManager.exitInputMode();
                 }
                 
-                if(newTc != null)
+                if(newTc != null) {
                     ViManager.activateFile("P_ACTV", newTc);
+                    doOptionsInitHack(); // HORROR STORY
+                }
             } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
                 // For each top component we know about, see if it is still
                 // opened.
@@ -238,4 +271,5 @@ public class Module extends ModuleInstall
         }
         return null;
     }
+
 }

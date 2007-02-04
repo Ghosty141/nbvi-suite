@@ -26,6 +26,11 @@
                     <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.PlainViKit"/>
                 </file>
             </folder>
+            <folder name="xml">
+                <file name="EditorKit.instance">
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.XMLViKit"/>
+                </file>
+            </folder>
         </folder>
     </folder>
     <folder name="UI">

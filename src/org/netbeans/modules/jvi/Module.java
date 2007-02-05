@@ -11,7 +11,6 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
@@ -19,6 +18,13 @@ import java.util.prefs.Preferences;
 import org.netbeans.editor.Registry;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
+import javax.swing.text.Caret;
+import org.netbeans.editor.MultiKeymap;
+import org.netbeans.modules.editor.NbEditorKit;
+import org.netbeans.modules.editor.html.HTMLKit;
+import org.netbeans.modules.editor.java.JavaKit;
+import org.netbeans.modules.editor.plain.PlainKit;
+import org.netbeans.modules.xml.text.syntax.XMLKit;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -33,17 +39,6 @@ public class Module extends ModuleInstall
 {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
-        try {
-            EventQueue.invokeAndWait(new Runnable() {
-                public void run() {
-                    initJVi();
-                }
-            });
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-        } catch (InvocationTargetException ex) {
-            ex.printStackTrace();
-        }
     } 
     
     private static boolean didInit;
@@ -65,8 +60,12 @@ public class Module extends ModuleInstall
         NbOptions.init(); // HORROR STORY
     }
     
-    private void initJVi() {
+    private static final void initJVi() {
+        assert(EventQueue.isDispatchThread());
+        if(didInit)
+            return;
         didInit = true;
+        
         ViManager.setViFactory(new NbFactory());
         
         Options.init();
@@ -271,5 +270,62 @@ public class Module extends ModuleInstall
         }
         return null;
     }
+    
+    //
+    // Here are the various editor kits (too bad the one line top level class
+    // is needed to map top level class to inner class.
+    // Expect to get rid of them entirely when jVi is a keybindings only thing.
+    //
+    // Not sure of life cycle.
+    //
 
+    public static class ViKit extends NbEditorKit {
+        public ViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
+        }
+
+        public Caret createCaret() { return new NbCaret(); }
+    } 
+
+    public static class PlainViKit extends PlainKit {
+        public PlainViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
+        }
+
+        public Caret createCaret() { return new NbCaret(); }
+    } 
+
+    public static class HtmlViKit extends HTMLKit {
+        public HtmlViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
+        }
+
+        public Caret createCaret() { return new NbCaret(); }
+    } 
+
+    public static class JavaViKit extends JavaKit {
+        public JavaViKit() { super(); initJVi(); }
+
+        public MultiKeymap getKeymap() {
+            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
+        }
+
+        public Caret createCaret() { return new NbCaret(); }
+    } 
+
+    public static class XMLViKit extends XMLKit {
+        public XMLViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
+        }
+
+        public Caret createCaret() { return new NbCaret(); }
+    } 
 }

@@ -40,13 +40,22 @@ public class NbOutputStream extends OutputStreamAdaptor {
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
     
-    /** Creates a new instance of NbOutputStream */
+    /** Creates a new instance of NbOutputStream.
+     * Type of ViOutputStream.OUTPUT is plain command output, the other
+     * types will output lines from a file.
+     */
     public NbOutputStream(ViTextView tv, String type, String info) {
         this.tv = tv;
-        String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
-        tabTag = "jVi " + sep +  info + sep;
-        ow = getIO(true); // make a new tab
-        fnTag = tv.getDisplayFileName() + ":";
+        if(type.equals(ViOutputStream.OUTPUT)) {
+            // plain output, no hyper text stuff or files or line numbers
+            ow = getIO(false); // make a new tab
+            ow.println(info);
+        } else {
+            String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
+            tabTag = "jVi " + sep +  info + sep;
+            ow = getIO(true); // make a new tab
+            fnTag = tv.getDisplayFileName() + ":";
+        }
     }
     
     private OutputWriter getIO(boolean fNew) {

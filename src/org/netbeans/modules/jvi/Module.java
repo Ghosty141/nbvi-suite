@@ -5,6 +5,7 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
+import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,6 +19,7 @@ import java.util.prefs.Preferences;
 import org.netbeans.editor.Registry;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
+import javax.swing.SwingUtilities;
 import javax.swing.text.Caret;
 import org.netbeans.editor.MultiKeymap;
 import org.netbeans.modules.editor.NbEditorKit;
@@ -25,6 +27,7 @@ import org.netbeans.modules.editor.html.HTMLKit;
 import org.netbeans.modules.editor.java.JavaKit;
 import org.netbeans.modules.editor.plain.PlainKit;
 import org.netbeans.modules.xml.text.syntax.XMLKit;
+import org.openide.cookies.EditorCookie;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -35,11 +38,10 @@ import org.openide.windows.WindowManager;
  * <p>
  * TODO: cover all the MIME types
  */
-public class Module extends ModuleInstall
-{
+public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
-    } 
+    }
     
     private static boolean didInit;
     /** Return true if have done module initialization */
@@ -69,7 +71,7 @@ public class Module extends ModuleInstall
         ViManager.setViFactory(new NbFactory());
         
         Options.init();
-	NbColonCommands.init();
+        NbColonCommands.init();
         // NbOptions.init(); HORROR STORY
         
         // Monitor activations/opens/closes.
@@ -86,7 +88,7 @@ public class Module extends ModuleInstall
             public void actionPerformed(ActionEvent e) {
                 try {
                     ViManager.getViFactory().getPreferences()
-                            .exportSubtree(System.out);
+                    .exportSubtree(System.out);
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();
                 } catch (IOException ex) {
@@ -155,27 +157,14 @@ public class Module extends ModuleInstall
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 if(G.dbgEditorActivation.getBoolean()) {
-		    System.err.println("WM evt = " + evt.getPropertyName() + ": "
-			    + dispName(evt.getOldValue())
-			    + " --> " + dispName(evt.getNewValue()));
+                    System.err.println("WM evt = " + evt.getPropertyName() + ": "
+                            + dispName(evt.getOldValue())
+                            + " --> " + dispName(evt.getNewValue()));
                 }
             }
         });
          */
     }
-
-    /** called when an editor component is being loaded */
-    public static void setupEditorPane( final JEditorPane editorPane )
-    { 
-        /* This doesn't do anything.  It calls setKeymap() on the JEditorPane,
-         * but getKeymap() is overridden in the netbeans editor kit to return
-         * a newly constructed MultiKeymap object.  So, we need to subclass
-         * MultiKeymap, delegate the calls to the JVI keymap, and override
-         * getKeymap() in our EditorKit classes.
-         */
-        //ViManager.installKeymap(editorPane);
-    } 
-    
     /** This class monitors the TopComponent registry and issues
      * <ul>
      * <li> ViManager.activateFile("debuginfo", tc) </li>
@@ -184,8 +173,9 @@ public class Module extends ModuleInstall
      * </ul>
      */
     private static class TopComponentRegistryListener
-    implements PropertyChangeListener {
+            implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent evt) {
+            assert(EventQueue.isDispatchThread());
             if(false && G.dbgEditorActivation.getBoolean()) {
                 System.err.println("NbVi REG evt = " + evt.getPropertyName() + ": "
                         + evt.getOldValue()
@@ -194,13 +184,18 @@ public class Module extends ModuleInstall
             //
             // For NB6 use PROP_TC_OPENED, PROP_TC_CLOSED
             if(evt.getPropertyName().equals(TopComponent.Registry.PROP_ACTIVATED)) {
+                trackTC(evt.getOldValue(), "activated oldTC");
+                trackTC(evt.getNewValue(), "activated newTC");
+                
                 TopComponent oldTc = getEdTc(evt.getOldValue());
                 TopComponent newTc = getEdTc(evt.getNewValue());
                 
                 if(oldTc != null) {
                     // Do this so don't hold begin/endUndo
-                    System.err.println("TC Activated old: exit input mode: "
-                                + oldTc.getDisplayName());
+                    if(G.dbgEditorActivation.getBoolean()) {
+                        System.err.println("TC Activated old: exit input mode: "
+                                           + oldTc.getDisplayName());
+                    }
                     ViManager.exitInputMode();
                 }
                 
@@ -211,8 +206,7 @@ public class Module extends ModuleInstall
             } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
                 // For each top component we know about, see if it is still
                 // opened.
-                // NEEDSWORK: checking each buffer, this seems wasteful
-                // NEEDSWORK: use the org.netbeans.editor.Registry ??
+                // NEEDSWORK: checking each buffer (until NB6 PROP_TC_OPENED)
                 Set<TopComponent> newSet = (Set<TopComponent>)evt.getNewValue();
                 Set<TopComponent> oldSet = (Set<TopComponent>)evt.getOldValue();
                 if(newSet.size() > oldSet.size()) {
@@ -227,6 +221,7 @@ public class Module extends ModuleInstall
                             tc = t;
                             break;
                         }
+                        trackTC(tc, "open");
                         tc = getEdTc(tc);
                         if(tc != null)
                             ViManager.activateFile("P_OPEN", tc);
@@ -245,8 +240,9 @@ public class Module extends ModuleInstall
                         }
                         // tc = getEdTc(tc); does not work, Mode is null
                         JEditorPane ep = (JEditorPane)tc.getClientProperty(
-                                        NbFactory.PROP_JEP);
+                                NbFactory.PROP_JEP);
                         // ep is null if never registered the editor pane
+                        trackTC(tc, "close");
                         ViManager.deactivateFile(ep, tc);
                     }
                 } else
@@ -255,77 +251,123 @@ public class Module extends ModuleInstall
         }
     }
     
+    private static String ancestorStringTC(Object o) {
+        StringBuilder s = new StringBuilder();
+        TopComponent tc = null;
+        TopComponent parent = (TopComponent)SwingUtilities
+                .getAncestorOfClass(TopComponent.class, (Component)o);
+        while (parent != null) {
+            s.append(" ")
+                .append(parent.getDisplayName())
+                .append(":")
+                .append(parent.hashCode());
+            tc = parent;
+            parent = (TopComponent)SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
+        }
+        return s.toString();
+    }
+    
+    private static final void trackTC(Object o, String tag) {
+        if(!G.dbgEditorActivation.getBoolean())
+            return;
+        if(!(o instanceof TopComponent))
+            return;
+        TopComponent tc = (TopComponent) o;
+        EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
+        if(ec == null)
+            return;
+        JEditorPane panes [] = ec.getOpenedPanes();
+        System.err.println("trackTC: " + tag + ": "
+                           + tc.getDisplayName() + ":" + tc.hashCode()
+                           + ": nPanes = "
+                           + (panes == null ? "null" : panes.length));
+        if(panes != null) {
+            for (JEditorPane ep : panes) {
+                System.err.println("\tep " + ep.hashCode() + ancestorStringTC(ep));
+            }
+        }
+    }
+    
     /**
      * Convert a TopComponent we're willing to deal with to a
-     * convenient file object. The TopComponent must be Mode "editor".
+     * convenient file object. If the top component has panes,
+     * then its one we want. 
+     *
+     * TopComponents in a secondary editor window are not Mode "editor",
+     * and MVTC do not have panes at open time, not until they are acivated.
      */
     private static TopComponent getEdTc(Object o) {
+        TopComponent tc = null;
         if(o instanceof TopComponent) {
-            TopComponent tc = (TopComponent)o;
+            tc = (TopComponent)o;
             Mode m = WindowManager.getDefault().findMode(tc);
             String mode = m == null ? "null" : m.getName();
             if("editor".equals(mode)) {
                 return tc;
             }
         }
+        // If it's not mode editor, it may have panes
+        if(tc != null) {
+            EditorCookie ec
+                    = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
+            if(ec != null && ec.getOpenedPanes() != null)
+                return tc;
+        }
         return null;
     }
     
     //
-    // Here are the various editor kits (too bad the one line top level class
-    // is needed to map top level class to inner class.
+    // Here are the various editor kits.
     // Expect to get rid of them entirely when jVi is a keybindings only thing.
     //
-    // Not sure of life cycle.
-    //
-
+    
     public static class ViKit extends NbEditorKit {
         public ViKit() { super(); initJVi(); }
         
         public MultiKeymap getKeymap() {
             return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
         }
-
+        
         public Caret createCaret() { return new NbCaret(); }
-    } 
-
+    }
+    
     public static class PlainViKit extends PlainKit {
         public PlainViKit() { super(); initJVi(); }
         
         public MultiKeymap getKeymap() {
             return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
         }
-
+        
         public Caret createCaret() { return new NbCaret(); }
-    } 
-
+    }
+    
     public static class HtmlViKit extends HTMLKit {
         public HtmlViKit() { super(); initJVi(); }
         
         public MultiKeymap getKeymap() {
             return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
         }
-
+        
         public Caret createCaret() { return new NbCaret(); }
-    } 
-
+    }
+    
     public static class JavaViKit extends JavaKit {
         public JavaViKit() { super(); initJVi(); }
-
+        
         public MultiKeymap getKeymap() {
             return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
         }
-
+        
         public Caret createCaret() { return new NbCaret(); }
-    } 
-
+    }
+    
     public static class XMLViKit extends XMLKit {
         public XMLViKit() { super(); initJVi(); }
         
         public MultiKeymap getKeymap() {
             return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
         }
-
+        
         public Caret createCaret() { return new NbCaret(); }
-    } 
+    }
 }

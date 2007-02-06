@@ -5,31 +5,31 @@
         <folder name="text">
             <folder name="base">
                 <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.ViKit"/>
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$ViKit"/>
                 </file>
             </folder>
 
             <folder name="x-java">
                 <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.JavaViKit"/>
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$JavaViKit"/>
                 </file>
             </folder>
             
             <folder name="xml">
                 <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.XMLViKit"/>
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$XMLViKit"/>
                 </file>
             </folder>
 
             <folder name="html">
                 <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.HtmlViKit"/>
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$HtmlViKit"/>
                 </file>
             </folder>
 
             <folder name="plain">
                 <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.PlainViKit"/>
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$PlainViKit"/>
                 </file>
             </folder>
         </folder>

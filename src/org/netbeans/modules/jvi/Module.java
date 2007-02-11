@@ -96,28 +96,6 @@ public class Module extends ModuleInstall {
                 }
             }
         });
-        ColonCommands.register("buffersDump","buffersDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                System.err.println("Buffers activation:");
-                int i = 1;
-                while(true) {
-                    TopComponent tc = (TopComponent)ViManager.getTextBuffer(i);
-                    if(tc == null)
-                        break;
-                    System.err.println("\t" + tc.getDisplayName());
-                    i++;
-                }
-                System.err.println("Buffers MRU:");
-                i = 0;
-                while(true) {
-                    TopComponent tc = (TopComponent)ViManager.getMruBuffer(i);
-                    if(tc == null)
-                        break;
-                    System.err.println("\t" + tc.getDisplayName());
-                    i++;
-                }
-            }
-        });
         ColonCommands.register("optionsDelete", "optionsDelete", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -184,8 +162,8 @@ public class Module extends ModuleInstall {
             //
             // For NB6 use PROP_TC_OPENED, PROP_TC_CLOSED
             if(evt.getPropertyName().equals(TopComponent.Registry.PROP_ACTIVATED)) {
-                trackTC(evt.getOldValue(), "activated oldTC");
-                trackTC(evt.getNewValue(), "activated newTC");
+                tcDumpInfo(evt.getOldValue(), "activated oldTC");
+                tcDumpInfo(evt.getNewValue(), "activated newTC");
                 
                 TopComponent oldTc = getEdTc(evt.getOldValue());
                 TopComponent newTc = getEdTc(evt.getNewValue());
@@ -221,7 +199,7 @@ public class Module extends ModuleInstall {
                             tc = t;
                             break;
                         }
-                        trackTC(tc, "open");
+                        tcDumpInfo(tc, "open");
                         tc = getEdTc(tc);
                         if(tc != null)
                             ViManager.activateFile("P_OPEN", tc);
@@ -242,7 +220,7 @@ public class Module extends ModuleInstall {
                         JEditorPane ep = (JEditorPane)tc.getClientProperty(
                                 NbFactory.PROP_JEP);
                         // ep is null if never registered the editor pane
-                        trackTC(tc, "close");
+                        tcDumpInfo(tc, "close");
                         ViManager.deactivateFile(ep, tc);
                     }
                 } else
@@ -267,7 +245,7 @@ public class Module extends ModuleInstall {
         return s.toString();
     }
     
-    private static final void trackTC(Object o, String tag) {
+    private static final void tcDumpInfo(Object o, String tag) {
         if(!G.dbgEditorActivation.getBoolean())
             return;
         if(!(o instanceof TopComponent))
@@ -289,12 +267,14 @@ public class Module extends ModuleInstall {
     }
     
     /**
-     * Convert a TopComponent we're willing to deal with to a
-     * convenient file object. If the top component has panes,
+     * This method investigates a TC to see if it is something that jVi 
+     * wants to work with. If it has Mode "editor" or has editorPanes,
      * then its one we want. 
      *
      * TopComponents in a secondary editor window are not Mode "editor",
      * and MVTC do not have panes at open time, not until they are acivated.
+     *
+     * @return the TC if it is interesting, else null
      */
     private static TopComponent getEdTc(Object o) {
         TopComponent tc = null;

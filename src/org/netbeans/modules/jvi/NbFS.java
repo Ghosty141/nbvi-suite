@@ -12,8 +12,8 @@ import org.openide.actions.SaveAllAction;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
-import org.openide.text.CloneableEditor;
 import org.openide.util.actions.SystemAction;
+import org.openide.windows.TopComponent;
 
 public class NbFS implements ViFS
 {
@@ -56,12 +56,12 @@ public class NbFS implements ViFS
     }
 
     public void edit(ViTextView viTextView, int i, boolean force) {
-	CloneableEditor ce = (CloneableEditor)ViManager.getTextBuffer(i);
-	if(ce == null) {
+	TopComponent tc = (TopComponent)ViManager.getTextBuffer(i);
+	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
 	  return;
 	}
-	ce.requestActive();
+	tc.requestActive();
         Msg.smsg(viTextView.getDisplayFileNameAndSize());
     }    
 }

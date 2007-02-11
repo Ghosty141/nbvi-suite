@@ -2,6 +2,7 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
+import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
@@ -24,6 +25,11 @@ final public class NbFactory extends DefaultViFactory {
     
     public ViFS getFS() {
         return fs;
+    }
+    
+    public ViOutputStream createOutputStream(ViTextView tv,
+                                             Object type, Object info) {
+        return new NbOutputStream(tv, type.toString(), info.toString());
     }
     
     public Preferences getPreferences() {

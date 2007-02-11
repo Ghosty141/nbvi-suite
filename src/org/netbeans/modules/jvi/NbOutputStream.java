@@ -17,6 +17,7 @@ import javax.swing.text.Segment;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.text.Line;
 import org.openide.windows.IOProvider;
+import org.openide.windows.InputOutput;
 import org.openide.windows.OutputEvent;
 import org.openide.windows.OutputListener;
 import org.openide.windows.OutputWriter;
@@ -33,9 +34,9 @@ import org.openide.windows.OutputWriter;
  * @author erra
  */
 public class NbOutputStream extends OutputStreamAdaptor {
+    String type;
     ViTextView tv;
     OutputWriter ow;
-    String tabTag;
     String fnTag;
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
@@ -46,23 +47,30 @@ public class NbOutputStream extends OutputStreamAdaptor {
      */
     public NbOutputStream(ViTextView tv, String type, String info) {
         this.tv = tv;
+        this.type = type;
         if(type.equals(ViOutputStream.OUTPUT)) {
             // plain output, no hyper text stuff or files or line numbers
-            ow = getIO(false); // make a new tab
+            String tabTag = "jVi Output";
+            ow = getIO(tabTag, false); // reuse tab
+            ow.println("-----------------------------------------------------");
             ow.println(info);
         } else {
             String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
-            tabTag = "jVi " + sep +  info + sep;
-            ow = getIO(true); // make a new tab
+            String tabTag = "jVi " + sep +  info + sep;
+            ow = getIO(tabTag, true); // make a new tab
             fnTag = tv.getDisplayFileName() + ":";
         }
     }
     
-    private OutputWriter getIO(boolean fNew) {
-        return IOProvider.getDefault().getIO(tabTag, fNew).getOut();
+    private OutputWriter getIO(String tabTag, boolean fNew) {
+        InputOutput io = IOProvider.getDefault().getIO(tabTag, fNew);
+        io.select();
+        return io.getOut();
     }
 
     public void println(int line, int offset, int length) {
+        if(type.equals(ViOutputStream.OUTPUT))
+            return;
         Segment seg = tv.getLineSegment(line);
         sb.setLength(0);
         sb.append(fnTag).append(line).append(":")

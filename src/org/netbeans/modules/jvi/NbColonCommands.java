@@ -34,8 +34,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 import com.raelity.jvi.ViManager;
+import com.raelity.jvi.ViOutputStream;
 import org.netbeans.modules.editor.java.JavaFastOpenAction;
 import org.openide.util.actions.SystemAction;
+import org.openide.windows.TopComponent;
 
 public class NbColonCommands {
 
@@ -49,6 +51,10 @@ public class NbColonCommands {
   /** Register some ":" commands */
   static void setupCommands() {
     ColonCommands.register("ts", "tselect", new GoToClassAction());
+    
+    ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
+    ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
+    ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
 
     // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
     // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
@@ -69,27 +75,27 @@ public class NbColonCommands {
     */
   }
 
-  static private class GoToClassAction implements ActionListener {
-    public void actionPerformed(ActionEvent e) {
-	boolean ok = true;
-	SystemAction sa = null;
-	try {
-	    sa = SystemAction.get(JavaFastOpenAction.class);
-	} catch(IllegalArgumentException ex) {
-	    ok = false;
-	}
-	if(ok) {
-	    if(sa.isEnabled()) {
-		sa.actionPerformed(e);
-	    } else {
-		ok = false;
-	    }
-	}
-	if(!ok) {
-	    Util.vim_beep();
-	}
+    static private class GoToClassAction implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            boolean ok = true;
+            SystemAction sa = null;
+            try {
+                sa = SystemAction.get(JavaFastOpenAction.class);
+            } catch(IllegalArgumentException ex) {
+                ok = false;
+            }
+            if(ok) {
+                if(sa.isEnabled()) {
+                    sa.actionPerformed(e);
+                } else {
+                    ok = false;
+                }
+            }
+            if(!ok) {
+                Util.vim_beep();
+            }
+        }
     }
-  }
 
   /*
   private static AbbrevLookup toggles = new AbbrevLookup();

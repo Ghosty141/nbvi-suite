@@ -6,6 +6,7 @@ import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -70,7 +71,6 @@ public class Module extends ModuleInstall {
         
         ViManager.setViFactory(new NbFactory());
         
-        Options.init();
         NbColonCommands.init();
         // NbOptions.init(); HORROR STORY
         
@@ -266,10 +266,37 @@ public class Module extends ModuleInstall {
         }
     }
     
+    /** @return true if the TopComponent contains an JEditorPane */
+    public static boolean containsEP(TopComponent tc) {
+        TopComponent tc01 = null;
+        EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
+        if(ec == null)
+            return false;
+        
+        JEditorPane panes [] = ec.getOpenedPanes();
+        if(panes != null) {
+            for (JEditorPane ep : panes) {
+                Container parent = SwingUtilities
+                        .getAncestorOfClass(TopComponent.class, ep);
+                while (parent != null) {
+                    tc01 = (TopComponent)parent;
+                    if(tc == tc01)
+                        return true;
+                    parent = SwingUtilities.getAncestorOfClass(TopComponent.class,
+                                                               tc01);
+                }
+                // NOTE: could break if only want to check the first
+            }
+        }
+        
+        return false;
+    }
+    
     /**
      * This method investigates a TC to see if it is something that jVi 
      * wants to work with. If it has Mode "editor" or has editorPanes,
-     * then its one we want. 
+     * then its one we want. Assuming one of the associated editorPanes is a
+     * decendant of the TopComponent.
      *
      * TopComponents in a secondary editor window are not Mode "editor",
      * and MVTC do not have panes at open time, not until they are acivated.
@@ -280,17 +307,20 @@ public class Module extends ModuleInstall {
         TopComponent tc = null;
         if(o instanceof TopComponent) {
             tc = (TopComponent)o;
+            
+            /* Forget the mode editor, at least for now.
+             *
             Mode m = WindowManager.getDefault().findMode(tc);
             String mode = m == null ? "null" : m.getName();
             if("editor".equals(mode)) {
                 return tc;
             }
+             */
+            
         }
         // If it's not mode editor, it may have panes
         if(tc != null) {
-            EditorCookie ec
-                    = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
-            if(ec != null && ec.getOpenedPanes() != null)
+            if(containsEP(tc))
                 return tc;
         }
         return null;

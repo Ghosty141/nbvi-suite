@@ -1,0 +1,5 @@
+Both jvi and nbvi should be checked out of the CVS repository, and they should
+reside in the same directory.
+
+To build everything, open nbvi/nbvi-suite (yes, I know its backwards) and
+build it.

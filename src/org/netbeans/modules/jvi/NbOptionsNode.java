@@ -2,6 +2,7 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.OptionsBean;
 import com.raelity.jvi.swing.KeyBindingBean;
+import com.raelity.jvi.swing.KeypadBindingBean;
 import java.beans.IntrospectionException;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
@@ -15,7 +16,8 @@ import org.openide.nodes.Node;
 public class NbOptionsNode extends BeanNode {
     private static final String NODE_MISC = "Misc";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
-    private static final String NODE_KEYBINDINGS = "KeyBindings";
+    private static final String NODE_KEY_BINDINGS = "KeyBindings";
+    private static final String NODE_KEYPAD_BINDINGS = "KeypadBindings";
     private static final String NODE_DEBUG = "Debug";
     
     private static void putEx(PropertyVetoException pve) {
@@ -51,8 +53,10 @@ public class NbOptionsNode extends BeanNode {
         protected Node[] createNodes(Object object) {
             Node[] nodes = new Node[1];
             try {
-                if(object.equals(NODE_KEYBINDINGS)) {
+                if(object.equals(NODE_KEY_BINDINGS)) {
 		    nodes[0] = new KeyBindingNode();
+                } else if(object.equals(NODE_KEYPAD_BINDINGS)) {
+		    nodes[0] = new KeypadBindingNode();
                 } else if(object.equals(NODE_MISC)) {
 		    nodes[0] = new MiscNode();
                 } else if(object.equals(NODE_CURSOR_WRAP)) {
@@ -70,7 +74,8 @@ public class NbOptionsNode extends BeanNode {
            Collection c = new ArrayList();
            c.add(NODE_MISC);
            c.add(NODE_CURSOR_WRAP);
-           c.add(NODE_KEYBINDINGS);
+           c.add(NODE_KEY_BINDINGS);
+           c.add(NODE_KEYPAD_BINDINGS);
            c.add(NODE_DEBUG);
            setKeys(c);
         }
@@ -83,6 +88,12 @@ public class NbOptionsNode extends BeanNode {
     private static class KeyBindingNode extends BeanNode {
 	public KeyBindingNode() throws IntrospectionException {
 	    super(new KeyBindingBean());
+	}    
+    }
+    
+    private static class KeypadBindingNode extends BeanNode {
+	public KeypadBindingNode() throws IntrospectionException {
+	    super(new KeypadBindingBean());
 	}    
     }
     

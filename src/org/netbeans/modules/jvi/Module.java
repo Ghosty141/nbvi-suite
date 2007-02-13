@@ -2,8 +2,8 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
-import com.raelity.jvi.Options;
 import com.raelity.jvi.ViManager;
+import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.KeyBinding;
 import java.awt.Component;
 import java.awt.Container;
@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +43,7 @@ import org.openide.windows.WindowManager;
 public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
+        doEarlyInit();
     }
     
     private static boolean didInit;
@@ -63,16 +65,13 @@ public class Module extends ModuleInstall {
         NbOptions.init(); // HORROR STORY
     }
     
-    private static final void initJVi() {
-        assert(EventQueue.isDispatchThread());
-        if(didInit)
+    private static boolean didEarlyInit = false;
+    private static final void doEarlyInit() {
+        if(didEarlyInit)
             return;
-        didInit = true;
+        didEarlyInit = true;
         
         ViManager.setViFactory(new NbFactory());
-        
-        NbColonCommands.init();
-        // NbOptions.init(); HORROR STORY
         
         // Monitor activations/opens/closes.
         // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
@@ -80,6 +79,18 @@ public class Module extends ModuleInstall {
         //            or org.netbeans.editor.Registry monitoring.
         TopComponent.getRegistry().addPropertyChangeListener(
                 new TopComponentRegistryListener());
+    }
+    
+    private static final void initJVi() {
+        assert(EventQueue.isDispatchThread());
+        if(didInit)
+            return;
+        didInit = true;
+        
+        doEarlyInit();
+        
+        NbColonCommands.init();
+        // NbOptions.init(); HORROR STORY
         
         //
         // Some debug commands
@@ -87,8 +98,11 @@ public class Module extends ModuleInstall {
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ViManager.getViFactory().getPreferences()
-                    .exportSubtree(System.out);
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    ViManager.getViFactory().getPreferences().exportSubtree(os);
+                    ViManager.createOutputStream(null, ViOutputStream.OUTPUT,
+                                                 "Preferences")
+                                .println(os.toString());
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();
                 } catch (IOException ex) {
@@ -252,13 +266,16 @@ public class Module extends ModuleInstall {
             return;
         TopComponent tc = (TopComponent) o;
         EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
-        if(ec == null)
-            return;
-        JEditorPane panes [] = ec.getOpenedPanes();
+        JEditorPane panes[] = null;
+        if(ec != null)
+            panes = ec.getOpenedPanes();
+        Mode mode = WindowManager.getDefault().findMode(tc);
         System.err.println("trackTC: " + tag + ": "
-                           + tc.getDisplayName() + ":" + tc.hashCode()
-                           + ": nPanes = "
-                           + (panes == null ? "null" : panes.length));
+                        + tc.getDisplayName() + ":" + tc.hashCode()
+                        + " '" + (mode == null ? "null" : mode.getName()) + "'"
+                        + (ec == null ? " ec null"
+                           : " : nPanes = "
+                             + (panes == null ? "null" : panes.length)));
         if(panes != null) {
             for (JEditorPane ep : panes) {
                 System.err.println("\tep " + ep.hashCode() + ancestorStringTC(ep));
@@ -266,9 +283,19 @@ public class Module extends ModuleInstall {
         }
     }
     
-    /** @return true if the TopComponent contains an JEditorPane */
-    public static boolean containsEP(TopComponent tc) {
-        TopComponent tc01 = null;
+    /**
+     * Investigate the argument Object. Return it as a TopComponent if it
+     * contains a JEditorPane.
+     *
+     * Note that simply having an associated JEditorPane is insuficient, for
+     * example a navigator may be associated with a JEditorPane.
+     */
+    public static boolean containsEP(Object o) {
+        TopComponent tc = null;
+        if(!(o instanceof TopComponent)) {
+            return false;
+        }
+        tc = (TopComponent) o;
         EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
         if(ec == null)
             return false;
@@ -279,11 +306,11 @@ public class Module extends ModuleInstall {
                 Container parent = SwingUtilities
                         .getAncestorOfClass(TopComponent.class, ep);
                 while (parent != null) {
-                    tc01 = (TopComponent)parent;
-                    if(tc == tc01)
+                    Container c01 = parent;
+                    if(tc == c01)
                         return true;
                     parent = SwingUtilities.getAncestorOfClass(TopComponent.class,
-                                                               tc01);
+                                                               c01);
                 }
                 // NOTE: could break if only want to check the first
             }
@@ -294,35 +321,17 @@ public class Module extends ModuleInstall {
     
     /**
      * This method investigates a TC to see if it is something that jVi 
-     * wants to work with. If it has Mode "editor" or has editorPanes,
-     * then its one we want. Assuming one of the associated editorPanes is a
+     * wants to work with. Assuming one of the associated editorPanes is a
      * decendant of the TopComponent.
      *
-     * TopComponents in a secondary editor window are not Mode "editor",
-     * and MVTC do not have panes at open time, not until they are acivated.
+     * Note: MVTC do not have panes at open time, not until they are acivated.
+     * Note: can not count on TC's Mode.
      *
      * @return the TC if it is interesting, else null
      */
     private static TopComponent getEdTc(Object o) {
-        TopComponent tc = null;
-        if(o instanceof TopComponent) {
-            tc = (TopComponent)o;
-            
-            /* Forget the mode editor, at least for now.
-             *
-            Mode m = WindowManager.getDefault().findMode(tc);
-            String mode = m == null ? "null" : m.getName();
-            if("editor".equals(mode)) {
-                return tc;
-            }
-             */
-            
-        }
-        // If it's not mode editor, it may have panes
-        if(tc != null) {
-            if(containsEP(tc))
-                return tc;
-        }
+        if(containsEP(o))
+            return (TopComponent)o;
         return null;
     }
     
@@ -370,6 +379,28 @@ public class Module extends ModuleInstall {
         
         public Caret createCaret() { return new NbCaret(); }
     }
+    
+    /*
+    public static class PropertiesViKit extends PropertiesKit {
+        public PropertiesViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
+        }
+        
+        public Caret createCaret() { return new NbCaret(); }
+    }
+    
+    public static class SQLEditorViKit extends SQLEditorKit {
+        public SQLEditorViKit() { super(); initJVi(); }
+        
+        public MultiKeymap getKeymap() {
+            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
+        }
+        
+        public Caret createCaret() { return new NbCaret(); }
+    }
+    */
     
     public static class XMLViKit extends XMLKit {
         public XMLViKit() { super(); initJVi(); }

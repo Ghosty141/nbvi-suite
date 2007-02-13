@@ -14,7 +14,19 @@
                     <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$JavaViKit"/>
                 </file>
             </folder>
-            
+ <!--
+            <folder name="x-properties">
+                <file name="EditorKit.instance">
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$PropertiesViKit"/>
+                </file>
+            </folder>
+
+            <folder name="x-sql">
+                <file name="EditorKit.instance">
+                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$SQLEditorViKit"/>
+                </file>
+            </folder>
+-->
             <folder name="xml">
                 <file name="EditorKit.instance">
                     <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$XMLViKit"/>
@@ -33,7 +45,7 @@
                 </file>
             </folder>
         </folder>
-    </folder>
+        </folder>
     <folder name="UI">
         <folder name="Services">
             <folder name="Editing">

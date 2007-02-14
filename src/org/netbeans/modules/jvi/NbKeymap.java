@@ -26,7 +26,10 @@ public class NbKeymap extends MultiKeymap
     public Action getAction(KeyStroke key)
     { 
         Action a = m_viMap.getAction(key);
-        return (a != null) ? a : m_nbMap.getAction(key);
+        if(a == null) {
+            a = m_nbMap.getAction(key);
+        }
+        return a;
     } 
 
     public Action[] getBoundActions()

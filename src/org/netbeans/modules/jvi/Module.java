@@ -2,6 +2,7 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
+import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.KeyBinding;
@@ -18,7 +19,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import javax.swing.Action;
 import org.netbeans.editor.Registry;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -30,6 +33,11 @@ import org.netbeans.modules.editor.java.JavaKit;
 import org.netbeans.modules.editor.plain.PlainKit;
 import org.netbeans.modules.xml.text.syntax.XMLKit;
 import org.openide.cookies.EditorCookie;
+import org.openide.cookies.InstanceCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.Repository;
+import org.openide.loaders.DataObject;
+import org.openide.util.actions.SystemAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -157,6 +165,30 @@ public class Module extends ModuleInstall {
         });
          */
     }
+    
+    /** Get a SystemAction out of the file system */
+    public static Action getFSAction(String name) {
+        FileObject fo = Repository.getDefault().getDefaultFileSystem()
+                                                .getRoot().getFileObject(name);
+        InstanceCookie ck = null;
+        try {
+            ck = (InstanceCookie) DataObject.find(fo)
+                                    .getCookie(InstanceCookie.class);
+        } catch (DataObjectNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        if(ck != null) {
+            try {
+                return SystemAction.get(ck.instanceClass());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return null;
+    }
+    
     /** This class monitors the TopComponent registry and issues
      * <ul>
      * <li> ViManager.activateFile("debuginfo", tc) </li>

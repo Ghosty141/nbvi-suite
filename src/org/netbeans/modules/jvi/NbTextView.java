@@ -8,6 +8,8 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
+import java.awt.event.ActionEvent;
+import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -246,6 +248,27 @@ public class NbTextView extends TextView
 	Util.vim_beep();
         break;
     }
+  }
+
+  public void anonymousMark(MARKOP op) {
+    String actName = null;
+    switch(op) {
+        case TOGGLE:
+            actName = "/Actions/Edit/bookmark-toggle.instance";
+            break;
+        case NEXT:
+            actName = "/Actions/Edit/bookmark-next.instance";
+            break;
+        case PREV:
+            actName = "/Actions/Edit/bookmark-previous.instance";
+            break;
+    }
+    Action act = Module.getFSAction(actName);
+    if(act != null) {
+        ActionEvent e = new ActionEvent(getEditorComponent(), 0, "");
+        act.actionPerformed(e);
+    } else
+        Util.vim_beep();
   }
 
     public void foldOperation(int op) {

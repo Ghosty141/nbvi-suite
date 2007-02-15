@@ -29,51 +29,116 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ColonCommands;
+import com.raelity.jvi.ColonCommands.ColonAction;
+import com.raelity.jvi.ColonCommands.ColonEvent;
 import com.raelity.jvi.Util;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-
-import com.raelity.jvi.ViManager;
-import com.raelity.jvi.ViOutputStream;
 import org.netbeans.modules.editor.java.JavaFastOpenAction;
 import org.openide.util.actions.SystemAction;
-import org.openide.windows.TopComponent;
 
 public class NbColonCommands {
 
-  public static void init() {
-      setupCommands();
-  }
+    public static void init() {
+        setupCommands();
+    }
 
-  private NbColonCommands() {
-  }
+    private NbColonCommands() {
+    }
 
-  /** Register some ":" commands */
-  static void setupCommands() {
-    ColonCommands.register("ts", "tselect", new GoToClassAction());
+    /** Register some ":" commands */
+    static void setupCommands() {
+        ColonCommands.register("ts", "tselect", new GoToClassAction());
+        
+        ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
+        ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
+        ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
     
-    ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
-    ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
-    ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
+        ColonCommands.register("cn","cnext",
+                               new Module.DelegateFileSystemAction(
+           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance"));
+        ColonCommands.register("cp","cprevious",
+                               new Module.DelegateFileSystemAction(
+           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
+        
+        ColonCommands.register("mak","make", new Make());
+        /*
+        ColonCommands.register("run", "run",
+        ColonCommands.register("deb", "debug",
+         */
+        
+        
 
-    // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
-    // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
+        // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
+        // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
+        
+
+        /*
+        initToggleCommand();
+        ColonCommands.register("tog", "toggle", toggleAction);
+        */
+    }
+        
+    /*
+     * For the make/build type of commands
+     * There's ActionProvider and Project, but thats not recommended level.
+     *
+     * Recommended or not, Project.getLookup for ActionProvider...
+     *
+     * There's also the following, but shouldn't need to get it from the file system
+    <!-- Main project -->
+    <file name="org-netbeans-modules-project-ui-BuildMainProject.instance">
+    <file name="org-netbeans-modules-project-ui-RebuildMainProject.instance">
+    <file name="org-netbeans-modules-project-ui-RunMainProject.instance">
+    <file name="org-netbeans-modules-project-ui-DebugMainProject.instance">
+
+    <!-- Current project -->            
+    <file name="org-netbeans-modules-project-ui-TestProject.instance">
+    <file name="org-netbeans-modules-project-ui-JavadocProject.instance">
+    <file name="org-netbeans-modules-project-ui-BuildProject.instance">
+    <file name="org-netbeans-modules-project-ui-RebuildProject.instance">
+    <file name="org-netbeans-modules-project-ui-RunProject.instance">
+                
+    <!-- 1 off actions -->            
+    <file name="org-netbeans-modules-project-ui-CompileSingle.instance">
+    <file name="org-netbeans-modules-project-ui-RunSingle.instance">
+    <file name="org-netbeans-modules-project-ui-DebugSingle.instance">
+    <file name="org-netbeans-modules-project-ui-TestSingle.instance">
+    <file name="org-netbeans-modules-project-ui-DebugTestSingle.instance">
+        */
     
-    /*
-    ColonCommands.register("mak", "make", makeAction);
-    ColonCommands.register("bui", "build", buildAction);
-    ColonCommands.register("run", "run",
-                           RuntimeActionPool.ACTION_RunProject);
-     */
-    /*JB7 ColonCommands.register("deb", "debug",
-                           RuntimeActionPool.ACTION_ProjectDebug); JB7*/
-    // NEEDSWORK: run/debug without build/make
-
-    /*
-    initToggleCommand();
-    ColonCommands.register("tog", "toggle", toggleAction);
-    */
-  }
+    /** Make */
+    static private class Make extends ColonAction {
+        public void actionPerformed(ActionEvent e) {
+            ColonEvent ce = (ColonEvent)e;
+            boolean fClean = false;
+            boolean fAll = true;
+            // make [c[lean]] [a[ll]]
+            if(ce.getNArg() > 0) {
+                fAll = false;
+                for(int i = 1; i <= ce.getNArg(); i++) {
+                    String a = ce.getArg(i);
+                    if("clean".startsWith(a))
+                        fClean = true;
+                    else if("all".startsWith(a))
+                        fAll = true;
+                    else {
+                        ce.getViTextView().getStatusDisplay().displayErrorMessage(
+                                "syntax: mak[e] [a[ll]] [c[lean]]");
+                        return;
+                    }
+                }
+            }
+            String path = "Actions/Project/org-netbeans-modules-project-ui-";
+            if(fClean == true && fAll == true)
+                path += "RebuildMainProject.instance";
+            else if(fAll == true)
+                path += "BuildMainProject.instance";
+            else if(fClean == true)
+                path += "CleanMainProject.instance";
+            Module.execFileSystemAction(path, e);
+        }
+    }
 
     static private class GoToClassAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {

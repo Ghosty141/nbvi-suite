@@ -250,7 +250,7 @@ public class NbTextView extends TextView
     }
   }
 
-  public void anonymousMark(MARKOP op) {
+  public void anonymousMark(MARKOP op, int count) {
     String actName = null;
     switch(op) {
         case TOGGLE:
@@ -263,8 +263,8 @@ public class NbTextView extends TextView
             actName = "/Actions/Edit/bookmark-previous.instance";
             break;
     }
-    Action act = Module.getFSAction(actName);
-    if(act != null) {
+    Action act = Module.fetchFileSystemAction(actName);
+    if(act != null && act.isEnabled()) {
         ActionEvent e = new ActionEvent(getEditorComponent(), 0, "");
         act.actionPerformed(e);
     } else

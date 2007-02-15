@@ -166,27 +166,62 @@ public class Module extends ModuleInstall {
          */
     }
     
-    /** Get a SystemAction out of the file system */
-    public static Action getFSAction(String name) {
+    public static void execFileSystemAction(String path, ActionEvent e) {
+        Action act = fetchFileSystemAction(path);
+        if(act != null && act.isEnabled())
+            act.actionPerformed(e);
+        else
+            Util.vim_beep();
+    }
+    
+    /** Get an Action from the file system at the given path.
+     * Check if it is a SystemAction, if not then try to create it.
+     * @return an Action, null if couldn't get or create one
+     */
+    public static Action fetchFileSystemAction(String path) {
         FileObject fo = Repository.getDefault().getDefaultFileSystem()
-                                                .getRoot().getFileObject(name);
+                                                .getRoot().getFileObject(path);
+        if(fo == null)
+            return null;
         InstanceCookie ck = null;
+        Action act = null;
         try {
             ck = (InstanceCookie) DataObject.find(fo)
                                     .getCookie(InstanceCookie.class);
         } catch (DataObjectNotFoundException ex) {
-            ex.printStackTrace();
         }
         if(ck != null) {
             try {
-                return SystemAction.get(ck.instanceClass());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            } catch (ClassNotFoundException ex) {
-                ex.printStackTrace();
-            }
+                act = SystemAction.get(ck.instanceClass());
+                if(act != null)
+                    return act;
+            } catch (Exception ex) { }
         }
-        return null;
+        if(act == null) {
+            // if its not a SystemAction try creating one
+            Object o = null;
+            try {
+                o = ck.instanceCreate();
+            } catch (Exception ex) { }
+            if(o instanceof Action)
+                act = (Action) o;
+        }
+        return act;
+    }
+    
+    /**
+     * This class delegates an action to an Action which is found
+     * in the file system.
+     */
+    public static class DelegateFileSystemAction implements ActionListener {
+        String actionPath;
+        DelegateFileSystemAction(String actionPath) {
+            this.actionPath = actionPath;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            execFileSystemAction(actionPath, e);
+        }
     }
     
     /** This class monitors the TopComponent registry and issues

@@ -3,3 +3,12 @@ reside in the same directory.
 
 To build everything, open nbvi/nbvi-suite (yes, I know its backwards) and
 build it.
+
+jvi is the platform independent code. It is referenced from the free form
+project nbvi/nbvi-suite/jvi-project. jvi-project is wrapped by the module
+jvi-wrapper. nbvi is the module that interface jVi to NetBeans. The nbvi
+module's display name is "jVi KeyBindings" and jvi-wrapper's display name is
+"jVi Core".
+
+jvi-wrapper and nbvi are contained in nbvi-suite. The clean and build targets
+on jvi-wrapper are modified to clean/build jvi-project.

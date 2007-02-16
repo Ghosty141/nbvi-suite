@@ -11,16 +11,11 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
-import com.raelity.jvi.Options;
-import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
+import com.raelity.jvi.ViTextView;
 import java.awt.Color;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
-import java.util.prefs.Preferences;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
@@ -36,37 +31,64 @@ import org.netbeans.editor.Utilities;
  * @author erra
  */
 public class NbStatusDisplay implements ViStatusDisplay {
-    JEditorPane editorPane;
+    private ViTextView textView;
+    private String lastMode = "";
+    private String lastMsg = "";
+    private Coloring lastMsgColoring = null;
+    private String mode = "";
 
-    public static final String CELL_MODE = "vi-mode";
+    // a few things for working with the netbeans status bar.
+    // public static final String CELL_MODE = "vi-mode";
+    public static final String CELL_STATUS = "vi-status";
     public static final String CELL_COMMAND = "vi-command";
     private static Coloring red = new Coloring(null, Color.red, null);
     
     /** Creates a new instance of NbStatusDisplay */
-    public NbStatusDisplay() {
+    public NbStatusDisplay(ViTextView textView) {
+        this.textView = textView;
+        displayMode(""); // Start out in command mode
+    }
+
+    private String modeString() {
+        return mode + (G.Recording  ? "recording " : "");
     }
 
     /**
      * Use the NB JLabel and mimic the NB usage.
      * This is not localized. NB's status label needs a cleaner interface.
      */
-    public void displayMode(String text) {
+    public void displayMode(String mode) {
 	// setText(CELL_MODE, text);
-	String mode = text; // may be blank for command mode
-	if(text.equals(Edit.VI_MODE_INSERT)) {
-	    mode = "INS";
-	} else if(text.equals(Edit.VI_MODE_REPLACE)) {
-	    mode = "OVR";
-	} else if(!text.equals("")) {
-	    mode = "???";
+        
+        // Keep track of the mode we're in
+        if( ! mode.equals(lastMode))
+            lastMode = mode;
+        if( ! mode.equals(""))
+            this.mode = "-- " + mode + " -- ";
+        else
+            this.mode = "";
+        lastMsg = "";       // clear lastMsg when mode is set
+	setText(CELL_STATUS, modeString());
+        
+        //
+        // Do that 3 char label in NetBeans' StatusBar
+        // Poke at some internal StatusBar structures
+        // 
+	String nbMode = mode; // may be blank for command mode
+	if(mode.equals(Edit.VI_MODE_INSERT)) {
+	    nbMode = "INS";
+	} else if(mode.equals(Edit.VI_MODE_REPLACE)) {
+	    nbMode = "OVR";
+	} else if(!mode.equals("")) {
+	    nbMode = "???";
 	}
-	if(mode != "") {
-	    setText(StatusBar.CELL_TYPING_MODE, mode);
+	if(nbMode != "") {
+	    setText(StatusBar.CELL_TYPING_MODE, nbMode);
 	} else {
 	    StatusBar sb = getStatusBar();
 	    if(sb != null) {
 		JLabel cell = sb.getCellByName(StatusBar.CELL_TYPING_MODE);
-		cell.setText(mode);
+		cell.setText(nbMode);
 		cell.setToolTipText("Command Mode");
 	    }
 	}
@@ -77,26 +99,37 @@ public class NbStatusDisplay implements ViStatusDisplay {
     }
 
     public void displayStatusMessage(String text) {
-	setText(StatusBar.CELL_MAIN, text);
+        lastMsg = text;
+        lastMsgColoring = null;
+	setText(CELL_STATUS, modeString() + text);
     }
 
     public void displayErrorMessage(String text) {
-	// NEEDSWORK: add color
-	setText(StatusBar.CELL_MAIN, text, red);
+        lastMsg = text;
+        lastMsgColoring = red;
+	setText(CELL_STATUS, modeString() + text, red);
     }
 
     public void clearMessage() {
-	setText(StatusBar.CELL_MAIN, "");
+	displayStatusMessage("");
     }
 
     private void setText(String cellName, String text) {
+        setText(cellName, text, null);
+        /*
 	StatusBar sb = getStatusBar();
 	if(sb != null) {
 	    sb.setText(cellName, text);
 	}
+         */
     }
 
     private void setText(String cellName, String text, Coloring coloring) {
+        /*
+        // use this to direct CELL_STATUS messsages to the default location
+        if(cellName == CELL_STATUS)
+            cellName = StatusBar.CELL_MAIN;
+         */
 	StatusBar sb = getStatusBar();
 	if(sb != null) {
 	    sb.setText(cellName, text, coloring);
@@ -105,14 +138,18 @@ public class NbStatusDisplay implements ViStatusDisplay {
 
     private StatusBar getStatusBar() {
 	StatusBar sb = null;
-        if(editorPane != null) {
-            EditorUI ui = Utilities.getEditorUI(editorPane);
+        JEditorPane ep = textView.getEditorComponent();
+        if(ep != null) {
+            EditorUI ui = Utilities.getEditorUI(ep);
             if(ui != null) {
                 sb = ui.getStatusBar();
                 // If the StatusBar does not have nbvi stuff, then add it
                 if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
                     int pos = sb.getCellCount(); // should position at end
                     sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
+                    // this should be before CELL_COMMAND
+                    sb.addCell(pos, CELL_STATUS,new String[]
+                        {"                                                            "});
                     // sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
                 }
             }

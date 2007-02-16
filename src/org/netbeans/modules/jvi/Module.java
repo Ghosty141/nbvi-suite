@@ -108,9 +108,11 @@ public class Module extends ModuleInstall {
                 try {
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
                     ViManager.getViFactory().getPreferences().exportSubtree(os);
-                    ViManager.createOutputStream(null, ViOutputStream.OUTPUT,
-                                                 "Preferences")
-                                .println(os.toString());
+                    ViOutputStream vios = ViManager.createOutputStream(
+                            null, ViOutputStream.OUTPUT, "Preferences");
+                    vios.println(os.toString());
+                    vios.close();
+                    
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();
                 } catch (IOException ex) {

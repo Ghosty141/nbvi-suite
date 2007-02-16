@@ -29,11 +29,10 @@ public class NbTextView extends TextView
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         cache = createTextViewCache();
-        statusDisplay = new NbStatusDisplay();
+        statusDisplay = new NbStatusDisplay(this);
     }
 
     public ViStatusDisplay getStatusDisplay() {
-	((NbStatusDisplay)statusDisplay).editorPane = editorPane;
 	return statusDisplay;
     }
 

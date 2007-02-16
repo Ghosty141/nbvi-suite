@@ -34,7 +34,11 @@ import com.raelity.jvi.ColonCommands.ColonEvent;
 import com.raelity.jvi.Util;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.editor.java.JavaFastOpenAction;
+import org.netbeans.spi.project.ActionProvider;
+import org.openide.util.Lookup;
 import org.openide.util.actions.SystemAction;
 
 public class NbColonCommands {
@@ -134,8 +138,20 @@ public class NbColonCommands {
                 path += "RebuildMainProject.instance";
             else if(fAll == true)
                 path += "BuildMainProject.instance";
-            else if(fClean == true)
+            else if(fClean == true) {
                 path += "CleanMainProject.instance";
+                // Unfortunately this layer path action not available until NB6
+                // so do it manually
+                Project p = OpenProjects.getDefault().getMainProject();
+                if(p != null) {
+                    Lookup ctx = p.getLookup();
+                    ActionProvider ap
+                            = (ActionProvider)ctx.lookup(ActionProvider.class);
+                    if(ap != null)
+                        ap.invokeAction(ap.COMMAND_CLEAN, ctx);
+                }
+                return;
+            }
             Module.execFileSystemAction(path, e);
         }
     }

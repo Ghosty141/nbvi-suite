@@ -31,6 +31,9 @@ import org.netbeans.editor.Utilities;
  * @author erra
  */
 public class NbStatusDisplay implements ViStatusDisplay {
+    // don't/do share pre-defined cell in StatusBar
+    private static final boolean useMyCell = true;
+    
     private ViTextView textView;
     private String lastMode = "";
     private String lastMsg = "";
@@ -38,7 +41,6 @@ public class NbStatusDisplay implements ViStatusDisplay {
     private String mode = "";
 
     // a few things for working with the netbeans status bar.
-    // public static final String CELL_MODE = "vi-mode";
     public static final String CELL_STATUS = "vi-status";
     public static final String CELL_COMMAND = "vi-command";
     private static Coloring red = new Coloring(null, Color.red, null);
@@ -58,8 +60,6 @@ public class NbStatusDisplay implements ViStatusDisplay {
      * This is not localized. NB's status label needs a cleaner interface.
      */
     public void displayMode(String mode) {
-	// setText(CELL_MODE, text);
-        
         // Keep track of the mode we're in
         if( ! mode.equals(lastMode))
             lastMode = mode;
@@ -125,11 +125,11 @@ public class NbStatusDisplay implements ViStatusDisplay {
     }
 
     private void setText(String cellName, String text, Coloring coloring) {
-        /*
-        // use this to direct CELL_STATUS messsages to the default location
-        if(cellName == CELL_STATUS)
-            cellName = StatusBar.CELL_MAIN;
-         */
+        if(!useMyCell) {
+            // direct CELL_STATUS messsages to the pre-defined location
+            if(cellName == CELL_STATUS)
+                cellName = StatusBar.CELL_MAIN;
+         }
 	StatusBar sb = getStatusBar();
 	if(sb != null) {
 	    sb.setText(cellName, text, coloring);
@@ -145,12 +145,15 @@ public class NbStatusDisplay implements ViStatusDisplay {
                 sb = ui.getStatusBar();
                 // If the StatusBar does not have nbvi stuff, then add it
                 if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
-                    int pos = sb.getCellCount(); // should position at end
-                    sb.addCell(pos, CELL_COMMAND, new String[] {"123yy'adff"});
-                    // this should be before CELL_COMMAND
-                    sb.addCell(pos, CELL_STATUS,new String[]
-                        {"                                                            "});
-                    // sb.addCell(1, CELL_MODE, new String[] {"Recording REPLACE"});
+                    //int pos = sb.getCellCount(); // should position at end
+                    
+                    // after StatusBar.CELL_TYPING_MODE
+                    sb.addCell(2, CELL_COMMAND, new String[] {"123yy'adff"});
+                    // after CELL_COMMAND
+                    if(useMyCell) {
+                        sb.addCell(3, CELL_STATUS,new String[] { "             "
+                          + "                                               "});
+                    }
                 }
             }
         }

@@ -27,6 +27,10 @@ final public class NbFactory extends DefaultViFactory {
         return fs;
     }
     
+    public void updateKeymap() {
+        Module.updateKeymap();
+    }
+    
     public ViOutputStream createOutputStream(ViTextView tv,
                                              Object type, Object info) {
         return new NbOutputStream(tv, type.toString(), info.toString());

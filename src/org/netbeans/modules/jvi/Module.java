@@ -15,18 +15,22 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
 import org.netbeans.editor.Registry;
+import org.netbeans.editor.Settings;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Caret;
 import org.netbeans.editor.MultiKeymap;
+import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.html.HTMLKit;
 import org.netbeans.modules.editor.java.JavaKit;
@@ -51,7 +55,18 @@ import org.openide.windows.WindowManager;
 public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
-        doEarlyInit();
+        earlyInit();
+    }
+
+    public void uninstalled() {
+        super.uninstalled();
+        // NEEDSWORK: remove listeners...
+        if(topComponentRegistryListener != null)
+            TopComponent.getRegistry().removePropertyChangeListener(
+                    topComponentRegistryListener);
+        
+        if(keyBindingsFilter != null)
+            Settings.removeFilter(keyBindingsFilter);
     }
     
     private static boolean didInit;
@@ -74,10 +89,31 @@ public class Module extends ModuleInstall {
     }
     
     private static boolean didEarlyInit = false;
-    private static final void doEarlyInit() {
+    private static synchronized void earlyInit() {
         if(didEarlyInit)
             return;
         didEarlyInit = true;
+        if(EventQueue.isDispatchThread()) {
+            runEarlyInit();
+        } else {
+            try {
+                EventQueue.invokeAndWait(new Runnable() {
+                    public void run() {
+                        runEarlyInit();
+                    }
+                });
+            } catch (InvocationTargetException ex) {
+                ex.printStackTrace();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    
+    private static TopComponentRegistryListener topComponentRegistryListener;
+    private static KeyBindingsFilter keyBindingsFilter;
+    
+    private static void runEarlyInit() {
         
         ViManager.setViFactory(new NbFactory());
         
@@ -85,17 +121,38 @@ public class Module extends ModuleInstall {
         // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
         //            WindowManager.findMode("editor").addPropertyChangeListener
         //            or org.netbeans.editor.Registry monitoring.
+        topComponentRegistryListener = new TopComponentRegistryListener();
         TopComponent.getRegistry().addPropertyChangeListener(
-                new TopComponentRegistryListener());
+                topComponentRegistryListener);
+        
+        keyBindingsFilter = new KeyBindingsFilter();
+        Settings.addFilter(keyBindingsFilter);
     }
     
-    private static final void initJVi() {
-        assert(EventQueue.isDispatchThread());
+    private synchronized static final void initJVi() {
         if(didInit)
             return;
         didInit = true;
+        if(EventQueue.isDispatchThread()) {
+            runInitJVi();
+        } else {
+            try {
+                EventQueue.invokeAndWait(new Runnable() {
+                    public void run() {
+                        runInitJVi();
+                    }
+                });
+            } catch (InvocationTargetException ex) {
+                ex.printStackTrace();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
         
-        doEarlyInit();
+    }
+    
+    private static void runInitJVi() {
+        earlyInit();
         
         NbColonCommands.init();
         // NbOptions.init(); HORROR STORY
@@ -211,6 +268,54 @@ public class Module extends ModuleInstall {
         return act;
     }
     
+    static void updateKeymap() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+    
+    private static final class KeyBindingsFilter implements Settings.Filter {
+        public Settings.KitAndValue[] filterValueHierarchy(
+                                            Class kitClass,
+                                            String settingName,
+                                            Settings.KitAndValue[] kavArray) {
+            if(!settingName.equals(SettingsNames.KEY_BINDING_LIST))
+                return kavArray;
+            
+            // This probly rates around the top of my HACK list.
+            // Wish I could ask for a short trace
+            StackTraceElement s[] = new Throwable().getStackTrace();
+            boolean isGetKeymap = false;
+            for (int i = 0; i < 6 && i < s.length; i++) {
+                if(s[i].getMethodName().equals("getKeymap")
+                   && s[i].getClassName().equals("org.netbeans.editor.BaseKit")) {
+                    isGetKeymap = true;
+                    break;
+                }
+            }
+            if(!isGetKeymap)
+                return kavArray;
+ /*           
+            System.err.println("KeyBindingsFilter: filterValueHierarchy: "
+                               + kitClass.getSimpleName());
+
+            for (int i = kavArray.length - 1; i >= 0; i--) {
+                List keyList = (List)kavArray[i].value;
+                //JTextComponent.KeyBinding[] keys = new JTextComponent.KeyBinding[keyList.size()];
+                System.err.println("\t" + kavArray[i].kitClass.getSimpleName()
+                                   + ", " + keyList.size() + "entries");
+                //keyList.toArray(keys);
+                //km.load(keys, getActionMap());
+            }
+  */
+            return kavArray;
+        }
+
+        public Object filterValue(Class kitClass,
+                                  String settingName,
+                                  Object value) {
+            return value;
+        }
+    }
+
     /**
      * This class delegates an action to an Action which is found
      * in the file system.

@@ -21,6 +21,10 @@ import org.netbeans.modules.editor.NbEditorKit;
  * @author erra
  */
 public class NbOps extends OpsBase {
+    // jVi replaces the defaultKeyTypedAction in the editor kit.
+    // So this avoids an infinite loop.
+    // NEEDSWORK: investigate use of editor kit actions
+    private static Action keyTypedAction = new BaseKit.DefaultKeyTypedAction();
     
     /** Creates a new instance of NbOps */
     public NbOps(ViTextView textView) {
@@ -34,8 +38,10 @@ public class NbOps extends OpsBase {
                 actionName = NbEditorKit.insertContentAction;
                 break;
             case KEY_TYPED:
-                actionName = NbEditorKit.defaultKeyTypedAction;
-                break;
+                // actionName = NbEditorKit.defaultKeyTypedAction;
+                // break;
+                xact(keyTypedAction);
+                return;
             case INSERT_NEW_LINE:
                 actionName = NbEditorKit.insertBreakAction;
                 break;

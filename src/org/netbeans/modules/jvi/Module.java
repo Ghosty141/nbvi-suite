@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
+import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
 import org.openide.loaders.DataObjectNotFoundException;
@@ -29,6 +30,7 @@ import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Caret;
+import javax.swing.text.JTextComponent;
 import org.netbeans.editor.MultiKeymap;
 import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorKit;
@@ -272,20 +274,27 @@ public class Module extends ModuleInstall {
         throw new UnsupportedOperationException("Not yet implemented");
     }
     
+    /**
+     * Hook into Settings to add jVi bindings for the Keymap and its
+     * defaultKeyTypedAction; but only for BaseKit.getKeymap. Its not pretty.
+     */
     private static final class KeyBindingsFilter implements Settings.Filter {
         public Settings.KitAndValue[] filterValueHierarchy(
                                             Class kitClass,
                                             String settingName,
                                             Settings.KitAndValue[] kavArray) {
-            if(!settingName.equals(SettingsNames.KEY_BINDING_LIST))
+            if(!(settingName.equals(SettingsNames.KEY_BINDING_LIST)
+                 || settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)))
                 return kavArray;
             
             // This probly rates around the top of my HACK list.
             // Wish I could ask for a short trace
+            
             StackTraceElement s[] = new Throwable().getStackTrace();
             boolean isGetKeymap = false;
             for (int i = 0; i < 6 && i < s.length; i++) {
-                if(s[i].getMethodName().equals("getKeymap")
+                if((s[i].getMethodName().equals("getKeymap")
+                    || s[i].getMethodName().equals("getCustomActions"))
                    && s[i].getClassName().equals("org.netbeans.editor.BaseKit")) {
                     isGetKeymap = true;
                     break;
@@ -293,20 +302,28 @@ public class Module extends ModuleInstall {
             }
             if(!isGetKeymap)
                 return kavArray;
- /*           
-            System.err.println("KeyBindingsFilter: filterValueHierarchy: "
-                               + kitClass.getSimpleName());
-
-            for (int i = kavArray.length - 1; i >= 0; i--) {
-                List keyList = (List)kavArray[i].value;
-                //JTextComponent.KeyBinding[] keys = new JTextComponent.KeyBinding[keyList.size()];
-                System.err.println("\t" + kavArray[i].kitClass.getSimpleName()
-                                   + ", " + keyList.size() + "entries");
-                //keyList.toArray(keys);
-                //km.load(keys, getActionMap());
+            
+            if(false) {
+                System.err.println("KeyBindingsFilter: " + settingName + ": "
+                                    + kitClass.getSimpleName());
             }
-  */
-            return kavArray;
+            // got a live one, augment keybindings or actions
+            Settings.KitAndValue kv01 = new Settings.KitAndValue(null, null);
+            if(settingName.equals(SettingsNames.KEY_BINDING_LIST)) {
+                kv01.value = KeyBinding.getBindingsList();
+            } else if(settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)) {
+                kv01.value = KeyBinding.getActionsList();
+            }
+            // jVi goes first in array to overide anything else
+            Settings.KitAndValue kv[] = null;
+            if(kv01.value != null) {
+                kv01.kitClass = ViManager.class; // why not?
+                kv = new Settings.KitAndValue[kavArray.length+1];
+                System.arraycopy(kavArray, 0, kv, 1, kavArray.length);
+                kv[0] = kv01;
+            } else
+                kv = kavArray;
+            return kv;
         }
 
         public Object filterValue(Class kitClass,
@@ -507,82 +524,5 @@ public class Module extends ModuleInstall {
         if(containsEP(o))
             return (TopComponent)o;
         return null;
-    }
-    
-    //
-    // Here are the various editor kits.
-    // Expect to get rid of them entirely when jVi is a keybindings only thing.
-    //
-    
-    public static class ViKit extends NbEditorKit {
-        public ViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    
-    public static class PlainViKit extends PlainKit {
-        public PlainViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    
-    public static class HtmlViKit extends HTMLKit {
-        public HtmlViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    
-    public static class JavaViKit extends JavaKit {
-        public JavaViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    
-    /*
-    public static class PropertiesViKit extends PropertiesKit {
-        public PropertiesViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    
-    public static class SQLEditorViKit extends SQLEditorKit {
-        public SQLEditorViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap( super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
-    }
-    */
-    
-    public static class XMLViKit extends XMLKit {
-        public XMLViKit() { super(); initJVi(); }
-        
-        public MultiKeymap getKeymap() {
-            return new NbKeymap(super.getKeymap(), KeyBinding.getKeymap());
-        }
-        
-        public Caret createCaret() { return new NbCaret(); }
     }
 }

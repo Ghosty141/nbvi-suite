@@ -1,51 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
-    <folder name="Editors">
-        <folder name="text">
-            <folder name="base">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$ViKit"/>
-                </file>
-            </folder>
-
-            <folder name="x-java">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$JavaViKit"/>
-                </file>
-            </folder>
- <!--
-            <folder name="x-properties">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$PropertiesViKit"/>
-                </file>
-            </folder>
-
-            <folder name="x-sql">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$SQLEditorViKit"/>
-                </file>
-            </folder>
--->
-            <folder name="xml">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$XMLViKit"/>
-                </file>
-            </folder>
-
-            <folder name="html">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$HtmlViKit"/>
-                </file>
-            </folder>
-
-            <folder name="plain">
-                <file name="EditorKit.instance">
-                    <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$PlainViKit"/>
-                </file>
-            </folder>
-        </folder>
-        </folder>
     <folder name="UI">
         <folder name="Services">
             <folder name="Editing">

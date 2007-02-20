@@ -49,6 +49,7 @@ final public class NbFactory extends DefaultViFactory {
     protected ViTextView createViTextView(JEditorPane editorPane) {
         // Set up some linkage so we can clean up the editorpane
         // when the TopComponent closes.
+        // NEEDSWORK: move this to base class or ViManager.activateFile
         TopComponent tc = getEditorTopComponent(editorPane);
         if(tc != null)
             tc.putClientProperty(PROP_JEP, editorPane);

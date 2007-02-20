@@ -58,6 +58,12 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
         earlyInit();
+        //initJVi(); // This deadlocks somehow, not right!
+        ViManager.addStartupListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                initJVi();
+            }
+        });
     }
 
     public void uninstalled() {
@@ -69,12 +75,6 @@ public class Module extends ModuleInstall {
         
         if(keyBindingsFilter != null)
             Settings.removeFilter(keyBindingsFilter);
-    }
-    
-    private static boolean didInit;
-    /** Return true if have done module initialization */
-    public static boolean isInit() {
-        return didInit;
     }
     
     private static boolean didOptionsInit;
@@ -131,7 +131,14 @@ public class Module extends ModuleInstall {
         Settings.addFilter(keyBindingsFilter);
     }
     
-    private synchronized static final void initJVi() {
+    /** Return true if have done module initialization */
+    public static boolean isInit() {
+        return didInit;
+    }
+    
+    private static boolean didInit;
+    
+    private synchronized static void initJVi() {
         if(didInit)
             return;
         didInit = true;
@@ -370,20 +377,12 @@ public class Module extends ModuleInstall {
                 tcDumpInfo(evt.getOldValue(), "activated oldTC");
                 tcDumpInfo(evt.getNewValue(), "activated newTC");
                 
-                TopComponent oldTc = getEdTc(evt.getOldValue());
-                TopComponent newTc = getEdTc(evt.getNewValue());
+                if(getTCEditor(evt.getOldValue()) != null)
+                    ViManager.deactivateCurrentFile(evt.getOldValue());
                 
-                if(oldTc != null) {
-                    // Do this so don't hold begin/endUndo
-                    if(G.dbgEditorActivation.getBoolean()) {
-                        System.err.println("TC Activated old: exit input mode: "
-                                           + oldTc.getDisplayName());
-                    }
-                    ViManager.exitInputMode();
-                }
-                
-                if(newTc != null) {
-                    ViManager.activateFile("P_ACTV", newTc);
+                JEditorPane ep = getTCEditor(evt.getNewValue());
+                if(ep != null) {
+                    ViManager.activateFile(ep, evt.getNewValue(), "P_ACTV");
                     doOptionsInitHack(); // HORROR STORY
                 }
             } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
@@ -405,9 +404,9 @@ public class Module extends ModuleInstall {
                             break;
                         }
                         tcDumpInfo(tc, "open");
-                        tc = getEdTc(tc);
-                        if(tc != null)
-                            ViManager.activateFile("P_OPEN", tc);
+                        JEditorPane ep = getTCEditor(tc);
+                        if(ep != null)
+                            ViManager.activateFile(ep, tc, "P_OPEN");
                     }
                 } else if(oldSet.size() > newSet.size()) {
                     // something CLOSEing
@@ -426,7 +425,7 @@ public class Module extends ModuleInstall {
                                 NbFactory.PROP_JEP);
                         // ep is null if never registered the editor pane
                         tcDumpInfo(tc, "close");
-                        ViManager.deactivateFile(ep, tc);
+                        ViManager.closeFile(ep, tc);
                     }
                 } else
                     System.err.println("TC OPEN: SAME SET SIZE");
@@ -475,21 +474,29 @@ public class Module extends ModuleInstall {
     }
     
     /**
-     * Investigate the argument Object. Return it as a TopComponent if it
-     * contains a JEditorPane.
+     * Investigate the argument Object and return a
+     * contained JEditorPane.
      *
-     * Note that simply having an associated JEditorPane is insuficient, for
+     * This method investigates a TC to see if it is something that jVi 
+     * wants to work with. Assuming one of the associated editorPanes is a
+     * decendant of the TopComponent.
+     *
+     * Note: MVTC do not have panes at open time, not until they are acivated.
+     * Note: can not count on TC's Mode.
+     * Note: simply having an associated JEditorPane is insuficient, for
      * example a navigator may be associated with a JEditorPane.
+     *
+     * @return The contained editor or null if there is none.
      */
-    public static boolean containsEP(Object o) {
+    public static JEditorPane getTCEditor(Object o) {
         TopComponent tc = null;
         if(!(o instanceof TopComponent)) {
-            return false;
+            return null;
         }
         tc = (TopComponent) o;
         EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
         if(ec == null)
-            return false;
+            return null;
         
         JEditorPane panes [] = ec.getOpenedPanes();
         if(panes != null) {
@@ -499,30 +506,13 @@ public class Module extends ModuleInstall {
                 while (parent != null) {
                     Container c01 = parent;
                     if(tc == c01)
-                        return true;
+                        return ep;
                     parent = SwingUtilities.getAncestorOfClass(TopComponent.class,
                                                                c01);
                 }
-                // NOTE: could break if only want to check the first
             }
         }
         
-        return false;
-    }
-    
-    /**
-     * This method investigates a TC to see if it is something that jVi 
-     * wants to work with. Assuming one of the associated editorPanes is a
-     * decendant of the TopComponent.
-     *
-     * Note: MVTC do not have panes at open time, not until they are acivated.
-     * Note: can not count on TC's Mode.
-     *
-     * @return the TC if it is interesting, else null
-     */
-    private static TopComponent getEdTc(Object o) {
-        if(containsEP(o))
-            return (TopComponent)o;
         return null;
     }
 }

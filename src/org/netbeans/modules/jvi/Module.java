@@ -11,33 +11,28 @@ import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
-import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.text.Caret;
 import javax.swing.text.JTextComponent;
-import org.netbeans.editor.MultiKeymap;
 import org.netbeans.editor.SettingsNames;
-import org.netbeans.modules.editor.NbEditorKit;
-import org.netbeans.modules.editor.html.HTMLKit;
-import org.netbeans.modules.editor.java.JavaKit;
-import org.netbeans.modules.editor.plain.PlainKit;
-import org.netbeans.modules.xml.text.syntax.XMLKit;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.filesystems.FileObject;
@@ -294,6 +289,11 @@ public class Module extends ModuleInstall {
                  || settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)))
                 return kavArray;
             
+            if(false)
+                return kavArray;
+            
+boolean onlyFilterForBaseKit = true;
+ if(onlyFilterForBaseKit) {
             // This probly rates around the top of my HACK list.
             // Wish I could ask for a short trace
             
@@ -309,7 +309,7 @@ public class Module extends ModuleInstall {
             }
             if(!isGetKeymap)
                 return kavArray;
-            
+ }           
             if(false) {
                 System.err.println("KeyBindingsFilter: " + settingName + ": "
                                     + kitClass.getSimpleName());
@@ -317,7 +317,25 @@ public class Module extends ModuleInstall {
             // got a live one, augment keybindings or actions
             Settings.KitAndValue kv01 = new Settings.KitAndValue(null, null);
             if(settingName.equals(SettingsNames.KEY_BINDING_LIST)) {
-                kv01.value = KeyBinding.getBindingsList();
+                List l = (List)((ArrayList)KeyBinding.getBindingsList()).clone();
+                // Going through this path, in the end result, the only bindings
+                // for "caret-up/down" are VK_KP_UP/DOWN. Code completion uses
+                // "caret-up" for scrolling, and VK_UP/DOWN is what is needed.
+                // jVi doesn't use "caret-up" but somewhere they are getting
+                // trashed. They are probably getting trashed because we are
+                // providing a mapping for VK_UP, and the same key can not be
+                // mapped to multiple events; so VK_UP --> "caret-up" is removed
+                // So add mappings for VK_KP_UP/DOWN, then there will be no
+                // bindings for "caret-up" and the defaults for code comletion
+                //will be used. (This means that VK_KP_UP won't work, so what.)
+                // (see CompletionScrollPane if you're interested)
+                l.add(new JTextComponent.KeyBinding(
+                        KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0),
+                                               "ViUpKey"));
+                l.add(new JTextComponent.KeyBinding(
+                        KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, 0),
+                                               "ViDownKey"));
+                kv01.value = l;
             } else if(settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)) {
                 kv01.value = KeyBinding.getActionsList();
             }

@@ -14,6 +14,7 @@ import com.raelity.jvi.swing.OpsBase;
 import javax.swing.Action;
 import javax.swing.text.EditorKit;
 import org.netbeans.editor.BaseKit;
+import org.netbeans.editor.ext.ExtKit;
 import org.netbeans.modules.editor.NbEditorKit;
 
 /**
@@ -22,9 +23,9 @@ import org.netbeans.modules.editor.NbEditorKit;
  */
 public class NbOps extends OpsBase {
     // jVi replaces the defaultKeyTypedAction in the editor kit.
-    // So this avoids an infinite loop.
-    // NEEDSWORK: investigate use of editor kit actions
-    private static Action keyTypedAction = new BaseKit.DefaultKeyTypedAction();
+    // Expect to use an action associated with a kit, but this is here
+    // as a fallback
+    private static Action keyTypedAction = new ExtKit.DefaultKeyTypedAction();
     
     /** Creates a new instance of NbOps */
     public NbOps(ViTextView textView) {
@@ -40,7 +41,9 @@ public class NbOps extends OpsBase {
             case KEY_TYPED:
                 // actionName = NbEditorKit.defaultKeyTypedAction;
                 // break;
-                xact(keyTypedAction);
+                EditorKit kit = textView.getEditorComponent().getEditorKit();
+                Action a = Module.getDefaultKeyAction(kit.getClass());
+                xact(a != null ? a : keyTypedAction);
                 return;
             case INSERT_NEW_LINE:
                 actionName = NbEditorKit.insertBreakAction;

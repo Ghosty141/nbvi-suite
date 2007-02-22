@@ -9,6 +9,7 @@ import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Container;
 import java.util.prefs.Preferences;
+import javax.naming.OperationNotSupportedException;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -39,7 +40,7 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     public Preferences getPreferences() {
-        // return NbPreferences.forModule(ViManager.class); Not in 5.5
+        // NB6 return NbPreferences.forModule(ViManager.class); Not in 5.5
         Preferences retValue;
         
         retValue = super.getPreferences();

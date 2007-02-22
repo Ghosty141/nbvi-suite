@@ -3,5 +3,4 @@ OpenIDE-Module: org.netbeans.modules.jvi/0
 OpenIDE-Module-Install: org/netbeans/modules/jvi/Module.class
 OpenIDE-Module-Layer: org/netbeans/modules/jvi/layer.xml
 OpenIDE-Module-Localizing-Bundle: org/netbeans/modules/jvi/Bundle.properties
-OpenIDE-Module-Specification-Version: 0.8.0
 

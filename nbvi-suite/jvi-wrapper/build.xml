@@ -9,8 +9,6 @@
     <property name="original.project.dir" value="../jvi-project"/>
     <property name="original.project.jar"
               value="${original.project.dir}/dist/jvi-project.jar"/>
-
-    <delete dir="${basedir}/release"/>
     
     <target name="release">
         <echo message="Building ${original.project.dir}" level="info"/>
@@ -22,13 +20,10 @@
               file="${original.project.jar}"/>
     </target>
     
-
-    <target name="clean" depends="-pre-clean,projectized-common.clean"/>
-
-    <target name="-pre-clean">
+    <target name="clean" depends="projectized-common.clean">
         <echo message="Cleaning ${original.project.dir}" level="info"/>
         <ant dir="${original.project.dir}"
-             target="clean" inheritall="false" inheritrefs="false"/>
+            target="clean" inheritall="false" inheritrefs="false"/>
         <echo message="Done cleaning ${original.project.dir}" level="info"/>
     </target>
 </project>

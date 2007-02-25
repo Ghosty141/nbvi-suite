@@ -32,6 +32,7 @@ import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.ColonCommands.ColonAction;
 import com.raelity.jvi.ColonCommands.ColonEvent;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViManager;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import org.netbeans.api.project.Project;
@@ -40,6 +41,7 @@ import org.netbeans.modules.editor.java.JavaFastOpenAction;
 import org.netbeans.spi.project.ActionProvider;
 import org.openide.util.Lookup;
 import org.openide.util.actions.SystemAction;
+import org.openide.windows.TopComponent;
 
 public class NbColonCommands {
 
@@ -53,6 +55,10 @@ public class NbColonCommands {
     /** Register some ":" commands */
     static void setupCommands() {
         ColonCommands.register("ts", "tselect", new GoToClassAction());
+        
+        ColonCommands.register("n", "next", ACTION_next);
+        ColonCommands.register("N", "Next", ACTION_Next);
+        ColonCommands.register("prev", "previous", ACTION_Next);
         
         ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
         ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
@@ -81,6 +87,33 @@ public class NbColonCommands {
         initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);
         */
+    }
+    
+    private static ColonAction ACTION_next = new Next(true);
+    private static ColonAction ACTION_Next = new Next(false);
+    
+    /** next/Next/previous */
+    static private class Next extends ColonAction {
+        boolean goForward;
+        
+        Next(boolean goForward) {
+            this.goForward = goForward;
+        }
+        public void actionPerformed(ActionEvent e) {
+            ColonEvent ce = (ColonEvent)e;
+            int offset;
+            if(ce.getAddrCount() == 0)
+                offset = 1;
+            else
+                offset = ce.getLine1();
+            if(!goForward)
+                offset = -offset;
+            TopComponent tc = (TopComponent)ViManager.relativeMruBuffer(offset);
+            if(tc != null) {
+                ViManager.ignoreActivation(tc); // don't want mru list to change
+                tc.requestActive();
+            }
+        }
     }
         
     /*

@@ -84,8 +84,9 @@ public class Module extends ModuleInstall {
             Settings.removeFilter(keyBindingsFilter);
     }
     
-    public static Action getDefaultKeyAction(Class clazz) {
-        return kitToDefaultKeyAction.get(clazz);
+    public static final Action getDefaultKeyAction(Class clazz) {
+        Map<Class, Action> m = kitToDefaultKeyAction;
+        return m.get(clazz);
     }
     
     private static boolean didOptionsInit;
@@ -234,6 +235,20 @@ public class Module extends ModuleInstall {
                 }
             }
         });
+        ColonCommands.register("kitDump", "kitDump", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Map<Class, Action> m = kitToDefaultKeyAction;
+                ViOutputStream os = ViManager.createOutputStream(
+                        null, ViOutputStream.OUTPUT, "Known Kits");
+                for (Map.Entry<Class, Action> entry
+                        : kitToDefaultKeyAction.entrySet()) {
+                    os.println(String.format("%20s %s",
+                               entry.getKey().getSimpleName(),
+                               entry.getValue().getClass().getSimpleName()));
+                }
+                os.close();
+            }
+        });
         
         /*
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {
@@ -296,8 +311,8 @@ public class Module extends ModuleInstall {
     }
     
     /**
-     * Hook into Settings to add jVi bindings for the Keymap and its
-     * defaultKeyTypedAction; but only for BaseKit.getKeymap. Its not pretty.
+     * Hook into Settings to add jVi bindings and actions for the Keymap;
+     * keep track of editor kit's original defaultKeyTypedAction.
      */
     private static final class KeyBindingsFilter implements Settings.Filter {
         
@@ -310,37 +325,18 @@ public class Module extends ModuleInstall {
                  || settingName.equals(SettingsNames.KIT_INSTALL_ACTION_NAME_LIST)))
                 return kavArray;
             
-            if(false)
-                return kavArray;
-            
-boolean onlyFilterForBaseKit = false; // with the addition of KIT_INSTALL... 
- if(onlyFilterForBaseKit) {
-            // This probly rates around the top of my HACK list.
-            // Wish I could ask for a short trace
-            
-            StackTraceElement s[] = new Throwable().getStackTrace();
-            boolean isGetKeymap = false;
-            for (int i = 0; i < 6 && i < s.length; i++) {
-                if(s[i].getClassName().equals("org.netbeans.editor.BaseKit")
-                   && (s[i].getMethodName().equals("getKeymap")
-                       || s[i].getMethodName().equals("getCustomActions")
-                       || s[i].getMethodName().equals("install"))) {
-                    isGetKeymap = true;
-                    break;
-                }
-            }
-            if(!isGetKeymap)
-                return kavArray;
- }           
             if(false) {
                 System.err.println("KeyBindingsFilter: " + settingName + ": "
                                     + kitClass.getSimpleName());
             }
+
             // got a live one, augment keybindings or actions
             Settings.KitAndValue kv01 = new Settings.KitAndValue(null, null);
+            
             if(settingName.equals(SettingsNames.KEY_BINDING_LIST)) {
                 List<JTextComponent.KeyBinding> l
                         = (List)((ArrayList)KeyBinding.getBindingsList()).clone();
+                
                 // Going through this path, in the end result, the only bindings
                 // for "caret-up/down" are VK_KP_UP/DOWN. Code completion uses
                 // "caret-up" for scrolling, and VK_UP/DOWN is what is needed.
@@ -359,12 +355,15 @@ boolean onlyFilterForBaseKit = false; // with the addition of KIT_INSTALL...
                         KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, 0),
                                                "ViDownKey"));
                 kv01.value = l;
-            } else if(settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)) {
+            }
+            else if(settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)) {
                 // get the jVi keybindings
                 List<Action> l =
                         (List)((ArrayList)KeyBinding.getActionsList()).clone();
+                
                 // Add an action that gets invoked when editor kit install
                 l.add(new JViInstallAction());
+                
                 // Want to add jVi defaultKeyTypedAction, but can't do that
                 // until the kit's default keytyped action is stashed for
                 // later use. Note: if the kit wants to change its
@@ -374,12 +373,14 @@ boolean onlyFilterForBaseKit = false; // with the addition of KIT_INSTALL...
                     l.add(ViManager.getViFactory().createCharAction(
                                     DefaultEditorKit.defaultKeyTypedAction));
                 kv01.value = l;
-            } else if(settingName.equals(
+            }
+            else if(settingName.equals(
                             SettingsNames.KIT_INSTALL_ACTION_NAME_LIST)) {
                 List<String> l = new ArrayList<String>();
                 l.add(JVI_INSTALL_ACTION_NAME);
                 kv01.value = l;
             }
+            
             // jVi goes first in array to overide anything else
             Settings.KitAndValue kv[] = null;
             if(kv01.value != null) {
@@ -415,7 +416,6 @@ boolean onlyFilterForBaseKit = false; // with the addition of KIT_INSTALL...
                     public void run() {
                         Settings.touchValue(BaseKit.class,
                                             SettingsNames.CUSTOM_ACTION_LIST);
-                        updateKeymap();
                     }
                 });
             }

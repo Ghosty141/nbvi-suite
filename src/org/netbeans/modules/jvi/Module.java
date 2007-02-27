@@ -8,6 +8,7 @@ import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.KeyBinding;
+import com.raelity.jvi.swing.ViCaret;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
@@ -25,9 +26,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
@@ -38,7 +39,6 @@ import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
-import org.netbeans.editor.ext.ExtCaret;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
@@ -92,8 +92,9 @@ public class Module extends ModuleInstall {
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
     private static Map<Class, Action> kitToDefaultKeyAction
             = new HashMap<Class, Action>();
+    
     private static Map<JEditorPane, Caret> editorToCaret
-            = new HashMap<JEditorPane, Caret>(); // NB6 don't want this
+            = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
     
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
@@ -144,7 +145,7 @@ public class Module extends ModuleInstall {
             for (TopComponent tc : s) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null)
-                    activateTC(ep, tc, "ENABLE");
+                    activateTC(ep, tc, "JVI-ENABLE");
             }
             
             if(keyBindingsFilter == null) {
@@ -182,14 +183,8 @@ public class Module extends ModuleInstall {
                 JEditorPane ep = (JEditorPane)tc.getClientProperty(PROP_JEP);
                 Caret c01 = editorToCaret.get(ep);
                 if(c01 != null) {
-                    Caret c02 = ep.getCaret();
-                    if(c02 instanceof NbCaret) {
-                        int offset = c02.getDot();
-                        int blinkRate = c02.getBlinkRate();
-
-                        ep.setCaret(c01);
-                        c01.setDot(offset);
-                        c01.setBlinkRate(blinkRate);
+                    if(ep.getCaret() instanceof NbCaret) {
+                        NbFactory.installCaret(ep, c01);
                         if(dbgNb.getBoolean()) {
                             System.err.println("Module: restore caret: "
                                             + tc.getDisplayName());
@@ -199,6 +194,12 @@ public class Module extends ModuleInstall {
                 closeTC(ep, tc);
                 tc = (TopComponent)ViManager.getTextBuffer(1);
             }
+            
+            // At this point, any remaining members of editorToCaret
+            // must be nomad (or so one would think).
+            int s = editorToCaret.size();
+            if(s != 0 && dbgNb.getBoolean())
+                System.err.println("Module: " + s + " nomads");
             
             Settings.reset();
         }
@@ -508,7 +509,8 @@ public class Module extends ModuleInstall {
         }
         
         public void actionPerformed(ActionEvent e) {
-            EditorKit kit = ((JEditorPane)e.getSource()).getEditorKit();
+            JEditorPane ep = (JEditorPane)e.getSource();
+            EditorKit kit = ep.getEditorKit();
             if(dbgNb.getBoolean()) {
                 System.err.println("Module: kit installed: "
                                    + kit.getClass().getSimpleName());
@@ -524,6 +526,9 @@ public class Module extends ModuleInstall {
                     }
                 });
             }
+            
+            // Make sure the nomadic editors have the right cursor.
+            checkCaret(ep);
         }
     }
 
@@ -547,15 +552,22 @@ public class Module extends ModuleInstall {
         editorToCaret.remove(ep);
     }
     
+    private static void checkCaret(JEditorPane ep) {
+        if(!(ep.getCaret() instanceof ViCaret)) {
+            if(editorToCaret.get(ep) == null) {
+                editorToCaret.put(ep, ep.getCaret());
+                if(dbgNb.getBoolean()) {
+                    System.err.println("Module: capture caret");
+                }
+            }
+            NbFactory.installCaret(ep, new NbCaret());
+        }
+    }
+    
     private static void activateTC(JEditorPane ep, Object o, String tag) {
         TopComponent tc = (TopComponent)o;
-        if(ep != null && editorToCaret.get(ep) == null) {
-            if(dbgNb.getBoolean()) {
-                System.err.println("Module: capture caret: "
-                                   + ((TopComponent)tc).getDisplayName());
-            }
-            editorToCaret.put(ep, ep.getCaret());
-        }
+        if(ep != null)
+            checkCaret(ep);
         if(ep != null && tc != null)
             tc.putClientProperty(PROP_JEP, ep);
         ViManager.activateFile(ep, tc, tag);

@@ -55,9 +55,10 @@ public class NbTextView extends TextView
 	Document doc = getDoc();
 	if(doc != null) {
 	    FileObject fo = NbEditorUtilities.getFileObject(doc);
-	    return fo.getNameExt();
+            if(fo != null)
+                return fo.getNameExt();
 	}
-	return "";
+	return "UNKNOWN";
     }
 
 /* FROM ActionFactory

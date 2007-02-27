@@ -15,6 +15,7 @@ import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Caret;
 import org.netbeans.editor.BaseAction;
+import org.netbeans.editor.BaseDocument;
 import org.openide.windows.TopComponent;
 
 final public class NbFactory extends DefaultViFactory {
@@ -61,22 +62,30 @@ final public class NbFactory extends DefaultViFactory {
         return new NbTextView(editorPane);
     }
     
-    public void registerEditorPane(JEditorPane editorPane) {
+    public void registerEditorPane(JEditorPane ep) {
         // Cursor is currently installed by editor kit
         // install cursor if neeeded
-        Caret c = editorPane.getCaret();
-        if( ! (c instanceof ViCaret)) {
-            int offset = 0;    // current location
-            int blinkRate = 500;
-            if(c != null) {
-                offset = c.getDot();    // current location
-                blinkRate = c.getBlinkRate();
-            }
-            NbCaret caret = new NbCaret();
-            editorPane.setCaret(caret);
-            caret.setDot(offset);
-            caret.setBlinkRate(blinkRate);
+        if( ! (ep.getCaret() instanceof ViCaret)) {
+            installCaret(ep, new NbCaret());
         }
+    }
+    
+    // NEEDSWORK: put installCaret in factory?
+    public static void installCaret(JEditorPane ep, Caret newCaret) {
+        Caret oldCaret = ep.getCaret(); // should never be null
+        int offset = 0;
+        int blinkRate = 400;
+        if(oldCaret != null) {
+            offset = oldCaret.getDot();
+            blinkRate = oldCaret.getBlinkRate();
+        }
+        ep.setCaret(newCaret);
+        if(ep.getDocument() instanceof BaseDocument) {
+            // If the caret is installed too early the following gets an
+            // exception trying to case PlanDocument to BaseDocument
+            newCaret.setDot(offset);
+        }
+        newCaret.setBlinkRate(blinkRate);
     }
     
     public String getDisplayFilename(Object o) {

@@ -18,7 +18,6 @@ import org.netbeans.editor.BaseAction;
 import org.openide.windows.TopComponent;
 
 final public class NbFactory extends DefaultViFactory {
-    public static final String PROP_JEP = "ViJEditorPane";
     
     NbFS fs = new NbFS();
     
@@ -52,9 +51,11 @@ final public class NbFactory extends DefaultViFactory {
         // when the TopComponent closes.
         // NEEDSWORK: move this to base class or ViManager.activateFile
         TopComponent tc = getEditorTopComponent(editorPane);
-        if(tc != null)
-            tc.putClientProperty(PROP_JEP, editorPane);
-        else
+        if(tc != null) {
+            Object ep = tc.getClientProperty(Module.PROP_JEP);
+            assert(ep != null && ep == editorPane);
+            tc.putClientProperty(Module.PROP_JEP, editorPane);
+        } else
             ViManager.log("createViTextView: not isBuffer");
         
         return new NbTextView(editorPane);

@@ -3,7 +3,9 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.OptionsBean;
 import com.raelity.jvi.swing.KeyBindingBean;
 import com.raelity.jvi.swing.KeypadBindingBean;
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -141,7 +143,7 @@ public class NbOptionsNode extends BeanNode {
     
     private static class DebugNode extends BeanNode {
 	public DebugNode() throws IntrospectionException {
-	    super(new OptionsBean.Debug() {
+	    super(new NbDebugOptions() {
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -158,5 +160,49 @@ public class NbOptionsNode extends BeanNode {
                 }
             });
 	}    
+    }
+    
+    // the names for the getters/setters
+    private static final String GETSET_DBG_MODULE = "DebugModule";
+    private static final String GETSET_DBG_TC = "DebugTC";
+    
+    public static class NbDebugOptions extends OptionsBean.Debug {
+        public PropertyDescriptor[] getPropertyDescriptors() {
+            PropertyDescriptor[]  descriptors = super.getPropertyDescriptors();
+            PropertyDescriptor d01 = null;
+            PropertyDescriptor d02 = null;
+            try {
+                d01 = createPropertyDescriptor(Module.DBG_MODULE,
+                                               GETSET_DBG_MODULE,
+                                               NbDebugOptions.class);
+                d02 = createPropertyDescriptor(Module.DBG_TC,
+                                               GETSET_DBG_TC,
+                                               NbDebugOptions.class);
+            } catch (IntrospectionException ex) {
+                return descriptors;
+            }
+            PropertyDescriptor[]  d00
+                    = new PropertyDescriptor[descriptors.length +2];
+            System.arraycopy(descriptors, 0, d00, 0, descriptors.length);
+            d00[descriptors.length] = d01;
+            d00[descriptors.length +1] = d02;
+            return d00;
+        }
+        
+        public void setDebugModule(boolean arg) {
+            put(Module.DBG_MODULE, arg);
+        }
+
+        public boolean getDebugModule() {
+            return getboolean(Module.DBG_MODULE);
+        }
+        
+        public void setDebugTC(boolean arg) {
+            put(Module.DBG_TC, arg);
+        }
+
+        public boolean getDebugTC() {
+            return getboolean(Module.DBG_TC);
+        }
     }
 }

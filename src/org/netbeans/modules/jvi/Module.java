@@ -7,6 +7,7 @@ import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Component;
@@ -99,7 +100,7 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
         if(dbgNb != null && dbgNb.getBoolean())
-            System.err.println("********* restored *********");
+            System.err.println("***** restored "+ this.hashCode() + " *****");
         earlyInit();
             
         JViEnableAction jvi
@@ -112,7 +113,7 @@ public class Module extends ModuleInstall {
         super.uninstalled();
         
         if(dbgNb.getBoolean())
-            System.err.println("********* uninstalled *********");
+            System.err.println("***** uninstalled "+ this.hashCode() + " *****");
         
         JViEnableAction jvi
                 = (JViEnableAction)SystemAction.get(JViEnableAction.class);
@@ -140,12 +141,25 @@ public class Module extends ModuleInstall {
                         topComponentRegistryListener);
             }
             
-            // See if there's anything to fire up
+            // See if there's anything to attach to, there are two cases to
+            // consider:
+            // enbable through the menu/toolbar
+            //      In this case the default key typed action has already
+            //      been captured for any opened editors.
+            // module activation
+            //      At boot, there are no opened editors. But if the module
+            //      is activated after NB comes up, then there *are* editors.
+            //      So capture keyType for the TopComponents. The nomads will
+            //      not be captured, oh well. Could capture the nomads by
+            //      checking at keyTyped, not worth it.
+            //
             Set<TopComponent> s = TopComponent.getRegistry().getOpened();
             for (TopComponent tc : s) {
                 JEditorPane ep = getTCEditor(tc);
-                if(ep != null)
+                if(ep != null) {
+                    captureDefaultKeyTypedAction(ep);
                     activateTC(ep, tc, "JVI-ENABLE");
+                }
             }
             
             if(keyBindingsFilter == null) {
@@ -157,6 +171,12 @@ public class Module extends ModuleInstall {
         }
     };
     
+    /**
+     * Unhook almost everything.
+     * <p/>
+     * In the future, may want to leave the TopComponent listener active so
+     * that we can maintain the MRU list.
+     */
     private static Runnable runJViDisable = new Runnable() {
         public void run() {
             if(!jViEnabled)
@@ -167,9 +187,11 @@ public class Module extends ModuleInstall {
             if(dbgNb.getBoolean())
                 System.err.println("Module: runJViDisable");
             
-            if(topComponentRegistryListener != null)
+            if(topComponentRegistryListener != null) {
                 TopComponent.getRegistry().removePropertyChangeListener(
                         topComponentRegistryListener);
+                topComponentRegistryListener = null;
+            }
             
             if(keyBindingsFilter != null) {
                 KeyBindingsFilter f = keyBindingsFilter;
@@ -200,6 +222,9 @@ public class Module extends ModuleInstall {
             int s = editorToCaret.size();
             if(s != 0 && dbgNb.getBoolean())
                 System.err.println("Module: " + s + " nomads");
+            
+            if(dbgNb.getBoolean())
+                ViManager.dump(System.err);
             
             Settings.reset();
         }
@@ -278,6 +303,11 @@ public class Module extends ModuleInstall {
         //
         // Some debug commands
         //
+        ColonCommands.register("jviDump", "jviDump", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ViManager.dump(System.err);
+            }
+        });
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -510,15 +540,11 @@ public class Module extends ModuleInstall {
         
         public void actionPerformed(ActionEvent e) {
             JEditorPane ep = (JEditorPane)e.getSource();
-            EditorKit kit = ep.getEditorKit();
             if(dbgNb.getBoolean()) {
                 System.err.println("Module: kit installed: "
-                                   + kit.getClass().getSimpleName());
+                                + ep.getEditorKit().getClass().getSimpleName());
             }
-            Action a = kitToDefaultKeyAction.get(kit.getClass());
-            if(a == null && kit instanceof BaseKit) {
-                a = ((BaseKit)kit).getActionByName(BaseKit.defaultKeyTypedAction);
-                kitToDefaultKeyAction.put(kit.getClass(), a);
+            if(captureDefaultKeyTypedAction(ep)) {
                 EventQueue.invokeLater(new Runnable() {
                     public void run() {
                         Settings.touchValue(BaseKit.class,
@@ -550,6 +576,25 @@ public class Module extends ModuleInstall {
     private static void closeTC(JEditorPane ep, TopComponent tc) {
         ViManager.closeFile(ep, tc);
         editorToCaret.remove(ep);
+    }
+    
+    private static boolean captureDefaultKeyTypedAction(JEditorPane ep) {
+        boolean captured = false;
+        
+        EditorKit kit = ep.getEditorKit();
+        Action a = kitToDefaultKeyAction.get(kit.getClass());
+        if(a == null && kit instanceof BaseKit) {
+            a = ((BaseKit)kit).getActionByName(BaseKit.defaultKeyTypedAction);
+            if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
+                kitToDefaultKeyAction.put(kit.getClass(), a);
+                if(dbgNb.getBoolean()) {
+                    System.err.println("Module: capture action: "
+                                    + a.getClass().getSimpleName());
+                }
+                captured = true;
+            }
+        }
+        return captured;
     }
     
     private static void checkCaret(JEditorPane ep) {

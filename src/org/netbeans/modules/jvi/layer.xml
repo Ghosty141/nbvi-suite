@@ -12,6 +12,15 @@
             <file name="org-netbeans-modules-jvi-Module$JViEnableAction.instance"/>
         </folder>
     </folder>
+    <folder name="OptionsDialog">
+        <folder name="Actions">
+            <folder name="Tools">
+                <file name="jVi.shadow">
+                    <attr name="originalFile" stringvalue="Menu/Tools/org-netbeans-modules-jvi-Module$JViEnableAction.instance"/>
+                </file>
+            </folder>
+        </folder>
+    </folder>
     <folder name="UI">
         <folder name="Services">
             <folder name="Editing">

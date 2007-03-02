@@ -54,7 +54,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.Presenter;
+import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -78,6 +78,8 @@ import org.openide.windows.WindowManager;
 public class Module extends ModuleInstall {
     
     private static boolean jViEnabled;
+    private static final String MOD = "Module-" +
+            System.identityHashCode(Module.class.getClassLoader()) + ": ";
     
     public static final String PROP_JEP = "ViJEditorPane";
     
@@ -100,25 +102,25 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
         if(dbgNb != null && dbgNb.getBoolean())
-            System.err.println("***** restored "+ this.hashCode() + " *****");
+            System.err.println(MOD + "***** restored *****");
         earlyInit();
             
         JViEnableAction jvi
                 = (JViEnableAction)SystemAction.get(JViEnableAction.class);
         jvi.setSelected(true);
-        runInDispatch(runJViEnable, true);
+        runInDispatch(true, runJViEnable);
     }
 
     public void uninstalled() {
         super.uninstalled();
         
         if(dbgNb.getBoolean())
-            System.err.println("***** uninstalled "+ this.hashCode() + " *****");
+            System.err.println(MOD + "***** uninstalled *****");
         
         JViEnableAction jvi
                 = (JViEnableAction)SystemAction.get(JViEnableAction.class);
         jvi.setSelected(false);
-        runInDispatch(runJViDisable, true);
+        runInDispatch(true, runJViDisable);
     }
     
     private static Runnable runJViEnable = new Runnable() {
@@ -127,7 +129,7 @@ public class Module extends ModuleInstall {
                 return;
             
             if(dbgNb.getBoolean())
-                System.err.println("Module: runJViEnable");
+                System.err.println(MOD + " runJViEnable");
             
             jViEnabled = true;
             
@@ -162,6 +164,9 @@ public class Module extends ModuleInstall {
                 }
             }
             
+            // And setup the nomads
+            // nomadicEditors
+            
             if(keyBindingsFilter == null) {
                 keyBindingsFilter = new KeyBindingsFilter();
                 Settings.addFilter(keyBindingsFilter);
@@ -185,7 +190,7 @@ public class Module extends ModuleInstall {
             jViEnabled = false;
             
             if(dbgNb.getBoolean())
-                System.err.println("Module: runJViDisable");
+                System.err.println(MOD + "runJViDisable");
             
             if(topComponentRegistryListener != null) {
                 TopComponent.getRegistry().removePropertyChangeListener(
@@ -208,7 +213,7 @@ public class Module extends ModuleInstall {
                     if(ep.getCaret() instanceof NbCaret) {
                         NbFactory.installCaret(ep, c01);
                         if(dbgNb.getBoolean()) {
-                            System.err.println("Module: restore caret: "
+                            System.err.println(MOD + "restore caret: "
                                             + tc.getDisplayName());
                         }
                     }
@@ -219,9 +224,19 @@ public class Module extends ModuleInstall {
             
             // At this point, any remaining members of editorToCaret
             // must be nomad (or so one would think).
-            int s = editorToCaret.size();
-            if(s != 0 && dbgNb.getBoolean())
-                System.err.println("Module: " + s + " nomads");
+            // Remove any references.
+            for (JEditorPane ep : editorToCaret.keySet()) {
+                Caret c01 = null;
+                if(ep.getCaret() instanceof ViCaret) {
+                    c01 = editorToCaret.get(ep);
+                    if(c01 != null)
+                        NbFactory.installCaret(ep, c01);
+                }
+                if(dbgNb.getBoolean())
+                    System.err.println(MOD + "shutdown nomad"
+                            + (c01 != null ? " restore caret" : ""));
+                ViManager.getViFactory().shutdown(ep);
+            }
             
             if(dbgNb.getBoolean())
                 ViManager.dump(System.err);
@@ -249,7 +264,7 @@ public class Module extends ModuleInstall {
             return;
         didEarlyInit = true;
         
-        runInDispatch(runEarlyInit, true);
+        runInDispatch(true, runEarlyInit);
     }
     
     private static Runnable runEarlyInit = new Runnable() {
@@ -284,7 +299,7 @@ public class Module extends ModuleInstall {
             return;
         didInit = true;
         
-        runInDispatch(runInitJVi, true);
+        runInDispatch(true, runInitJVi);
     }
     
     private static Runnable runInitJVi = new Runnable() {
@@ -541,7 +556,7 @@ public class Module extends ModuleInstall {
         public void actionPerformed(ActionEvent e) {
             JEditorPane ep = (JEditorPane)e.getSource();
             if(dbgNb.getBoolean()) {
-                System.err.println("Module: kit installed: "
+                System.err.println(MOD + "kit installed: "
                                 + ep.getEditorKit().getClass().getSimpleName());
             }
             if(captureDefaultKeyTypedAction(ep)) {
@@ -588,8 +603,9 @@ public class Module extends ModuleInstall {
             if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
                 kitToDefaultKeyAction.put(kit.getClass(), a);
                 if(dbgNb.getBoolean()) {
-                    System.err.println("Module: capture action: "
-                                    + a.getClass().getSimpleName());
+                    System.err.println(MOD + "capture: "
+                                   + "kit: " + kit.getClass().getSimpleName()
+                                   + "action: " + a.getClass().getSimpleName());
                 }
                 captured = true;
             }
@@ -597,12 +613,12 @@ public class Module extends ModuleInstall {
         return captured;
     }
     
-    private static void checkCaret(JEditorPane ep) {
+    public static final void checkCaret(JEditorPane ep) {
         if(!(ep.getCaret() instanceof ViCaret)) {
             if(editorToCaret.get(ep) == null) {
                 editorToCaret.put(ep, ep.getCaret());
                 if(dbgNb.getBoolean()) {
-                    System.err.println("Module: capture caret");
+                    System.err.println(MOD + "capture caret");
                 }
             }
             NbFactory.installCaret(ep, new NbCaret());
@@ -785,7 +801,7 @@ public class Module extends ModuleInstall {
         return null;
     }
     
-    public static void runInDispatch(Runnable runnable, boolean wait) {
+    public static void runInDispatch(boolean wait, Runnable runnable) {
         if(EventQueue.isDispatchThread()) {
             runnable.run();
         } else if(!wait) {
@@ -801,14 +817,26 @@ public class Module extends ModuleInstall {
         }
     }
     
-    private static class JViEnableAction extends SystemAction
-                                         implements Presenter.Menu {
-        private static final String NAME="jVi";
+    /** The action used for the NB system */
+    private static class JViEnableAction extends CallableSystemAction {
+        protected static final String NAME="jVi";
         private JCheckBoxMenuItem cb;
         
         JViEnableAction() {
+            super();
+            putValue("noIconInMenu", Boolean.TRUE); // NOI18N
             cb = new JCheckBoxMenuItem(NAME);
-            cb.setAction(this);
+            // Note if "this" is added with setAction, then icon
+            cb.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    doAction(cb.isSelected());
+                }
+            });
+            cb.setSelected(true);
+        }
+        
+        public boolean isEnabled() {
+            return true;
         }
         
         public JMenuItem getMenuPresenter() {
@@ -823,11 +851,26 @@ public class Module extends ModuleInstall {
             cb.setSelected(b);
         }
 
+        public void performAction() {
+            actionPerformed(null);
+        }
+
+        /** the system action toggles the current state */
         public void actionPerformed(ActionEvent e) {
-            if(isSelected())
-                runJViEnable.run();
-            else
-                runJViDisable.run();
+            boolean enable = !isSelected();
+            setSelected(enable);
+            doAction(enable);
+        }
+        
+        protected void doAction(final boolean enabled) {
+            runInDispatch(false, new Runnable() {
+                public void run() {
+                    if(enabled)
+                        runJViEnable.run();
+                    else
+                        runJViDisable.run();
+                }
+            });
         }
         
         public HelpCtx getHelpCtx() {
@@ -837,5 +880,10 @@ public class Module extends ModuleInstall {
         public String getName() {
             return NAME;
         }
+
+        protected String iconResource() {
+            return "/com/raelity/jvi/resources/jViLogo.png";
+        }
+        
     }
 }

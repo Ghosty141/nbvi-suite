@@ -23,20 +23,18 @@ import org.netbeans.editor.Utilities;
 
 /**
  * This status display displays status messages in the EditorUI's StatusBar.
- * A few fields are added to the status bar.
- *
- * NEEDSWORK: Handle "Recording"
- * NEEDSWORK: NB StatusBar interface needs cleanup.
+ * A few fields are added to the status bar dependign on useMyCells constant.
  *
  * @author erra
  */
-public class NbStatusDisplay implements ViStatusDisplay {
+public final class NbStatusDisplay implements ViStatusDisplay {
     // don't/do share pre-defined cell in StatusBar
-    private static final boolean useMyCell = true;
+    private static final boolean useMyCells = false;
     
     private ViTextView textView;
     private String lastMode = "";
     private String lastMsg = "";
+    private String lastCmd = "";
     private Coloring lastMsgColoring = null;
     private String mode = "";
 
@@ -95,7 +93,16 @@ public class NbStatusDisplay implements ViStatusDisplay {
     }
 
     public void displayCommand(String text) {
-	setText(CELL_COMMAND, text);
+        if(useMyCells)
+            setText(CELL_COMMAND, text);
+        else {
+            text = text.trim();
+            lastMsgColoring = null;
+            if(text.length() != 0)
+                text = " [ " + text + " ]";
+            lastCmd = text;
+            refresh();
+        }
     }
 
     public void displayStatusMessage(String text) {
@@ -114,18 +121,19 @@ public class NbStatusDisplay implements ViStatusDisplay {
 	displayStatusMessage("");
     }
 
+    public void refresh() {
+        // NetBeans insertDefaultKeyAction clears the status bar after every
+        // document addition. But we need to keep the "-- INSERT --" visible.
+        if(!useMyCells)
+            setText(CELL_STATUS, modeString() + lastMsg + lastCmd, lastMsgColoring);
+    }
+
     private void setText(String cellName, String text) {
         setText(cellName, text, null);
-        /*
-	StatusBar sb = getStatusBar();
-	if(sb != null) {
-	    sb.setText(cellName, text);
-	}
-         */
     }
 
     private void setText(String cellName, String text, Coloring coloring) {
-        if(!useMyCell) {
+        if(!useMyCells) {
             // direct CELL_STATUS messsages to the pre-defined location
             if(cellName == CELL_STATUS)
                 cellName = StatusBar.CELL_MAIN;
@@ -143,16 +151,14 @@ public class NbStatusDisplay implements ViStatusDisplay {
             EditorUI ui = Utilities.getEditorUI(ep);
             if(ui != null) {
                 sb = ui.getStatusBar();
-                // If the StatusBar does not have nbvi stuff, then add it
-                if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
-                    //int pos = sb.getCellCount(); // should position at end
-                    
-                    // after StatusBar.CELL_TYPING_MODE
-                    sb.addCell(2, CELL_COMMAND, new String[] {"123yy'adff"});
-                    // after CELL_COMMAND
-                    if(useMyCell) {
+                if(useMyCells) {
+                    // If the StatusBar does not have nbvi stuff, then add it
+                    if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
+                        // after StatusBar.CELL_TYPING_MODE
+                        sb.addCell(2, CELL_COMMAND, new String[] {"123yy'adff"});
+                        // after CELL_COMMAND
                         sb.addCell(3, CELL_STATUS,new String[] { "             "
-                          + "                                               "});
+                           + "                                               "});
                     }
                 }
             }

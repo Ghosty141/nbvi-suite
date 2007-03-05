@@ -17,6 +17,7 @@ import org.openide.nodes.Node;
 
 public class NbOptionsNode extends BeanNode {
     private static final String NODE_MISC = "Misc";
+    private static final String NODE_SEARCH = "Search";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
     private static final String NODE_KEY_BINDINGS = "KeyBindings";
     private static final String NODE_KEYPAD_BINDINGS = "KeypadBindings";
@@ -61,6 +62,8 @@ public class NbOptionsNode extends BeanNode {
 		    nodes[0] = new KeypadBindingNode();
                 } else if(object.equals(NODE_MISC)) {
 		    nodes[0] = new MiscNode();
+                } else if(object.equals(NODE_SEARCH)) {
+		    nodes[0] = new SearchNode();
                 } else if(object.equals(NODE_CURSOR_WRAP)) {
 		    nodes[0] = new CursorWrapNode();
                 } else if(object.equals(NODE_DEBUG)) {
@@ -75,6 +78,7 @@ public class NbOptionsNode extends BeanNode {
         protected void addNotify() {
            Collection c = new ArrayList();
            c.add(NODE_MISC);
+           c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);
            c.add(NODE_KEY_BINDINGS);
            c.add(NODE_KEYPAD_BINDINGS);
@@ -96,6 +100,27 @@ public class NbOptionsNode extends BeanNode {
     private static class KeypadBindingNode extends BeanNode {
 	public KeypadBindingNode() throws IntrospectionException {
 	    super(new KeypadBindingBean());
+	}    
+    }
+    
+    private static class SearchNode extends BeanNode {
+	public SearchNode() throws IntrospectionException {
+	    super(new OptionsBean.Search() {
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
 	}    
     }
     

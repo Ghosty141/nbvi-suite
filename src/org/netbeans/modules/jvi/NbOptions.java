@@ -30,7 +30,7 @@ import org.openide.util.Lookup;
  * <li> NB --> jVi expandTabs,shiftWidth <br/>
  *      The NB options are tracked on JavaIndentEngine. Note that change to the
  *      jVi options are not sync'd back to NB.</li>
- * <li> NB <--> jVi wrapScan,ignoreSpace<br/>
+ * <li> NB <--> jVi wrapScan,ignoreCase<br/>
  *      The NB options are tracked on FindSupport.
  *      Changes to either one are sent to the other.</li>
  * </ul>
@@ -41,32 +41,59 @@ import org.openide.util.Lookup;
 public class NbOptions {
     
     static boolean ignoreChangeEvent = false;
-    private static boolean needInit = true;
+    private static boolean enabled = false;
     private static JavaIndentEngine ieHACK; /////////////////////////
     
-    static void init() {
-        if(!needInit)
+    static void enable() {
+        if(enabled)
             return;
-        needInit = false;
+        enabled = true;
         
-        // NB seems to handle read only files ok, so hide this one.
-        Options.getOption(Options.readOnlyHack).setHidden(true);
+        init();
         
-        // Since we track NB's settings, make these expert.
-        // Note: NB doesn't have tabStop, it has shift width only.
-        Options.getOption(Options.expandTabs).setExpert(true);
-        Options.getOption(Options.shiftWidth).setExpert(true);
-        Options.getOption(Options.tabStop).setExpert(true);
+        jvil = new jViListener();
+        iel = new IndentEngineListener();
+        fsl = new FindSupportListener();
         
         // Listen to jVi options, and propogate some to NB
         Options.getOptions().addPropertyChangeListener(jvil);
         
-        //
-        // For indentation
-        //
-        // At least for now, take the simple course and use the Java
-        // indent engine settings to propogate to jVi. Note that the
-        // jVi settings are not propogated back.
+        JavaIndentEngine ie = findJavaIndentEngine();
+        ie.addPropertyChangeListener(iel);
+        
+        FindSupport fs = FindSupport.getFindSupport();
+        //fs.addPropertyChangeListener(SettingsNames.FIND_WRAP_SEARCH, l);
+        //fs.addPropertyChangeListener(SettingsNames.FIND_MATCH_CASE, l);
+        fs.addPropertyChangeListener(fsl);
+    }
+    
+    static void disable() {
+        if(!enabled)
+            return;
+        enabled = false;
+        
+        ieHACK = null;
+        
+        Options.getOptions().removePropertyChangeListener(jvil);
+        
+        JavaIndentEngine ie = findJavaIndentEngine();
+        ie.removePropertyChangeListener(iel);
+        
+        FindSupport fs = FindSupport.getFindSupport();
+        //fs.addPropertyChangeListener(SettingsNames.FIND_WRAP_SEARCH, l);
+        //fs.addPropertyChangeListener(SettingsNames.FIND_MATCH_CASE, l);
+        fs.removePropertyChangeListener(fsl);
+        
+        jvil = null;
+        iel = null;
+        fsl = null;
+    }
+    
+    private static PropertyChangeListener jvil;
+    private static PropertyChangeListener iel;
+    private static PropertyChangeListener fsl;
+    
+    private static JavaIndentEngine findJavaIndentEngine() {
         // 
         // BaseOptions bo = MimeLookup.getLookup(MimePath.parse("text/x-java"))
         //                                    .lookup(BaseOptions.class);
@@ -83,6 +110,31 @@ public class NbOptions {
         List instances = (List)result.allInstances();
         BaseOptions bo = (BaseOptions)instances.get(0);
         JavaIndentEngine ie = (JavaIndentEngine)bo.getIndentEngine();
+        
+        return ie;
+    }
+    
+    private static void init() {
+        if(true)
+            return;
+        
+        // NB seems to handle read only files ok, so hide this one.
+        Options.getOption(Options.readOnlyHack).setHidden(true);
+        
+        // Since we track NB's settings, make these expert.
+        // Note: NB doesn't have tabStop, it has shift width only.
+        Options.getOption(Options.expandTabs).setExpert(true);
+        Options.getOption(Options.shiftWidth).setExpert(true);
+        Options.getOption(Options.tabStop).setExpert(true);
+        
+        //
+        // For indentation
+        //
+        // At least for now, take the simple course and use the Java
+        // indent engine settings to propogate to jVi. Note that the
+        // jVi settings are not propogated back.
+        
+        JavaIndentEngine ie = findJavaIndentEngine();
         ieHACK = ie; // so the listener will stick to something
         
         // fetch the options we care about
@@ -96,12 +148,10 @@ public class NbOptions {
         setJviOption(Options.expandTabs, ""+et);
         setJviOption(Options.shiftWidth, ""+sw);
         
-        ie.addPropertyChangeListener(iel);
-        
         //
         // For find options
         //
-        // could use deprecated org.netbeans.editor.FindSupport,
+        // Use deprecated org.netbeans.editor.FindSupport,
         // add PropertyChangeListener and listen on some of the
         // properties with names listed in org.netbeans.editor.SettingsNames
         // (i.e. use property names starting with FIND_)
@@ -116,10 +166,6 @@ public class NbOptions {
         o = fs.getFindProperty(SettingsNames.FIND_MATCH_CASE);
         // need to invert the sense of this one
         setJviOption(Options.ignoreCase, "" + !((Boolean)o).booleanValue());
-        
-        //fs.addPropertyChangeListener(SettingsNames.FIND_WRAP_SEARCH, l);
-        //fs.addPropertyChangeListener(SettingsNames.FIND_MATCH_CASE, l);
-        fs.addPropertyChangeListener(fsl);
     }
     
     private static void setJviOption(String optName, String val) {
@@ -133,7 +179,9 @@ public class NbOptions {
     
     
     /** Listener to jVi properties to propagate changes to NB */
-    private static PropertyChangeListener jvil = new PropertyChangeListener() {
+    
+    private static class jViListener
+    implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent evt) {
             if(ignoreChangeEvent)
                 return;
@@ -157,10 +205,8 @@ public class NbOptions {
         }
     };
     
-    private static PropertyChangeListener iel = new IndentEngineListener();
-    
     private static class IndentEngineListener
-    implements PropertyChangeListener{
+    implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent evt) {
             if(ignoreChangeEvent)
                 return;
@@ -176,8 +222,6 @@ public class NbOptions {
             }
         }
     }
-    
-    private static PropertyChangeListener fsl = new FindSupportListener();
     
     private static class FindSupportListener
     implements PropertyChangeListener{

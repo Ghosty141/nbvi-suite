@@ -15,7 +15,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import org.netbeans.editor.BaseDocument;
+import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.GuardedException;
+import org.netbeans.editor.Settings;
+import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
@@ -31,6 +34,31 @@ public class NbTextView extends TextView
         cache = createTextViewCache();
         statusDisplay = new NbStatusDisplay(this);
     }
+    
+    //
+    // The viOptionBag interface
+    //
+    
+    // Line numbers is a global in NB, not per window
+    
+    @Override
+    public void viOptionChange(ViTextView tv, String name) {
+        System.err.println("NbTextView: viOptionChange: name = " + name );
+        if("w_p_nu".equals(name)) {
+            Settings.setValue(BaseKit.class,
+                              SettingsNames.LINE_NUMBER_VISIBLE,
+                              w_p_nu);
+        }
+    }
+
+    @Override
+    public void activateOptions(ViTextView tv) {
+        System.err.println("NbTextView: activateOptions");
+    }
+    
+    // 
+    // The viTextView interface
+    //
 
     public ViStatusDisplay getStatusDisplay() {
 	return statusDisplay;

@@ -53,10 +53,11 @@ public class NbOutputStream extends OutputStreamAdaptor {
             String tabTag = "jVi Output";
             ow = getIO(tabTag, false); // reuse tab
             ow.println("-----------------------------------------------------");
-            ow.println(info);
+            if(info != null)
+                ow.println(info);
         } else {
             String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
-            String tabTag = "jVi " + sep +  info + sep;
+            String tabTag = "jVi " + sep +  (info != null ? info : "") + sep;
             ow = getIO(tabTag, true); // make a new tab
             fnTag = tv.getDisplayFileName() + ":";
         }

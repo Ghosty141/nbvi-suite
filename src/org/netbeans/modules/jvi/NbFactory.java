@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.Buffer;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
@@ -8,12 +9,14 @@ import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Container;
+import java.util.Collections;
+import java.util.Set;
 import java.util.prefs.Preferences;
-import javax.naming.OperationNotSupportedException;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.Caret;
+import javax.swing.text.Document;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseDocument;
 import org.openide.windows.TopComponent;
@@ -22,8 +25,12 @@ final public class NbFactory extends DefaultViFactory {
     
     NbFS fs = new NbFS();
     
-    public NbFactory() {
+    NbFactory() {
         super((CommandLine)null);
+    }
+    
+    static Set<Document> getDocSet() {
+        return Collections.unmodifiableSet(((NbFactory)INSTANCE).docMap.keySet());
     }
     
     public ViFS getFS() {
@@ -36,7 +43,8 @@ final public class NbFactory extends DefaultViFactory {
     
     public ViOutputStream createOutputStream(ViTextView tv,
                                              Object type, Object info) {
-        return new NbOutputStream(tv, type.toString(), info.toString());
+        return new NbOutputStream(tv, type.toString(),
+                                  info == null ? null : info.toString());
     }
     
     public Preferences getPreferences() {
@@ -60,6 +68,10 @@ final public class NbFactory extends DefaultViFactory {
             ViManager.log("createViTextView: not isBuffer");
         
         return new NbTextView(editorPane);
+    }
+    
+    protected Buffer createBuffer(JEditorPane editorPane) {
+        return new NbBuffer();
     }
     
     public void registerEditorPane(JEditorPane ep) {

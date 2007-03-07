@@ -35,6 +35,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.Document;
 import javax.swing.text.TextAction;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
@@ -189,6 +190,9 @@ public class Module extends ModuleInstall {
             
             jViEnabled = false;
             
+            NbOptions.disable();
+            didOptionsInit = false;
+            
             if(dbgNb.getBoolean())
                 System.err.println(MOD + "runJViDisable");
             
@@ -238,6 +242,10 @@ public class Module extends ModuleInstall {
                 ViManager.getViFactory().shutdown(ep);
             }
             
+            for (Document doc : NbFactory.getDocSet()) {
+                doc.putProperty(NbFactory.PROP_BUF, null);
+            }
+            
             if(dbgNb.getBoolean())
                 ViManager.dump(System.err);
             
@@ -255,7 +263,7 @@ public class Module extends ModuleInstall {
         if(didOptionsInit)
             return;
         didOptionsInit = true;
-        NbOptions.init(); // HORROR STORY
+        NbOptions.enable(); // HORROR STORY
     }
     
     private static boolean didEarlyInit = false;
@@ -603,9 +611,9 @@ public class Module extends ModuleInstall {
             if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
                 kitToDefaultKeyAction.put(kit.getClass(), a);
                 if(dbgNb.getBoolean()) {
-                    System.err.println(MOD + "capture: "
-                                   + "kit: " + kit.getClass().getSimpleName()
-                                   + "action: " + a.getClass().getSimpleName());
+                    System.err.println(MOD + "capture:"
+                                + " kit: " + kit.getClass().getSimpleName()
+                                + " action: " + a.getClass().getSimpleName());
                 }
                 captured = true;
             }

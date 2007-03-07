@@ -246,6 +246,11 @@ public class Module extends ModuleInstall {
                 doc.putProperty(NbFactory.PROP_BUF, null);
             }
             
+            // Following shouldn't be needed
+            for (JEditorPane ep : NbFactory.getEditorSet()) {
+                ep.putClientProperty(NbFactory.PROP_VITV, null);
+            }
+            
             if(dbgNb.getBoolean())
                 ViManager.dump(System.err);
             

@@ -23,6 +23,11 @@ import org.netbeans.modules.editor.options.BaseOptions;
 import org.openide.util.Lookup;
 
 /**
+ * THE STUFF IN HERE IS USELESS. The find support listener is invoked when
+ * the dialog comes up, but not when an option is changed, and the indent
+ * engine listener doesn't seem to have anything to do with the main editor
+ * options for indent.
+ *
  * Sync options between NB and jVi. At startup NB options are read and the
  * corresponding jVi are set from them. During runtime, the options are kept
  * in sync as follows:
@@ -42,7 +47,7 @@ public class NbOptions {
     
     static boolean ignoreChangeEvent = false;
     private static boolean enabled = false;
-    private static JavaIndentEngine ieHACK; /////////////////////////
+    //static JavaIndentEngine ieHACK; ///////////////////////
     
     static void enable() {
         if(enabled)
@@ -52,14 +57,17 @@ public class NbOptions {
         init();
         
         jvil = new jViListener();
-        iel = new IndentEngineListener();
+        // iel = new IndentEngineListener(); /////////////////////////////
         fsl = new FindSupportListener();
         
         // Listen to jVi options, and propogate some to NB
         Options.getOptions().addPropertyChangeListener(jvil);
         
+        /*
         JavaIndentEngine ie = findJavaIndentEngine();
-        ie.addPropertyChangeListener(iel);
+        if(iel != null)
+            ie.addPropertyChangeListener(iel);
+        */
         
         FindSupport fs = FindSupport.getFindSupport();
         //fs.addPropertyChangeListener(SettingsNames.FIND_WRAP_SEARCH, l);
@@ -72,12 +80,14 @@ public class NbOptions {
             return;
         enabled = false;
         
-        ieHACK = null;
+        //ieHACK = null; /////////////////////////////////////////////
         
         Options.getOptions().removePropertyChangeListener(jvil);
         
+        /*
         JavaIndentEngine ie = findJavaIndentEngine();
         ie.removePropertyChangeListener(iel);
+         **/
         
         FindSupport fs = FindSupport.getFindSupport();
         //fs.addPropertyChangeListener(SettingsNames.FIND_WRAP_SEARCH, l);
@@ -85,12 +95,12 @@ public class NbOptions {
         fs.removePropertyChangeListener(fsl);
         
         jvil = null;
-        iel = null;
+        //iel = null;
         fsl = null;
     }
     
     private static PropertyChangeListener jvil;
-    private static PropertyChangeListener iel;
+    //private static PropertyChangeListener iel;
     private static PropertyChangeListener fsl;
     
     private static JavaIndentEngine findJavaIndentEngine() {
@@ -115,8 +125,6 @@ public class NbOptions {
     }
     
     private static void init() {
-        if(true)
-            return;
         
         // NB seems to handle read only files ok, so hide this one.
         Options.getOption(Options.readOnlyHack).setHidden(true);
@@ -127,6 +135,10 @@ public class NbOptions {
         Options.getOption(Options.shiftWidth).setExpert(true);
         Options.getOption(Options.tabStop).setExpert(true);
         
+        establishFindSupportOptions();
+        
+        /*
+        
         //
         // For indentation
         //
@@ -136,6 +148,10 @@ public class NbOptions {
         
         JavaIndentEngine ie = findJavaIndentEngine();
         ieHACK = ie; // so the listener will stick to something
+        if(iel == null) {
+            iel = new IndentEngineListener();
+            ie.addPropertyChangeListener(iel);
+        }
         
         // fetch the options we care about
         int sw = ie.getSpacesPerTab();
@@ -147,6 +163,7 @@ public class NbOptions {
         //
         setJviOption(Options.expandTabs, ""+et);
         setJviOption(Options.shiftWidth, ""+sw);
+         **/
         
         //
         // For find options
@@ -156,7 +173,6 @@ public class NbOptions {
         // properties with names listed in org.netbeans.editor.SettingsNames
         // (i.e. use property names starting with FIND_)
         //
-        establishFindSupportOptions();
     }
     
     private static void establishFindSupportOptions() {

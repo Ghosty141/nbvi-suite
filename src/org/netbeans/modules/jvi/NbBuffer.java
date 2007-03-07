@@ -15,7 +15,7 @@ import java.util.List;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
-import org.netbeans.modules.editor.java.JavaIndentEngine;
+import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.options.BaseOptions;
 import org.openide.text.IndentEngine;
 import org.openide.util.Lookup;
@@ -30,11 +30,37 @@ public class NbBuffer extends Buffer {
     public NbBuffer() {
     }
 
-    public void viOptionChange(ViTextView tv, String name) {
-        System.err.println("NbBuffer: viOptionChange: name = " + name );
-        Class kit = tv.getEditorComponent().getEditorKit().getClass();
+    public void viOptionSet(ViTextView tv, String name) {
+        Class kitC = tv.getEditorComponent().getEditorKit().getClass();
+        String content = tv.getEditorComponent().getContentType();
         
-        BaseOptions bo = findBaseOptions(tv);
+        if("b_p_ts".equals(name)) {
+            Settings.setValue(kitC, SettingsNames.TAB_SIZE, b_p_ts);
+            Settings.setValue(kitC, SettingsNames.SPACES_PER_TAB, b_p_ts);
+        } else if("b_p_sw".equals(name)) {
+            //IndentEngine ie = IndentEngine.find(content);
+            FormatterIndentEngine ie = fetchIndentEngine(tv);
+            if(ie != null)
+                ie.setSpacesPerTab(b_p_sw); // space per tab ??????
+        } else if("b_p_et".equals(name)) {
+            FormatterIndentEngine ie = fetchIndentEngine(tv);
+            if(ie != null)
+                ie.setExpandTabs(b_p_et);
+        }
+        
+        /*
+        if("b_p_ts".equals(name)) {
+            Settings.setValue(kitC, SettingsNames.TAB_SIZE, b_p_ts);
+            Settings.setValue(kitC, SettingsNames.SPACES_PER_TAB, b_p_ts);
+        } else if("b_p_sw".equals(name)) {
+            Settings.setValue(kitC, SettingsNames.INDENT_SHIFT_WIDTH, b_p_sw);
+        } else if("b_p_et".equals(name)) {
+            Settings.setValue(kitC, SettingsNames.EXPAND_TABS, b_p_et);
+        }
+         **/
+        
+        /*
+        BaseOptions bo = fetchBaseOptions(tv);
         
         if("b_p_ts".equals(name)) {
             if(bo == null) {
@@ -52,26 +78,50 @@ public class NbBuffer extends Buffer {
             else
                 bo.setExpandTabs(b_p_et);
         }
+        */
     }
     
     public void activateOptions(ViTextView tv) {
-        System.err.println("NbBuffer: activateOptions");
-        // put thenm all out there.
-        Class kit = tv.getEditorComponent().getEditorKit().getClass();
+        // put them all out there.
+        Class kitC = tv.getEditorComponent().getEditorKit().getClass();
+        String content = tv.getEditorComponent().getContentType();
+        
+        Settings.setValue(kitC, SettingsNames.TAB_SIZE, b_p_ts);
+        Settings.setValue(kitC, SettingsNames.SPACES_PER_TAB, b_p_ts);
+        FormatterIndentEngine ie = fetchIndentEngine(tv);
+        if(ie != null) {
+            ie.setSpacesPerTab(b_p_sw); // space per tab ??????
+            ie.setExpandTabs(b_p_et);
+        }
+        
+        /*
         Settings.setValue(kit, SettingsNames.TAB_SIZE, b_p_ts);
         Settings.setValue(kit, SettingsNames.SPACES_PER_TAB, b_p_ts);
         Settings.setValue(kit, SettingsNames.INDENT_SHIFT_WIDTH, b_p_sw);
         Settings.setValue(kit, SettingsNames.EXPAND_TABS, b_p_et);
+        */
         
-        BaseOptions bo = findBaseOptions(tv);
+        /*
+        BaseOptions bo = fetchBaseOptions(tv);
         if(bo != null) {
             bo.setTabSize(b_p_ts);
             bo.setSpacesPerTab(b_p_ts);
             bo.setExpandTabs(b_p_et);
         }
+        */
     }
     
-    private BaseOptions findBaseOptions(ViTextView tv) {
+    private FormatterIndentEngine fetchIndentEngine(ViTextView tv) {
+        FormatterIndentEngine ie = null;
+        BaseOptions bo = fetchBaseOptions(tv);
+        if(bo != null
+            && bo.getIndentEngine() instanceof FormatterIndentEngine) {
+            ie = (FormatterIndentEngine) bo.getIndentEngine();
+        }
+        return ie;
+    }
+    
+    private BaseOptions fetchBaseOptions(ViTextView tv) {
         String content = tv.getEditorComponent().getContentType();
         BaseOptions bo = null;
         
@@ -85,7 +135,6 @@ public class NbBuffer extends Buffer {
             List instances = (List)result.allInstances();
             if(instances != null && instances.size() > 0)
                 bo = (BaseOptions)instances.get(0);
-            //IndentEngine ie = bo.getIndentEngine();
         }
         return bo;
     }

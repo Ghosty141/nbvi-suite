@@ -29,8 +29,12 @@ final public class NbFactory extends DefaultViFactory {
         super((CommandLine)null);
     }
     
+    static Set<JEditorPane> getEditorSet() {
+        return Collections.unmodifiableSet(((NbFactory)INSTANCE).editorSet.keySet());
+    }
+    
     static Set<Document> getDocSet() {
-        return Collections.unmodifiableSet(((NbFactory)INSTANCE).docMap.keySet());
+        return Collections.unmodifiableSet(((NbFactory)INSTANCE).docSet.keySet());
     }
     
     public ViFS getFS() {

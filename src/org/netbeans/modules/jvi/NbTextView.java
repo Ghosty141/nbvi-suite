@@ -3,6 +3,7 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
+import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
@@ -33,6 +34,7 @@ public class NbTextView extends TextView
         super(editorPane);
         cache = createTextViewCache();
         statusDisplay = new NbStatusDisplay(this);
+        w_p_nu = showLineNumbers;
     }
     
     //
@@ -40,20 +42,21 @@ public class NbTextView extends TextView
     //
     
     // Line numbers is a global in NB, not per window
+    private static boolean showLineNumbers;
     
     @Override
-    public void viOptionChange(ViTextView tv, String name) {
-        System.err.println("NbTextView: viOptionChange: name = " + name );
+    public void viOptionSet(ViTextView tv, String name) {
         if("w_p_nu".equals(name)) {
+            showLineNumbers = w_p_nu;
             Settings.setValue(BaseKit.class,
                               SettingsNames.LINE_NUMBER_VISIBLE,
                               w_p_nu);
+            Options.SetCommand.setAllInstances("w_p_nu");
         }
     }
 
     @Override
     public void activateOptions(ViTextView tv) {
-        System.err.println("NbTextView: activateOptions");
     }
     
     // 

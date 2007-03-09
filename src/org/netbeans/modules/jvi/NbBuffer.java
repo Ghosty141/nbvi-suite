@@ -47,38 +47,6 @@ public class NbBuffer extends Buffer {
             if(ie != null)
                 ie.setExpandTabs(b_p_et);
         }
-        
-        /*
-        if("b_p_ts".equals(name)) {
-            Settings.setValue(kitC, SettingsNames.TAB_SIZE, b_p_ts);
-            Settings.setValue(kitC, SettingsNames.SPACES_PER_TAB, b_p_ts);
-        } else if("b_p_sw".equals(name)) {
-            Settings.setValue(kitC, SettingsNames.INDENT_SHIFT_WIDTH, b_p_sw);
-        } else if("b_p_et".equals(name)) {
-            Settings.setValue(kitC, SettingsNames.EXPAND_TABS, b_p_et);
-        }
-         **/
-        
-        /*
-        BaseOptions bo = fetchBaseOptions(tv);
-        
-        if("b_p_ts".equals(name)) {
-            if(bo == null) {
-                Settings.setValue(kit, SettingsNames.TAB_SIZE, b_p_ts);
-                Settings.setValue(kit, SettingsNames.SPACES_PER_TAB, b_p_ts);
-            } else {
-                bo.setTabSize(b_p_ts);
-                bo.setSpacesPerTab(b_p_ts);
-            }
-        } else if("b_p_sw".equals(name)) {
-            Settings.setValue(kit, SettingsNames.INDENT_SHIFT_WIDTH, b_p_sw);
-        } else if("b_p_et".equals(name)) {
-            if(bo == null)
-                Settings.setValue(kit, SettingsNames.EXPAND_TABS, b_p_et);
-            else
-                bo.setExpandTabs(b_p_et);
-        }
-        */
     }
     
     public void activateOptions(ViTextView tv) {
@@ -93,22 +61,6 @@ public class NbBuffer extends Buffer {
             ie.setSpacesPerTab(b_p_sw); // space per tab ??????
             ie.setExpandTabs(b_p_et);
         }
-        
-        /*
-        Settings.setValue(kit, SettingsNames.TAB_SIZE, b_p_ts);
-        Settings.setValue(kit, SettingsNames.SPACES_PER_TAB, b_p_ts);
-        Settings.setValue(kit, SettingsNames.INDENT_SHIFT_WIDTH, b_p_sw);
-        Settings.setValue(kit, SettingsNames.EXPAND_TABS, b_p_et);
-        */
-        
-        /*
-        BaseOptions bo = fetchBaseOptions(tv);
-        if(bo != null) {
-            bo.setTabSize(b_p_ts);
-            bo.setSpacesPerTab(b_p_ts);
-            bo.setExpandTabs(b_p_et);
-        }
-        */
     }
     
     private FormatterIndentEngine fetchIndentEngine(ViTextView tv) {

@@ -2,7 +2,9 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.BooleanOption;
 import com.raelity.jvi.ColonCommands;
+import com.raelity.jvi.ColonCommands.ColonEvent;
 import com.raelity.jvi.G;
+import com.raelity.jvi.Msg;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
@@ -369,6 +371,20 @@ public class Module extends ModuleInstall {
                 } catch (BackingStoreException ex) {
                     ex.printStackTrace();
                 }
+            }
+        });
+        ColonCommands.register("optionDelete", "optionDelete",
+                               new ColonCommands.ColonAction() {
+
+            public void actionPerformed(ActionEvent ev) {
+                ColonEvent cev = (ColonEvent) ev;
+            
+                if(cev.getNArg() == 1) {
+                    String key = cev.getArg(1);
+                    Preferences prefs = ViManager.getViFactory().getPreferences();
+                    prefs.remove(key);
+                } else
+                    Msg.emsg("optionDelete takes exactly one argument");
             }
         });
         ColonCommands.register("registryDump", "registryDump", new ActionListener() {

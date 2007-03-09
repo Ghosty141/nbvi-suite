@@ -34,6 +34,9 @@ public class NbTextView extends TextView
         super(editorPane);
         cache = createTextViewCache();
         statusDisplay = new NbStatusDisplay(this);
+        
+        // since NB insists that this is a shared variable
+        // set the common value
         w_p_nu = showLineNumbers;
     }
     
@@ -51,7 +54,7 @@ public class NbTextView extends TextView
             Settings.setValue(BaseKit.class,
                               SettingsNames.LINE_NUMBER_VISIBLE,
                               w_p_nu);
-            Options.SetCommand.setAllInstances("w_p_nu");
+            Options.SetCommand.syncAllInstances("w_p_nu");
         }
     }
 

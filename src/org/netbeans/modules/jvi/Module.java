@@ -35,6 +35,8 @@ import java.util.prefs.Preferences;
 import javax.swing.Action;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
@@ -93,6 +95,7 @@ public class Module extends ModuleInstall {
     static BooleanOption dbgAct;
     
     private static TopComponentRegistryListener topComponentRegistryListener;
+    private static EditorRegistryListener editorRegistryListener;
     private static KeyBindingsFilter keyBindingsFilter;
     
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
@@ -145,6 +148,16 @@ public class Module extends ModuleInstall {
                 TopComponent.getRegistry().addPropertyChangeListener(
                         topComponentRegistryListener);
             }
+            
+            /*
+             * This is useless for investigating the jump list
+            // Monitor editor registry to pick off jump list stuff
+            if(editorRegistryListener == null) {
+                editorRegistryListener = new EditorRegistryListener();
+                Registry.addChangeListener(editorRegistryListener);
+            }
+            */
+            
             
             // See if there's anything to attach to, there are two cases to
             // consider:
@@ -202,6 +215,11 @@ public class Module extends ModuleInstall {
                 TopComponent.getRegistry().removePropertyChangeListener(
                         topComponentRegistryListener);
                 topComponentRegistryListener = null;
+            }
+            
+            if(editorRegistryListener != null) {
+                Registry.removeChangeListener(editorRegistryListener);
+                editorRegistryListener = null;
             }
             
             if(keyBindingsFilter != null) {
@@ -739,6 +757,13 @@ public class Module extends ModuleInstall {
                 } else
                     System.err.println("TC OPEN: SAME SET SIZE");
             }
+        }
+    }
+    
+    private static class EditorRegistryListener
+            implements ChangeListener {
+        public void stateChanged(ChangeEvent e) {
+            System.err.println("e = " + e );
         }
     }
     

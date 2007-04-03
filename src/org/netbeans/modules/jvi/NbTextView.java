@@ -9,6 +9,7 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
@@ -261,49 +262,50 @@ public class NbTextView extends TextView
     }
     
     /**
-     * Jump to the definiiton of the identifier unde the cursor.
+     * Jump to the definition of the identifier unde the cursor.
      */
-    public void jumpDefinition() {
+    public void jumpDefinition(String ident) {
         ops.xact(NbEditorKit.gotoDeclarationAction);
+        ViManager.getViFactory().startTagPush(this, ident);
     }
 
-  public void jumpList(JLOP op, int count) {
-    switch(op) {
-      case NEXT_CHANGE:
-        ops.xact(NbEditorKit.jumpListNextAction);
-        break;
-          
-      case PREV_CHANGE:
-        ops.xact(NbEditorKit.jumpListPrevAction);
-        break;
-        
-      case NEXT_JUMP:
-      case PREV_JUMP:
-	Util.vim_beep();
-        break;
+    public void jumpList(JLOP op, int count) {
+        switch(op) {
+        case NEXT_CHANGE:
+            ops.xact(NbEditorKit.jumpListNextAction);
+            break;
+            
+        case PREV_CHANGE:
+            ops.xact(NbEditorKit.jumpListPrevAction);
+            break;
+            
+        case NEXT_JUMP:
+        case PREV_JUMP:
+            Util.vim_beep();
+            break;
+        }
     }
-  }
 
-  public void anonymousMark(MARKOP op, int count) {
-    String actName = null;
-    switch(op) {
-        case TOGGLE:
-            actName = "/Actions/Edit/bookmark-toggle.instance";
-            break;
-        case NEXT:
-            actName = "/Actions/Edit/bookmark-next.instance";
-            break;
-        case PREV:
-            actName = "/Actions/Edit/bookmark-previous.instance";
-            break;
+    public void anonymousMark(MARKOP op, int count) {
+        String actName = null;
+        switch(op) {
+            case TOGGLE:
+                actName = "/Actions/Edit/bookmark-toggle.instance";
+                break;
+            case NEXT:
+                actName = "/Actions/Edit/bookmark-next.instance";
+                break;
+            case PREV:
+                actName = "/Actions/Edit/bookmark-previous.instance";
+                break;
+        }
+        Action act = Module.fetchFileSystemAction(actName);
+        if(act != null && act.isEnabled()) {
+            ActionEvent e = new ActionEvent(getEditorComponent(), 0, "");
+            act.actionPerformed(e);
+        } else
+            Util.vim_beep();
     }
-    Action act = Module.fetchFileSystemAction(actName);
-    if(act != null && act.isEnabled()) {
-        ActionEvent e = new ActionEvent(getEditorComponent(), 0, "");
-        act.actionPerformed(e);
-    } else
-        Util.vim_beep();
-  }
 
     public void foldOperation(int op) {
         String action = null;

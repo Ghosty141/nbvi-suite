@@ -97,7 +97,8 @@ public final class NbStatusDisplay implements ViStatusDisplay {
             setText(CELL_COMMAND, text);
         else {
             text = text.trim();
-            lastMsgColoring = null;
+            if(text.length() != 0)
+                lastMsgColoring = null;
             if(text.length() != 0)
                 text = " [ " + text + " ]";
             lastCmd = text;

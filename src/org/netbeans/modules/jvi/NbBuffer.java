@@ -64,8 +64,23 @@ public class NbBuffer extends Buffer {
     }
     
     private FormatterIndentEngine fetchIndentEngine(ViTextView tv) {
+        FormatterIndentEngine fie = null;
+        IndentEngine ie = IndentEngine.find(
+                                    tv.getEditorComponent().getDocument());
+        if(ie instanceof FormatterIndentEngine)
+            fie = (FormatterIndentEngine) ie;
+        return fie;
+    }
+    
+    
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Following NOT USED but keep the code around for an example BaseOptions
+    //
+    
+    private FormatterIndentEngine XXXfetchIndentEngine(ViTextView tv) {
         FormatterIndentEngine ie = null;
-        BaseOptions bo = fetchBaseOptions(tv);
+        BaseOptions bo = XXXfetchBaseOptions(tv);
         if(bo != null
             && bo.getIndentEngine() instanceof FormatterIndentEngine) {
             ie = (FormatterIndentEngine) bo.getIndentEngine();
@@ -73,7 +88,7 @@ public class NbBuffer extends Buffer {
         return ie;
     }
     
-    private BaseOptions fetchBaseOptions(ViTextView tv) {
+    private BaseOptions XXXfetchBaseOptions(ViTextView tv) {
         String content = tv.getEditorComponent().getContentType();
         BaseOptions bo = null;
         

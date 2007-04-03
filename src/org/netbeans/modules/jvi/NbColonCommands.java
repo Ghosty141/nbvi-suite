@@ -35,6 +35,7 @@ import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.Action;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.editor.java.JavaFastOpenAction;
@@ -191,23 +192,21 @@ public class NbColonCommands {
 
     static private class GoToClassAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            boolean ok = true;
-            SystemAction sa = null;
-            try {
-                sa = SystemAction.get(JavaFastOpenAction.class);
-            } catch(IllegalArgumentException ex) {
-                ok = false;
+            Action act = Module.fetchFileSystemAction(
+                    "/Actions/Edit"
+                    + "/org-netbeans-modules-java-actions-GoToType.instance");
+            if(act == null) {
+                // Not found, try the NB5.5 action
+                act = Module.fetchFileSystemAction(
+                    "/Actions/Edit/org-netbeans"
+                    + "-modules-editor-java-JavaFastOpenAction.instance");
             }
-            if(ok) {
-                if(sa.isEnabled()) {
-                    sa.actionPerformed(e);
-                } else {
-                    ok = false;
-                }
-            }
-            if(!ok) {
+            if(act != null && act.isEnabled()) {
+                ColonEvent ce = (ColonEvent)e;
+                ViManager.getViFactory().startTagPush(ce.getViTextView(), "");
+                act.actionPerformed(e);
+            } else
                 Util.vim_beep();
-            }
         }
     }
 

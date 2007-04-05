@@ -9,16 +9,22 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
-import java.awt.EventQueue;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.Segment;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseKit;
+import org.netbeans.editor.Coloring;
+import org.netbeans.editor.DrawContext;
+import org.netbeans.editor.DrawLayer;
+import org.netbeans.editor.DrawLayerFactory;
 import org.netbeans.editor.GuardedException;
+import org.netbeans.editor.MarkFactory;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorKit;
@@ -31,6 +37,28 @@ import org.openide.windows.TopComponent;
  */
 public class NbTextView extends TextView
 {
+    // Use the corresponding values from DrawlayerFactory
+    
+    /** Highlight search layer name */
+    public static final String VI_HIGHLIGHT_SEARCH_LAYER_NAME
+                                        = "vi-highlight-search-layer"; // NOI18N
+
+    /** Highlight search layer visibility */
+    public static final int VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY = 9000;
+
+    /** Incremental search layer name */
+    public static final String VI_INC_SEARCH_LAYER_NAME
+                                            = "vi-inc-search-layer"; // NOI18N
+
+    /** Incremental search layer visibility */
+    public static final int VI_INC_SEARCH_LAYER_VISIBILITY = 9500;
+
+    /** Incremental search layer name */
+    public static final String VI_VISUAL_SELECT_LAYER_NAME
+                                            = "vi-visual-select-layer"; // NOI18N
+    
+    public static final int VI_VISUAL_SELECT_LAYER_VISIBILITY = 9600;
+    
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         cache = createTextViewCache();
@@ -39,6 +67,13 @@ public class NbTextView extends TextView
         // since NB insists that this is a shared variable
         // set the common value
         w_p_nu = showLineNumbers;
+        
+        // add jVi's DrawLayers
+        if(editorPane.getDocument() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument) editorPane.getDocument();
+            doc.addLayer(new VisualSelectLayer(),
+                         VI_VISUAL_SELECT_LAYER_VISIBILITY);
+        }
     }
     
     //
@@ -369,5 +404,157 @@ public class NbTextView extends TextView
         // and close the one requested
         if(!closeTC.close())
             Msg.emsg(getDisplayFileName() + " not closed");
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //
+    // VisualSelectLayer
+    //
+    
+    int[] getVisualSelectBlocks(int so, int eo) {
+        // Pick up the visual select blocks left lying around
+        // return getBlocksTest(so, eo); // TESTING, TESTING............
+        return new int[] {-1,-1};
+    }
+    
+    public class VisualSelectLayer extends HighlightBlocksLayer {
+        VisualSelectLayer() {
+            super(VI_VISUAL_SELECT_LAYER_NAME);
+            // enabled = true; // TESTING, TESTING............
+        }
+        
+        protected Coloring getColoring() {
+            return super.getColoring();
+        }
+        
+        protected int[] getBlocks(int startOffset, int endOffset) {
+            //ViTextView tv = NbTextView.this;
+            return getVisualSelectBlocks(startOffset, endOffset);
+            //return new int[] { -1, -1 };
+        }
+    }
+    
+    private int[] getBlocksTest(int startOffset, int endOffset) {
+        //int t[] = new int[] {-1,-1};
+        int t[] = new int[300];
+        int idx = 0;
+        
+        ViTextView tv = this;
+        // highlight chars 1-2 on lines with more that 4 characters
+        if(tv.getLineStartOffsetFromOffset(startOffset) != startOffset) {
+            System.err.println("MISMATCHED STARTOFFSET");
+        }
+        System.err.println("line offset = "
+                + tv.getLineStartOffsetFromOffset(startOffset)
+                + ", startOffset = " + startOffset
+                + ", endOffset = " + endOffset);
+        int line = tv.getLineNumber(startOffset);
+        while(line <= tv.getLineCount()) {
+            int lineOffset = tv.getLineStartOffset(line);
+            if(lineOffset >= endOffset)
+                break;
+            Segment seg = tv.getLineSegment(line);
+            if(seg.count > 4) {
+                t[idx++] = 1 + lineOffset;
+                t[idx++] = 3 + lineOffset;
+                System.err.println("line " + line + ", "
+                                    + t[idx-2] + "," + t[idx-1]);
+            }
+            line++;
+        }
+        t[idx++] = -1;
+        t[idx++] = -1;
+        return t;
+    }
+    
+    
+    /** Highlight blocks layer highlights all occurences
+    * indicated by the blocks array.
+    */
+    abstract class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
+
+        /** Pairs of start and end position */
+        //int blocks[] = new int[] { -1, -1 };
+        int blocks[];
+
+        /** Coloring to use for highlighting */
+        Coloring coloring;
+        Coloring defaultColoring;
+        
+        protected Coloring getColoring() {
+            if(defaultColoring == null)
+                defaultColoring = new Coloring(null, null, Color.orange);
+            return defaultColoring;
+        }
+        
+        abstract protected int[] getBlocks(int startOffset, int endOffset);
+
+        /** Current index for painting */
+        int curInd;
+
+        /** Enabled flag */
+        protected boolean enabled;
+
+        protected HighlightBlocksLayer(String layerName) {
+            super(layerName);
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public void init(DrawContext ctx) {
+            if (enabled) {
+                blocks = getBlocks(ctx.getStartOffset(), ctx.getEndOffset());
+                coloring = null; // reset so it will be re-read
+                curInd = 0;
+            }
+        }
+
+        public boolean isActive(DrawContext ctx, MarkFactory.DrawMark mark) {
+            boolean active;
+            if (enabled) {
+                int pos = ctx.getFragmentOffset();
+                if (pos == blocks[curInd]) {
+                    active = true;
+                    setNextActivityChangeOffset(blocks[curInd + 1]);
+
+                } else if (pos == blocks[curInd + 1]) {
+                    active = false;
+                    curInd += 2;
+                    setNextActivityChangeOffset(blocks[curInd]);
+                    if (pos == blocks[curInd]) { // just follows
+                        setNextActivityChangeOffset(blocks[curInd + 1]);
+                        active = true;
+                    }
+
+                } else {
+                    setNextActivityChangeOffset(blocks[curInd]);
+                    active = false;
+                }
+            } else {
+                active = false;
+            }
+
+            return active;
+        }
+
+        public void updateContext(DrawContext ctx) {
+            int pos = ctx.getFragmentOffset();
+            if (pos >= blocks[curInd] && pos < blocks[curInd + 1]) {
+                if (coloring == null) {
+                    //coloring = ctx.getEditorUI().getColoring(SettingsNames.HIGHLIGHT_SEARCH_COLORING);
+                    coloring = getColoring();
+                }
+                if (coloring != null) {
+                    coloring.apply(ctx);
+                }
+            }
+        }
+
     }
 }

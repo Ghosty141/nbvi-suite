@@ -1,8 +1,10 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
+import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
+import com.raelity.jvi.Util;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
@@ -199,7 +201,7 @@ final public class NbFactory extends DefaultViFactory {
     
     @Override
     public void displayTags() {
-        String heading = "   # TO tag         FROM line  in file/line";
+        String heading = "  # TO tag         FROM line  in file/line";
         
         ViOutputStream vios = ViManager.createOutputStream(
                 null, ViOutputStream.OUTPUT, heading);
@@ -215,7 +217,7 @@ final public class NbFactory extends DefaultViFactory {
                 fromData = s.trim();
             }
             vios.println(String.format(
-                         "%1s%2s %-17s %5d %s",
+                         "%1s%2s %-18s %5d %s",
                          i == iActiveTag ? ">" : "",
                          i+1,
                          tag.toIdent,
@@ -292,11 +294,6 @@ final public class NbFactory extends DefaultViFactory {
         pushingTag.toIdent = ident;
         
         fillTagFrom(pushingTag, tv);
-        
-        System.err.println("##### startTagPush:"
-                + " name = " + tv.getDisplayFileName()
-                + " line = " + tv.getWCursor().getLine()
-                + " col = " + tv.getWCursor().getColumn());
     }
     
     /**
@@ -328,7 +325,6 @@ final public class NbFactory extends DefaultViFactory {
                                         == pushingTag.toPosition.getOffset()) {
             // Forget it
             pushingTag = null;
-            System.err.println("avoid duplicate entries");
             return;
         }
         
@@ -339,15 +335,27 @@ final public class NbFactory extends DefaultViFactory {
             pushingTag.toIdent = "in " + tv.getDisplayFileName();
         }
         
-        System.err.println("##### finishTagPush:"
-                + " name = " + tv.getDisplayFileName()
-                + " line = " + tv.getWCursor().getLine()
-                + " col = " + tv.getWCursor().getColumn());
-        
         tagStack.setSize(iActiveTag);
         tagStack.push(pushingTag);
         iActiveTag++;
         
         pushingTag = null;
+    }
+    
+    public void tagDialog(ColonCommands.ColonEvent ce) {
+        Action act = Module.fetchFileSystemAction(
+                "/Actions/Edit"
+                + "/org-netbeans-modules-java-actions-GoToType.instance");
+        if(act == null) {
+            // Not found, try the NB5.5 action
+            act = Module.fetchFileSystemAction(
+                "/Actions/Edit/org-netbeans"
+                + "-modules-editor-java-JavaFastOpenAction.instance");
+        }
+        if(act != null && act.isEnabled()) {
+            ViManager.getViFactory().startTagPush(ce.getViTextView(), "");
+            act.actionPerformed(ce);
+        } else
+            Util.vim_beep();
     }
 }

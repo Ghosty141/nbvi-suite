@@ -55,8 +55,6 @@ public class NbColonCommands {
 
     /** Register some ":" commands */
     static void setupCommands() {
-        ColonCommands.register("ts", "tselect", new GoToClassAction());
-        
         ColonCommands.register("n", "next", ACTION_next);
         ColonCommands.register("N", "Next", ACTION_Next);
         ColonCommands.register("prev", "previous", ACTION_Next);
@@ -187,26 +185,6 @@ public class NbColonCommands {
                 return;
             }
             Module.execFileSystemAction(path, e);
-        }
-    }
-
-    static private class GoToClassAction implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            Action act = Module.fetchFileSystemAction(
-                    "/Actions/Edit"
-                    + "/org-netbeans-modules-java-actions-GoToType.instance");
-            if(act == null) {
-                // Not found, try the NB5.5 action
-                act = Module.fetchFileSystemAction(
-                    "/Actions/Edit/org-netbeans"
-                    + "-modules-editor-java-JavaFastOpenAction.instance");
-            }
-            if(act != null && act.isEnabled()) {
-                ColonEvent ce = (ColonEvent)e;
-                ViManager.getViFactory().startTagPush(ce.getViTextView(), "");
-                act.actionPerformed(e);
-            } else
-                Util.vim_beep();
         }
     }
 

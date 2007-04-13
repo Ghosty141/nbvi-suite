@@ -22,6 +22,7 @@ import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
 import org.netbeans.editor.DrawLayer;
+import org.netbeans.editor.DrawLayer.AbstractLayer;
 import org.netbeans.editor.DrawLayerFactory;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.editor.MarkFactory;
@@ -411,62 +412,162 @@ public class NbTextView extends TextView
     // VisualSelectLayer
     //
     
-    int[] getVisualSelectBlocks(int so, int eo) {
-        // Pick up the visual select blocks left lying around
-        // return getBlocksTest(so, eo); // TESTING, TESTING............
-        return new int[] {-1,-1};
-    }
-    
     public class VisualSelectLayer extends HighlightBlocksLayer {
         VisualSelectLayer() {
             super(VI_VISUAL_SELECT_LAYER_NAME);
-            // enabled = true; // TESTING, TESTING............
         }
         
         protected Coloring getColoring() {
-            return super.getColoring();
+            return new Coloring(null, null, Options.getSelectColor());
         }
         
         protected int[] getBlocks(int startOffset, int endOffset) {
-            //ViTextView tv = NbTextView.this;
             return getVisualSelectBlocks(startOffset, endOffset);
-            //return new int[] { -1, -1 };
         }
     }
     
-    private int[] getBlocksTest(int startOffset, int endOffset) {
-        //int t[] = new int[] {-1,-1};
-        int t[] = new int[300];
-        int idx = 0;
-        
-        ViTextView tv = this;
-        // highlight chars 1-2 on lines with more that 4 characters
-        if(tv.getLineStartOffsetFromOffset(startOffset) != startOffset) {
-            System.err.println("MISMATCHED STARTOFFSET");
-        }
-        System.err.println("line offset = "
-                + tv.getLineStartOffsetFromOffset(startOffset)
-                + ", startOffset = " + startOffset
-                + ", endOffset = " + endOffset);
-        int line = tv.getLineNumber(startOffset);
-        while(line <= tv.getLineCount()) {
-            int lineOffset = tv.getLineStartOffset(line);
-            if(lineOffset >= endOffset)
-                break;
-            Segment seg = tv.getLineSegment(line);
-            if(seg.count > 4) {
-                t[idx++] = 1 + lineOffset;
-                t[idx++] = 3 + lineOffset;
-                System.err.println("line " + line + ", "
-                                    + t[idx-2] + "," + t[idx-1]);
+    public void updateVisualState() {
+        if(getDoc() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument) getDoc();
+            
+            // Enable/disable the visual select layer
+            HighlightBlocksLayer dl
+                        = (HighlightBlocksLayer)
+                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+            if(dl != null) {
+                dl.setEnabled(G.VIsual_active || G.Visual_active_colon
+                              ? true : false);
             }
-            line++;
+            
+            // Poke the document indicating that things have changed.
+            doc.repaintBlock(0, doc.getLength());
         }
-        t[idx++] = -1;
-        t[idx++] = -1;
+    }
+    
+    public int[] getVisualSelectBlocks(int startOffset, int endOffset) {
+        // allBlocks = tBlocks; // TESTING, TESTING .....
+        
+        //int[] allBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
+        
+        // Pass in an array terminated with '-1', '-1'
+        // remove this, and uncomment above, if super terminates with -1,-1
+        // and sets up previous highlight
+        int[] xBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
+        previousHighlight = xBlocks;
+        
+        int[] allBlocks = new int[xBlocks.length +2];
+        System.arraycopy(xBlocks, 0, allBlocks, 0, xBlocks.length);
+        allBlocks[allBlocks.length -2] = -1;
+        allBlocks[allBlocks.length -1] = -1;
+        
+        return getInterestingBlocks(allBlocks, startOffset, endOffset);
+    }
+    
+    static int tBlocks[];
+    
+    /** Scan through the file building a blocks array; TEST ONLY.
+     * @param col1 start
+     * @param modulo start at every Nth line, if -1 then file offsets
+     * @param contig contiguous lines to apply highlight
+     */
+    static void testVisualHighlight(int col1, int col2,
+                                    int modulo, int contig) {
+        System.err.println("" + col1 + ", " + col2 + ", "
+                           + modulo + ", " + contig);
+        
+        if(tBlocks == null) {
+            tBlocks = new int[300];
+            tBlocks[0] = -1;
+            tBlocks[1] = -1;
+        }
+        
+        ViTextView tv = G.curwin;
+        
+        // enable the layer
+        if(tv.getEditorComponent().getDocument() instanceof BaseDocument) {
+            // Poke ??? that things have changed.
+            BaseDocument doc = (BaseDocument) tv.getEditorComponent().getDocument();
+            //doc.repaintBlock(0, doc.getLength());
+            
+            // enable the visual select layer
+            HighlightBlocksLayer dl
+                        = (HighlightBlocksLayer)
+                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+            if(dl != null) {
+                dl.setEnabled(true);
+            }
+        }
+        
+        if(modulo != -1 && contig >= modulo)
+            return;
+        
+        if(col1 > col2) {
+            int t = col1;
+            col1 = col2;
+            col2 = t;
+        }
+        
+        int idx = 0;
+        if(modulo < 0) {
+            tBlocks[idx++] = col1;
+            tBlocks[idx++] = col2;
+            tBlocks[idx++] = -1;
+            tBlocks[idx++] = -1;
+            return;
+        }
+        
+        int nLine = tv.getLineCount();
+        for(int iLine = 1; iLine < nLine; iLine++) {
+            if(iLine % modulo != 0)
+                continue;
+            int endLine = Math.min(iLine + contig -1, nLine);
+            for(; iLine <= endLine; iLine++) {
+                int lineOffset = tv.getLineStartOffset(iLine);
+                Segment seg = tv.getLineSegment(iLine);
+                if(seg.count > col1) {
+                    tBlocks[idx++] = col1 + lineOffset;
+                    tBlocks[idx++] = Math.min(col2, seg.count) + lineOffset;
+                }
+            }
+        }
+        tBlocks[idx++] = -1;
+        tBlocks[idx++] = -1;
+    }
+    
+    private int[] getInterestingBlocks(int[] allBlocks,
+                                       int startOffset,
+                                       int endOffset) {
+        // return relevent blocks properly bounded
+        if(allBlocks[0] < 0) {
+            return new int[] { -1, -1};
+        }
+        
+        //
+        // find the first block of interest
+        //
+        
+        // skip blocks until startOffset within or after block
+        int idx = 0;
+        for(;
+               idx < allBlocks.length
+            && allBlocks[idx +2] != -1
+            && allBlocks[idx +1] < startOffset ;
+            idx += 2);
+        if(startOffset > allBlocks[idx +1])
+            idx += 2;
+        
+        // copy what's needed
+        int t[] = new int[allBlocks.length];
+        System.arraycopy(allBlocks, idx, t, 0,
+                         Math.min(allBlocks.length - idx, t.length - 1));
+        
+        // If within block, then adjust the start of the block
+        if(t[0] <= startOffset)
+            t[0] = startOffset;
+        t[t.length -2] = -1;
+        t[t.length -1] = -1;
         return t;
     }
-    
     
     /** Highlight blocks layer highlights all occurences
     * indicated by the blocks array.

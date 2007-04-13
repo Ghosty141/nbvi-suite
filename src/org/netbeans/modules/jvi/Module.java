@@ -351,6 +351,28 @@ public class Module extends ModuleInstall {
         //
         // Some debug commands
         //
+        ColonCommands.register("vhlDebug", "vhlDebug",
+                               new ColonCommands.ColonAction() {
+            public void actionPerformed(ActionEvent ev) {
+                ColonEvent cev = (ColonEvent) ev;
+                int col1 = 0, col2 = 0;
+                int modulo = -1, contig = 1;
+                if(cev.getNArg() < 2)
+                    return;
+                try {
+                    
+                    col1 = Integer.parseInt(cev.getArg(1));
+                    col2 = Integer.parseInt(cev.getArg(2));
+                    if(cev.getNArg() >= 3)
+                        modulo = Integer.parseInt(cev.getArg(3));
+                    
+                    if(cev.getNArg() >= 4)
+                        contig = Integer.parseInt(cev.getArg(4));
+                } catch (NumberFormatException ex) { }
+                
+                NbTextView.testVisualHighlight(col1, col2, modulo, contig);
+            }
+        });
         ColonCommands.register("jviDump", "jviDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ViManager.dump(System.err);
@@ -466,28 +488,26 @@ public class Module extends ModuleInstall {
                                                 .getRoot().getFileObject(path);
         if(fo == null)
             return null;
+        
         InstanceCookie ck = null;
         Action act = null;
         try {
             ck = (InstanceCookie) DataObject.find(fo)
                                     .getCookie(InstanceCookie.class);
-        } catch (DataObjectNotFoundException ex) {
-        }
+        } catch (DataObjectNotFoundException ex) { }
         if(ck != null) {
             try {
                 act = SystemAction.get(ck.instanceClass());
-                if(act != null)
-                    return act;
             } catch (Exception ex) { }
-        }
-        if(act == null) {
-            // if its not a SystemAction try creating one
-            Object o = null;
-            try {
-                o = ck.instanceCreate();
-            } catch (Exception ex) { }
-            if(o instanceof Action)
-                act = (Action) o;
+            if(act == null) {
+                // if its not a SystemAction try creating one
+                Object o = null;
+                try {
+                    o = ck.instanceCreate();
+                } catch (Exception ex) { }
+                if(o instanceof Action)
+                    act = (Action) o;
+            }
         }
         return act;
     }

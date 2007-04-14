@@ -435,7 +435,7 @@ public class NbTextView extends TextView
                         = (HighlightBlocksLayer)
                                     doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
             if(dl != null) {
-                dl.setEnabled(G.VIsual_active || G.Visual_active_colon
+                dl.setEnabled(G.VIsual_active || G.drawSavedVisualBounds
                               ? true : false);
             }
             
@@ -445,22 +445,8 @@ public class NbTextView extends TextView
     }
     
     public int[] getVisualSelectBlocks(int startOffset, int endOffset) {
-        // allBlocks = tBlocks; // TESTING, TESTING .....
-        
-        //int[] allBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
-        
-        // Pass in an array terminated with '-1', '-1'
-        // remove this, and uncomment above, if super terminates with -1,-1
-        // and sets up previous highlight
         int[] xBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
-        previousHighlight = xBlocks;
-        
-        int[] allBlocks = new int[xBlocks.length +2];
-        System.arraycopy(xBlocks, 0, allBlocks, 0, xBlocks.length);
-        allBlocks[allBlocks.length -2] = -1;
-        allBlocks[allBlocks.length -1] = -1;
-        
-        return getInterestingBlocks(allBlocks, startOffset, endOffset);
+        return getInterestingBlocks(xBlocks, startOffset, endOffset);
     }
     
     static int tBlocks[];

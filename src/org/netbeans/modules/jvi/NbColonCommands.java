@@ -70,6 +70,14 @@ public class NbColonCommands {
                                new Module.DelegateFileSystemAction(
            "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
         
+        /*
+        // This action is not well behaved.
+        ColonCommands.register("gr","grep",
+                               new Module.DelegateFileSystemAction(
+            "Actions/Refactoring/"
+            + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance"));
+        */
+        
         ColonCommands.register("mak","make", new Make());
         /*
         ColonCommands.register("run", "run",

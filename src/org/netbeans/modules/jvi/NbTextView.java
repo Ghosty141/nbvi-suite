@@ -77,6 +77,18 @@ public class NbTextView extends TextView
         }
     }
     
+    public void shutdown() {
+        if(editorPane.getDocument() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument) editorPane.getDocument();
+            HighlightBlocksLayer dl
+                        = (HighlightBlocksLayer)
+                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+            if(dl != null)
+                dl.shutdown();
+        }
+        super.shutdown();
+    }
+    
     //
     // The viOptionBag interface
     //
@@ -532,13 +544,20 @@ public class NbTextView extends TextView
 
         /** Enabled flag */
         protected boolean enabled;
+        
+        protected boolean shutdown;
 
         protected HighlightBlocksLayer(String layerName) {
             super(layerName);
         }
 
         public boolean isEnabled() {
-            return enabled;
+            return enabled && !shutdown;
+        }
+
+        private void shutdown() {
+            shutdown = true;
+            setEnabled(false);
         }
 
         public void setEnabled(boolean enabled) {
@@ -546,8 +565,15 @@ public class NbTextView extends TextView
         }
 
         public void init(DrawContext ctx) {
-            if (enabled) {
-                blocks = getBlocks(ctx.getStartOffset(), ctx.getEndOffset());
+            if (isEnabled()) {
+                try { // Just in case..., see jvi-Bugs-1703078 
+                    blocks = getBlocks(ctx.getStartOffset(), ctx.getEndOffset());
+                }
+                catch(Exception ex) {
+                    ex.printStackTrace();
+                    setEnabled(false);
+                    blocks = new int[] { -1, -1};
+                }
                 coloring = null; // reset so it will be re-read
                 curInd = 0;
             }
@@ -555,7 +581,7 @@ public class NbTextView extends TextView
 
         public boolean isActive(DrawContext ctx, MarkFactory.DrawMark mark) {
             boolean active;
-            if (enabled) {
+            if (isEnabled()) {
                 int pos = ctx.getFragmentOffset();
                 if (pos == blocks[curInd]) {
                     active = true;

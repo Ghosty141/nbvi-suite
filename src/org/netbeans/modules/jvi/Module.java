@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,7 +87,7 @@ public class Module extends ModuleInstall {
     private static final String MOD = "Module-" +
             System.identityHashCode(Module.class.getClassLoader()) + ": ";
     
-    public static final String PROP_JEP = "ViJEditorPane";
+    private static final String PROP_JEP = "ViJEditorPane";
     
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
@@ -231,18 +232,19 @@ public class Module extends ModuleInstall {
             // remove all jVi connections, replace original caret
             TopComponent tc = (TopComponent)ViManager.getTextBuffer(1);
             while(tc != null) {
-                JEditorPane ep = (JEditorPane)tc.getClientProperty(PROP_JEP);
-                Caret c01 = editorToCaret.get(ep);
-                if(c01 != null) {
-                    if(ep.getCaret() instanceof NbCaret) {
-                        NbFactory.installCaret(ep, c01);
-                        if(dbgNb.getBoolean()) {
-                            System.err.println(MOD + "restore caret: "
-                                            + tc.getDisplayName());
+                for (JEditorPane ep : fetchEpFromTC(tc)) {
+                    Caret c01 = editorToCaret.get(ep);
+                    if(c01 != null) {
+                        if(ep.getCaret() instanceof NbCaret) {
+                            NbFactory.installCaret(ep, c01);
+                            if(dbgNb.getBoolean()) {
+                                System.err.println(MOD + "restore caret: "
+                                                + tc.getDisplayName());
+                            }
                         }
                     }
+                    closeTC(ep, tc);
                 }
-                closeTC(ep, tc);
                 tc = (TopComponent)ViManager.getTextBuffer(1);
             }
             
@@ -692,13 +694,50 @@ public class Module extends ModuleInstall {
         }
     }
     
-    private static void activateTC(JEditorPane ep, Object o, String tag) {
+    // This was private, but there are times when a TopComponent with
+    // an editor pane sneaks through the TC open/activation logic (DiffExecuter)
+    static void activateTC(JEditorPane ep, Object o, String tag) {
         TopComponent tc = (TopComponent)o;
         if(ep != null)
             checkCaret(ep);
-        if(ep != null && tc != null)
-            tc.putClientProperty(PROP_JEP, ep);
+        addEpToTC(tc, ep);
         ViManager.activateFile(ep, tc, tag);
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Some methods to handle a TC's PROP_JEP.
+    // Note that a TC may have more than one JEditorPane.
+    //
+    
+    /** Add the editor as a property to the top component, if either parameter
+     * is null, then false is returned.
+     * @return true if editor added or already was there, false if couldn't add
+     */
+    static boolean addEpToTC(TopComponent tc, JEditorPane ep) {
+        if(ep == null || tc == null)
+            return false;
+        Set<JEditorPane> s = (Set<JEditorPane>)tc.getClientProperty(PROP_JEP);
+        if(s == null) {
+            s = new HashSet<JEditorPane>();
+            tc.putClientProperty(PROP_JEP, s);
+        }
+        if(!s.contains(ep))
+            s.add(ep);
+        return true;
+    }
+    
+    static JEditorPane fetchEpFromTC(TopComponent tc, JEditorPane ep) {
+        if(fetchEpFromTC(tc).contains(ep))
+            return ep;
+        return null;
+    }
+    
+    static Set<JEditorPane> fetchEpFromTC(TopComponent tc) {
+        Object o = tc.getClientProperty(PROP_JEP);
+        if(o != null)
+            return (Set<JEditorPane>)o;
+        return Collections.emptySet();
     }
     
     /** This class monitors the TopComponent registry and issues
@@ -767,12 +806,10 @@ public class Module extends ModuleInstall {
                             tc = t;
                             break;
                         }
-                        // tc = getEdTc(tc); does not work, Mode is null
-                        JEditorPane ep = (JEditorPane)tc.getClientProperty(
-                                                                    PROP_JEP);
-                        // ep is null if never registered the editor pane
-                        tcDumpInfo(tc, "close");
-                        closeTC(ep, tc);
+                        for (JEditorPane ep : fetchEpFromTC(tc)) {
+                            tcDumpInfo(tc, "close");
+                            closeTC(ep, tc);
+                        }
                     }
                 } else
                     System.err.println("TC OPEN: SAME SET SIZE");

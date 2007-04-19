@@ -65,8 +65,15 @@ public class NbOutputStream extends OutputStreamAdaptor {
     
     private OutputWriter getIO(String tabTag, boolean fNew) {
         InputOutput io = IOProvider.getDefault().getIO(tabTag, fNew);
-        if(io.isClosed())  // See NetBeans Issue 101445
-            io = IOProvider.getDefault().getIO(tabTag, true);
+        if(io.isClosed()) {
+            // See NetBeans Issue 101445
+            try {
+                io.getOut().reset();//io = IOProvider.getDefault().getIO(tabTag, true);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                io = IOProvider.getDefault().getIO(tabTag, true);
+            }
+        }
         io.select();
         return io.getOut();
     }

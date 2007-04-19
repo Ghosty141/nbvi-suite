@@ -77,9 +77,12 @@ final public class NbFactory extends DefaultViFactory {
         // NEEDSWORK: move this to base class or ViManager.activateFile
         TopComponent tc = getEditorTopComponent(editorPane);
         if(tc != null) {
-            Object ep = tc.getClientProperty(Module.PROP_JEP);
+            JEditorPane ep = Module.fetchEpFromTC(tc, editorPane);
+            if(ep == null) {
+                Module.activateTC(editorPane, tc, "CREATE-TV");
+                ep = Module.fetchEpFromTC(tc, editorPane);
+            }
             assert(ep != null && ep == editorPane);
-            tc.putClientProperty(Module.PROP_JEP, editorPane);
         } else
             ViManager.log("createViTextView: not isBuffer");
         

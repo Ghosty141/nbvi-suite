@@ -1,8 +1,9 @@
 Both jvi and nbvi should be checked out of the CVS repository, and they should
 reside in the same directory.
 
-To build everything, open nbvi/nbvi-suite (yes, I know its backwards) and
-build it.
+To build everything, with NetBeans open nbvi/nbvi-suite (yep, its backwards)
+and build it. jvi-project can be built and run as a standalone app for
+debugging jVi internals.
 
 jvi is the platform independent code. It is referenced from the free form
 project nbvi/nbvi-suite/jvi-project. jvi-project is wrapped by the module

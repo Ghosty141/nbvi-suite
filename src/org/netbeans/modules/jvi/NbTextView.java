@@ -42,21 +42,21 @@ public class NbTextView extends TextView
     
     /** Highlight search layer name */
     public static final String VI_HIGHLIGHT_SEARCH_LAYER_NAME
-                                        = "vi-highlight-search-layer"; // NOI18N
-
+                                    = "vi-highlight-search-layer"; // NOI18N
+    
     /** Highlight search layer visibility */
     public static final int VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY = 9000;
-
+    
     /** Incremental search layer name */
     public static final String VI_INC_SEARCH_LAYER_NAME
                                             = "vi-inc-search-layer"; // NOI18N
-
+    
     /** Incremental search layer visibility */
     public static final int VI_INC_SEARCH_LAYER_VISIBILITY = 9500;
-
+    
     /** Incremental search layer name */
     public static final String VI_VISUAL_SELECT_LAYER_NAME
-                                            = "vi-visual-select-layer"; // NOI18N
+                                        = "vi-visual-select-layer"; // NOI18N
     
     public static final int VI_VISUAL_SELECT_LAYER_VISIBILITY = 9600;
     
@@ -74,15 +74,23 @@ public class NbTextView extends TextView
             BaseDocument doc = (BaseDocument) editorPane.getDocument();
             doc.addLayer(new VisualSelectLayer(),
                          VI_VISUAL_SELECT_LAYER_VISIBILITY);
+            doc.addLayer(new HighlightSearchLayer(),
+                         VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
         }
     }
     
     public void shutdown() {
         if(editorPane.getDocument() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument) editorPane.getDocument();
+            
             HighlightBlocksLayer dl
-                        = (HighlightBlocksLayer)
-                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+                    = (HighlightBlocksLayer)
+                                doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+            if(dl != null)
+                dl.shutdown();
+            
+            dl = (HighlightBlocksLayer)
+                                doc.findLayer(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
             if(dl != null)
                 dl.shutdown();
         }
@@ -106,60 +114,60 @@ public class NbTextView extends TextView
             Options.SetCommand.syncAllInstances("w_p_nu");
         }
     }
-
+    
     @Override
     public void activateOptions(ViTextView tv) {
     }
     
-    // 
+    //
     // The viTextView interface
     //
-
+    
     public ViStatusDisplay getStatusDisplay() {
-	return statusDisplay;
+        return statusDisplay;
     }
-
+    
     protected void createOps(JEditorPane editorPane) {
-	ops = new NbOps(this);
-	ops.init(editorPane);
+        ops = new NbOps(this);
+        ops.init(editorPane);
     }
-
+    
     public void displayFileInfo() {
-	StringBuffer sb = new StringBuffer();
-	sb.append("\"" + getDisplayFileName() + "\"");
-	int l = getLineCount();
-	sb.append(" " + l + " line" + Misc.plural(l));
-	sb.append(" --" + (int)((cache.getCursor().getLine() * 100)
-				  / getLineCount()) + "%--");
-	getStatusDisplay().displayStatusMessage(sb.toString());
+        StringBuffer sb = new StringBuffer();
+        sb.append("\"" + getDisplayFileName() + "\"");
+        int l = getLineCount();
+        sb.append(" " + l + " line" + Misc.plural(l));
+        sb.append(" --" + (int)((cache.getCursor().getLine() * 100)
+                                                    / getLineCount()) + "%--");
+        getStatusDisplay().displayStatusMessage(sb.toString());
     }
-
+    
     public String getDisplayFileName() {
-	Document doc = getDoc();
-	if(doc != null) {
-	    FileObject fo = NbEditorUtilities.getFileObject(doc);
+        Document doc = getDoc();
+        if(doc != null) {
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
             if(fo != null)
                 return fo.getNameExt();
-	}
-	return "UNKNOWN";
+        }
+        return "UNKNOWN";
     }
-
+    
 /* FROM ActionFactory
     public static class UndoAction extends LocalBaseAction {
-
+ 
         static final long serialVersionUID =8628586205035497612L;
-
+ 
         public UndoAction() {
             super(BaseKit.undoAction, ABBREV_RESET
                   | MAGIC_POSITION_RESET | UNDO_MERGE_RESET | WORD_MATCH_RESET);
         }
-
+ 
         public void actionPerformed(ActionEvent evt, JTextComponent target) {
             if (!target.isEditable() || !target.isEnabled()) {
                 target.getToolkit().beep();
                 return;
             }
-
+ 
             Document doc = target.getDocument();
             UndoableEdit undoMgr = (UndoableEdit)doc.getProperty(
                                        BaseDocument.UNDO_MANAGER_PROP);
@@ -172,59 +180,59 @@ public class NbTextView extends TextView
             }
         }
     }
-*/
+ */
     public void redo() {
-	if( ! isEditable()) {
-	    Util.vim_beep();
-	    return;
-	}
-	if(isInUndo()||isInInsertUndo()) {
-	    ViManager.dumpStack("Redo while in begin/endUndo");
+        if( ! isEditable()) {
+            Util.vim_beep();
             return;
-	}
+        }
+        if(isInUndo()||isInInsertUndo()) {
+            ViManager.dumpStack("Redo while in begin/endUndo");
+            return;
+        }
         // NEEDSWORK: check can undo for beep
         
-	cache.isUndoChange(); // clears the flag
+        cache.isUndoChange(); // clears the flag
         ops.xact(NbEditorKit.redoAction);
-	if(cache.isUndoChange()) {
+        if(cache.isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
-	    setCaretPosition(cache.getUndoOffset());
-	}
+            setCaretPosition(cache.getUndoOffset());
+        }
         // ops.xact(SystemAction.get(RedoAction.class)); // in openide
     }
-
+    
     public void undo() {
-	if( ! isEditable()) {
-	    Util.vim_beep();
-	    return;
-	}
-	if(isInUndo()||isInInsertUndo()) {
-	    ViManager.dumpStack("Undo while in begin/endUndo");
+        if( ! isEditable()) {
+            Util.vim_beep();
             return;
-	}
+        }
+        if(isInUndo()||isInInsertUndo()) {
+            ViManager.dumpStack("Undo while in begin/endUndo");
+            return;
+        }
         // NEEDSWORK: check can undo for beep
         
-	cache.isUndoChange(); // clears the flag
+        cache.isUndoChange(); // clears the flag
         ops.xact(NbEditorKit.undoAction);
-	if(cache.isUndoChange()) {
+        if(cache.isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
-	    setCaretPosition(cache.getUndoOffset());
-	}
+            setCaretPosition(cache.getUndoOffset());
+        }
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
     }
     
     //
     // Undo handling.
-    // 
+    //
     // With NB, the atomic lock on the document groups undo
     // so we can always do that for progromatic undo/redo, eg. "3dd".
     // But for insert mode locking the file has problems, so we
     // continue to use the classic undow flag
     //
-  
+    
     private boolean fGuardedException;
     private boolean fException;
-  
+    
     protected void processTextException(BadLocationException ex) {
         if(ex instanceof GuardedException) {
             fGuardedException = true;
@@ -233,11 +241,11 @@ public class NbTextView extends TextView
         }
         Util.vim_beep();
     }
-
+    
     public void beginUndo() {
         super.beginUndo();
-	fGuardedException = false;
-	fException = false;
+        fGuardedException = false;
+        fException = false;
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
             ((BaseDocument)doc).atomicLock();
@@ -247,35 +255,35 @@ public class NbTextView extends TextView
     public void endUndo() {
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
-	    if(fGuardedException || fException) {
+            if(fGuardedException || fException) {
                 // get rid of the changes
-		((BaseDocument)doc).breakAtomicLock();
-	    }
+                ((BaseDocument)doc).breakAtomicLock();
+            }
             
-	    ((BaseDocument)doc).atomicUnlock();
+            ((BaseDocument)doc).atomicUnlock();
             
-	    if(fGuardedException || fException) {
+            if(fGuardedException || fException) {
                 // This must come *after* atomicUnlock, otherwise it gets
                 // overwritten by a clear message due to scrolling.
                 
-		// Don't want this message lost, so defer until things
-		// settle down. The change/unlock-undo cause a lot of
-		// action
-
-		SwingUtilities.invokeLater(new Runnable() {
-		    public void run() {
-			getStatusDisplay().displayErrorMessage(
-			    "No changes made."
-			    + (fGuardedException
-                               ? " Attempt to change guarded text."
-                               : " Document location error."));
-		    }
-		});
+                // Don't want this message lost, so defer until things
+                // settle down. The change/unlock-undo cause a lot of
+                // action
+                
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        getStatusDisplay().displayErrorMessage(
+                                "No changes made."
+                                + (fGuardedException
+                                ? " Attempt to change guarded text."
+                                : " Document location error."));
+                    }
+                });
             }
         }
         super.endUndo();
     }
-
+    
     public void beginInsertUndo() {
         super.beginInsertUndo();
         Document doc = getDoc();
@@ -316,24 +324,24 @@ public class NbTextView extends TextView
         ops.xact(NbEditorKit.gotoDeclarationAction);
         ViManager.getViFactory().startTagPush(this, ident);
     }
-
+    
     public void jumpList(JLOP op, int count) {
         switch(op) {
-        case NEXT_CHANGE:
-            ops.xact(NbEditorKit.jumpListNextAction);
-            break;
-            
-        case PREV_CHANGE:
-            ops.xact(NbEditorKit.jumpListPrevAction);
-            break;
-            
-        case NEXT_JUMP:
-        case PREV_JUMP:
-            Util.vim_beep();
-            break;
+            case NEXT_CHANGE:
+                ops.xact(NbEditorKit.jumpListNextAction);
+                break;
+                
+            case PREV_CHANGE:
+                ops.xact(NbEditorKit.jumpListPrevAction);
+                break;
+                
+            case NEXT_JUMP:
+            case PREV_JUMP:
+                Util.vim_beep();
+                break;
         }
     }
-
+    
     public void anonymousMark(MARKOP op, int count) {
         String actName = null;
         switch(op) {
@@ -354,7 +362,7 @@ public class NbTextView extends TextView
         } else
             Util.vim_beep();
     }
-
+    
     public void foldOperation(int op) {
         String action = null;
         switch(op) {
@@ -374,35 +382,35 @@ public class NbTextView extends TextView
         if(action != null) {
             ops.xact(action);
         } else {
-	    Util.vim_beep();
+            Util.vim_beep();
         }
     }
     
     //
     // Widow manipulation operations
     //
-
+    
     public void win_quit() {
         // if split, close this half; otherwise close view
         win_close(false);
     }
-
+    
     public void win_split(int n) {
         super.win_split(n);
     }
-
+    
     public void win_goto(int n) {
         super.win_goto(n);
     }
-
+    
     public void win_cycle(int n) {
         super.win_cycle(n);
     }
-
+    
     public void win_close_others(boolean forceit) {
         super.win_close_others(forceit);
     }
-
+    
     public void win_close(boolean freeBuf) {
         JEditorPane ep = getEditorComponent();
         TopComponent closeTC = NbFactory.getEditorTopComponent(ep);
@@ -430,13 +438,13 @@ public class NbTextView extends TextView
         
         VisualSelectLayer() {
             super(VI_VISUAL_SELECT_LAYER_NAME);
-            selectColorOption = (ColorOption)
-                                Options.getOption(Options.selectColor);
+            selectColorOption
+                    = (ColorOption)Options.getOption(Options.selectColor);
             selectColoring = new Coloring(null, null,
                                           selectColorOption.getColor());
         }
         
-        protected Coloring getColoring() {
+        protected Coloring getColoring(DrawContext ctx) {
             Color c = selectColorOption.getColor();
             if(!c.equals(selectColoring.getBackColor()))
                 selectColoring = new Coloring(null, null, c);
@@ -453,12 +461,10 @@ public class NbTextView extends TextView
             BaseDocument doc = (BaseDocument) getDoc();
             
             // Enable/disable the visual select layer
-            HighlightBlocksLayer dl
-                        = (HighlightBlocksLayer)
+            HighlightBlocksLayer dl = (HighlightBlocksLayer)
                                     doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
             if(dl != null) {
-                dl.setEnabled(G.VIsual_active || G.drawSavedVisualBounds
-                              ? true : false);
+                dl.setEnabled(G.VIsual_active || G.drawSavedVisualBounds);
             }
             
             // Poke the document indicating that things have changed.
@@ -473,12 +479,68 @@ public class NbTextView extends TextView
     
     //////////////////////////////////////////////////////////////////////
     //
+    // HighlightSearchLayer
+    //
+    
+    public void updateHighlightSearchState() {
+        if(getDoc() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument) getDoc();
+            
+            // Enable/disable the hightlight search layer
+            HighlightBlocksLayer dl
+                    = (HighlightBlocksLayer)
+                                doc.findLayer(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
+            if(dl != null) {
+                // NEEDSWORK: highlight on/off flag
+                dl.setEnabled(true);
+            }
+            
+            // Poke the document indicating that things have changed.
+            doc.repaintBlock(0, doc.getLength());
+        }
+    }
+    
+    public class HighlightSearchLayer extends HighlightBlocksLayer {
+        // private ColorOption selectColorOption;
+        // private Coloring selectColoring;
+        
+        HighlightSearchLayer() {
+            super(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
+            // setEnabled(true);
+            /*
+            selectColorOption = (ColorOption)
+                                Options.getOption(Options.selectColor);
+            selectColoring = new Coloring(null, null,
+                                          selectColorOption.getColor());
+             */
+        }
+        
+        protected Coloring getColoring(DrawContext ctx) {
+            return ctx.getEditorUI().getColoring(
+                    SettingsNames.HIGHLIGHT_SEARCH_COLORING);
+            /*
+            Color c = selectColorOption.getColor();
+            if(!c.equals(selectColoring.getBackColor()))
+                selectColoring = new Coloring(null, null, c);
+            return selectColoring;
+             */
+        }
+        
+        protected int[] getBlocks(int startOffset, int endOffset) {
+            // return getHighlightSearchBlocks(startOffset, endOffset);
+            int[] xBlocks = getHighlightSearchBlocks(startOffset, endOffset);
+            return getInterestingBlocks(xBlocks, startOffset, endOffset);
+        }
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //
     // Draw Layer based on integer array of blocks to highlight
     //
     
     private int[] getInterestingBlocks(int[] allBlocks,
-                                       int startOffset,
-                                       int endOffset) {
+            int startOffset,
+            int endOffset) {
         
         // NEEDWORK: use this method to return the index of the
         //           first block of interest. Then can fixup
@@ -488,7 +550,7 @@ public class NbTextView extends TextView
         
         // return relevent blocks properly bounded
         if(allBlocks[0] < 0) {
-            return new int[] { -1, -1};
+            return allBlocks;
         }
         
         //
@@ -511,7 +573,7 @@ public class NbTextView extends TextView
                          Math.min(allBlocks.length - idx, t.length - 1));
         
         // If within block, then adjust the start of the block
-        if(t[0] <= startOffset)
+        if(t[0] <= startOffset && t[0] >= 0)
             t[0] = startOffset;
         t[t.length -2] = -1;
         t[t.length -1] = -1;
@@ -519,57 +581,56 @@ public class NbTextView extends TextView
     }
     
     /** Highlight blocks layer highlights all occurences
-    * indicated by the blocks array.
-    */
+     * indicated by the blocks array.
+     */
     abstract class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
-
+        
         /** Pairs of start and end position */
         //int blocks[] = new int[] { -1, -1 };
         int blocks[];
-
+        
         /** Coloring to use for highlighting */
         Coloring coloring;
         Coloring defaultColoring;
         
-        protected Coloring getColoring() {
+        protected Coloring getColoring(DrawContext ctx) {
             if(defaultColoring == null)
                 defaultColoring = new Coloring(null, null, Color.orange);
             return defaultColoring;
         }
         
         abstract protected int[] getBlocks(int startOffset, int endOffset);
-
+        
         /** Current index for painting */
         int curInd;
-
+        
         /** Enabled flag */
         protected boolean enabled;
         
         protected boolean shutdown;
-
+        
         protected HighlightBlocksLayer(String layerName) {
             super(layerName);
         }
-
+        
         public boolean isEnabled() {
             return enabled && !shutdown;
         }
-
+        
         private void shutdown() {
             shutdown = true;
             setEnabled(false);
         }
-
+        
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
-
+        
         public void init(DrawContext ctx) {
             if (isEnabled()) {
-                try { // Just in case..., see jvi-Bugs-1703078 
+                try { // Just in case..., see jvi-Bugs-1703078
                     blocks = getBlocks(ctx.getStartOffset(), ctx.getEndOffset());
-                }
-                catch(Exception ex) {
+                } catch(Exception ex) {
                     ex.printStackTrace();
                     setEnabled(false);
                     blocks = new int[] { -1, -1};
@@ -578,7 +639,7 @@ public class NbTextView extends TextView
                 curInd = 0;
             }
         }
-
+        
         public boolean isActive(DrawContext ctx, MarkFactory.DrawMark mark) {
             boolean active;
             if (isEnabled()) {
@@ -586,7 +647,7 @@ public class NbTextView extends TextView
                 if (pos == blocks[curInd]) {
                     active = true;
                     setNextActivityChangeOffset(blocks[curInd + 1]);
-
+                    
                 } else if (pos == blocks[curInd + 1]) {
                     active = false;
                     curInd += 2;
@@ -595,7 +656,7 @@ public class NbTextView extends TextView
                         setNextActivityChangeOffset(blocks[curInd + 1]);
                         active = true;
                     }
-
+                    
                 } else {
                     setNextActivityChangeOffset(blocks[curInd]);
                     active = false;
@@ -603,23 +664,22 @@ public class NbTextView extends TextView
             } else {
                 active = false;
             }
-
+            
             return active;
         }
-
+        
         public void updateContext(DrawContext ctx) {
             int pos = ctx.getFragmentOffset();
             if (pos >= blocks[curInd] && pos < blocks[curInd + 1]) {
                 if (coloring == null) {
-                    //coloring = ctx.getEditorUI().getColoring(SettingsNames.HIGHLIGHT_SEARCH_COLORING);
-                    coloring = getColoring();
+                    coloring = getColoring(ctx);
                 }
                 if (coloring != null) {
                     coloring.apply(ctx);
                 }
             }
         }
-
+        
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -635,9 +695,9 @@ public class NbTextView extends TextView
      * @param contig contiguous lines to apply highlight
      */
     static void testVisualHighlight(int col1, int col2,
-                                    int modulo, int contig) {
+            int modulo, int contig) {
         System.err.println("" + col1 + ", " + col2 + ", "
-                           + modulo + ", " + contig);
+                + modulo + ", " + contig);
         
         if(tBlocks == null) {
             tBlocks = new int[300];
@@ -655,8 +715,8 @@ public class NbTextView extends TextView
             
             // enable the visual select layer
             HighlightBlocksLayer dl
-                        = (HighlightBlocksLayer)
-                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+                    = (HighlightBlocksLayer)
+                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
             if(dl != null) {
                 dl.setEnabled(true);
             }

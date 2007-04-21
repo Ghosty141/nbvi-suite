@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.Buffer;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
@@ -41,21 +42,21 @@ public class NbTextView extends TextView
     // Use the corresponding values from DrawlayerFactory
     
     /** Highlight search layer name */
-    public static final String VI_HIGHLIGHT_SEARCH_LAYER_NAME
+    public static final String HIGHLIGHT_SEARCH_LAYER
                                     = "vi-highlight-search-layer"; // NOI18N
     
     /** Highlight search layer visibility */
     public static final int VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY = 9000;
     
     /** Incremental search layer name */
-    public static final String VI_INC_SEARCH_LAYER_NAME
+    public static final String INC_SEARCH_LAYER
                                             = "vi-inc-search-layer"; // NOI18N
     
     /** Incremental search layer visibility */
     public static final int VI_INC_SEARCH_LAYER_VISIBILITY = 9500;
     
     /** Incremental search layer name */
-    public static final String VI_VISUAL_SELECT_LAYER_NAME
+    public static final String VISUAL_SELECT_LAYER
                                         = "vi-visual-select-layer"; // NOI18N
     
     public static final int VI_VISUAL_SELECT_LAYER_VISIBILITY = 9600;
@@ -68,31 +69,56 @@ public class NbTextView extends TextView
         // since NB insists that this is a shared variable
         // set the common value
         w_p_nu = showLineNumbers;
+    }
+    
+    public void startup() {
+        super.startup();
+        
+        // NEEDSWORK: the layer stuff should be in Buffer
         
         // add jVi's DrawLayers
         if(editorPane.getDocument() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument) editorPane.getDocument();
-            doc.addLayer(new VisualSelectLayer(),
-                         VI_VISUAL_SELECT_LAYER_VISIBILITY);
-            doc.addLayer(new HighlightSearchLayer(),
-                         VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
+            HighlightBlocksLayer dl;
+            
+            // Set up the layers.
+            // Since we can not remove a layer from a document
+            // the layers may already exist,
+            // for example as in the case of an earlier shutdown.
+            
+            dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
+            if(dl == null) {
+                dl = new VisualSelectLayer();
+                doc.addLayer(dl, VI_VISUAL_SELECT_LAYER_VISIBILITY);
+            }
+            dl.setTextView(this);
+            
+            dl = (HighlightBlocksLayer) doc.findLayer(HIGHLIGHT_SEARCH_LAYER);
+            if(dl == null) {
+                dl = new HighlightSearchLayer();
+                doc.addLayer(dl, VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
+            }
+            dl.setTextView(this);
         }
     }
     
     public void shutdown() {
-        if(editorPane.getDocument() instanceof BaseDocument) {
+        Buffer buf = ViManager.getBuffer(getEditorComponent());
+        if(buf.getShare() == 1
+           && editorPane.getDocument() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument) editorPane.getDocument();
             
-            HighlightBlocksLayer dl
-                    = (HighlightBlocksLayer)
-                                doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
-            if(dl != null)
-                dl.shutdown();
+            // Last TV is detaching from editor pane.
+            // Since we can't remove the layers, disable them.
             
-            dl = (HighlightBlocksLayer)
-                                doc.findLayer(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
+            HighlightBlocksLayer dl;
+            dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
             if(dl != null)
-                dl.shutdown();
+                dl.setTextView(null);
+            
+            dl = (HighlightBlocksLayer) doc.findLayer(HIGHLIGHT_SEARCH_LAYER);
+            if(dl != null)
+                dl.setTextView(null);
         }
         super.shutdown();
     }
@@ -117,6 +143,7 @@ public class NbTextView extends TextView
     
     @Override
     public void activateOptions(ViTextView tv) {
+        super.activateOptions(tv);
     }
     
     //
@@ -432,12 +459,12 @@ public class NbTextView extends TextView
     // VisualSelectLayer
     //
     
-    public class VisualSelectLayer extends HighlightBlocksLayer {
+    public static class VisualSelectLayer extends HighlightBlocksLayer {
         private ColorOption selectColorOption;
         private Coloring selectColoring;
         
         VisualSelectLayer() {
-            super(VI_VISUAL_SELECT_LAYER_NAME);
+            super(VISUAL_SELECT_LAYER);
             selectColorOption
                     = (ColorOption)Options.getOption(Options.selectColor);
             selectColoring = new Coloring(null, null,
@@ -452,7 +479,7 @@ public class NbTextView extends TextView
         }
         
         protected int[] getBlocks(int startOffset, int endOffset) {
-            return getVisualSelectBlocks(startOffset, endOffset);
+            return tv.getVisualSelectBlocks(startOffset, endOffset);
         }
     }
     
@@ -462,7 +489,7 @@ public class NbTextView extends TextView
             
             // Enable/disable the visual select layer
             HighlightBlocksLayer dl = (HighlightBlocksLayer)
-                                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+                                    doc.findLayer(VISUAL_SELECT_LAYER);
             if(dl != null) {
                 dl.setEnabled(G.VIsual_active || G.drawSavedVisualBounds);
             }
@@ -483,16 +510,15 @@ public class NbTextView extends TextView
     //
     
     public void updateHighlightSearchState() {
+        updateHighlightSearchCommonState();
         if(getDoc() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument) getDoc();
             
             // Enable/disable the hightlight search layer
-            HighlightBlocksLayer dl
-                    = (HighlightBlocksLayer)
-                                doc.findLayer(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
+            HighlightBlocksLayer dl;
+            dl = (HighlightBlocksLayer) doc.findLayer(HIGHLIGHT_SEARCH_LAYER);
             if(dl != null) {
-                // NEEDSWORK: highlight on/off flag
-                dl.setEnabled(true);
+                dl.setEnabled(Options.doHighlightSearch());
             }
             
             // Poke the document indicating that things have changed.
@@ -500,13 +526,12 @@ public class NbTextView extends TextView
         }
     }
     
-    public class HighlightSearchLayer extends HighlightBlocksLayer {
+    public static class HighlightSearchLayer extends HighlightBlocksLayer {
         // private ColorOption selectColorOption;
         // private Coloring selectColoring;
         
         HighlightSearchLayer() {
-            super(VI_HIGHLIGHT_SEARCH_LAYER_NAME);
-            // setEnabled(true);
+            super(HIGHLIGHT_SEARCH_LAYER);
             /*
             selectColorOption = (ColorOption)
                                 Options.getOption(Options.selectColor);
@@ -527,9 +552,9 @@ public class NbTextView extends TextView
         }
         
         protected int[] getBlocks(int startOffset, int endOffset) {
-            // return getHighlightSearchBlocks(startOffset, endOffset);
-            int[] xBlocks = getHighlightSearchBlocks(startOffset, endOffset);
-            return getInterestingBlocks(xBlocks, startOffset, endOffset);
+            return tv.getHighlightSearchBlocks(startOffset, endOffset);
+            // int[] xBlocks = tv.getHighlightSearchBlocks(startOffset, endOffset);
+            // return getInterestingBlocks(xBlocks, startOffset, endOffset);
         }
     }
     
@@ -538,9 +563,9 @@ public class NbTextView extends TextView
     // Draw Layer based on integer array of blocks to highlight
     //
     
-    private int[] getInterestingBlocks(int[] allBlocks,
-            int startOffset,
-            int endOffset) {
+    static int[] getInterestingBlocks(int[] allBlocks,
+                                       int startOffset,
+                                       int endOffset) {
         
         // NEEDWORK: use this method to return the index of the
         //           first block of interest. Then can fixup
@@ -583,7 +608,9 @@ public class NbTextView extends TextView
     /** Highlight blocks layer highlights all occurences
      * indicated by the blocks array.
      */
-    abstract class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
+    abstract static class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
+        
+        protected NbTextView tv;
         
         /** Pairs of start and end position */
         //int blocks[] = new int[] { -1, -1 };
@@ -605,20 +632,18 @@ public class NbTextView extends TextView
         int curInd;
         
         /** Enabled flag */
-        protected boolean enabled;
-        
-        protected boolean shutdown;
+        private boolean enabled;
         
         protected HighlightBlocksLayer(String layerName) {
             super(layerName);
         }
         
         public boolean isEnabled() {
-            return enabled && !shutdown;
+            return enabled && tv != null;
         }
         
-        private void shutdown() {
-            shutdown = true;
+        private void setTextView(NbTextView tv) {
+            this.tv = tv;
             setEnabled(false);
         }
         
@@ -695,7 +720,7 @@ public class NbTextView extends TextView
      * @param contig contiguous lines to apply highlight
      */
     static void testVisualHighlight(int col1, int col2,
-            int modulo, int contig) {
+                                    int modulo, int contig) {
         System.err.println("" + col1 + ", " + col2 + ", "
                 + modulo + ", " + contig);
         
@@ -714,9 +739,8 @@ public class NbTextView extends TextView
             //doc.repaintBlock(0, doc.getLength());
             
             // enable the visual select layer
-            HighlightBlocksLayer dl
-                    = (HighlightBlocksLayer)
-                    doc.findLayer(VI_VISUAL_SELECT_LAYER_NAME);
+            HighlightBlocksLayer dl;
+            dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
             if(dl != null) {
                 dl.setEnabled(true);
             }

@@ -441,7 +441,8 @@ public class Module extends ModuleInstall {
                 for (TopComponent tc : s) {
                     if(tc == null) continue;
                     System.err.print("    tc = " + tc.getDisplayName() );
-                    System.err.println(", " + tc);
+                    System.err.print(", " + tc.isVisible());
+                    System.err.println(", " + tc.getClass().getName());
                 }
             }
         });

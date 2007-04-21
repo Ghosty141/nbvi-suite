@@ -118,6 +118,12 @@ final public class NbFactory extends DefaultViFactory {
         }
         newCaret.setBlinkRate(blinkRate);
     }
+  
+    public boolean isVisible(ViTextView tv) {
+        TopComponent tc = getEditorTopComponent(tv.getEditorComponent());
+        // wonder if this really works
+        return tc != null ? tc.isVisible() : false;
+    }
     
     public String getDisplayFilename(Object o) {
         if(o instanceof TopComponent)

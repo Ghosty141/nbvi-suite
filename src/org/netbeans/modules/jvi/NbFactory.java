@@ -90,7 +90,7 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     protected Buffer createBuffer(JEditorPane editorPane) {
-        return new NbBuffer();
+        return new NbBuffer(editorPane.getDocument());
     }
     
     public void registerEditorPane(JEditorPane ep) {
@@ -128,9 +128,14 @@ final public class NbFactory extends DefaultViFactory {
     public String getDisplayFilename(Object o) {
         if(o instanceof TopComponent)
             return ((TopComponent)o).getDisplayName();
+        if(o instanceof Document) {
+            Document doc = (Document) o;
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
+            return fo.getNameExt();
+        }
         return "";
     }
-    
+
     /** Find a TopComponent that has been activated as an editor */
     public static TopComponent getEditorTopComponent(JEditorPane editorPane) {
         TopComponent tc = null;

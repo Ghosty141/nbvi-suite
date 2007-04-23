@@ -71,8 +71,8 @@ public class NbTextView extends TextView
         w_p_nu = showLineNumbers;
     }
     
-    public void startup() {
-        super.startup();
+    public void startup(Buffer buf) {
+        super.startup(buf);
         
         // NEEDSWORK: the layer stuff should be in Buffer
         
@@ -88,14 +88,14 @@ public class NbTextView extends TextView
             
             dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
             if(dl == null) {
-                dl = new VisualSelectLayer();
+                dl = new VisualSelectLayer(buf);
                 doc.addLayer(dl, VI_VISUAL_SELECT_LAYER_VISIBILITY);
             }
             dl.setTextView(this);
             
             dl = (HighlightBlocksLayer) doc.findLayer(HIGHLIGHT_SEARCH_LAYER);
             if(dl == null) {
-                dl = new HighlightSearchLayer();
+                dl = new HighlightSearchLayer(buf);
                 doc.addLayer(dl, VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
             }
             dl.setTextView(this);
@@ -104,8 +104,12 @@ public class NbTextView extends TextView
     
     public void shutdown() {
         Buffer buf = ViManager.getBuffer(getEditorComponent());
-        if(buf.getShare() == 1
-           && editorPane.getDocument() instanceof BaseDocument) {
+        if(editorPane.getDocument() instanceof BaseDocument) {
+            // this alternate text view is a real kludge
+            // NEEDSWORK: move draw layer stuff to buffer
+            // Note: returned tv may be null, if this is last tv with buf
+            NbTextView tv
+                    = (NbTextView) ViManager.getAlternateTextView(this, buf);
             BaseDocument doc = (BaseDocument) editorPane.getDocument();
             
             // Last TV is detaching from editor pane.
@@ -114,11 +118,11 @@ public class NbTextView extends TextView
             HighlightBlocksLayer dl;
             dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
             if(dl != null)
-                dl.setTextView(null);
+                dl.setTextView(tv);
             
             dl = (HighlightBlocksLayer) doc.findLayer(HIGHLIGHT_SEARCH_LAYER);
             if(dl != null)
-                dl.setTextView(null);
+                dl.setTextView(tv);
         }
         super.shutdown();
     }
@@ -463,8 +467,8 @@ public class NbTextView extends TextView
         private ColorOption selectColorOption;
         private Coloring selectColoring;
         
-        VisualSelectLayer() {
-            super(VISUAL_SELECT_LAYER);
+        VisualSelectLayer(Buffer buf) {
+            super(VISUAL_SELECT_LAYER, buf);
             selectColorOption
                     = (ColorOption)Options.getOption(Options.selectColor);
             selectColoring = new Coloring(null, null,
@@ -530,8 +534,8 @@ public class NbTextView extends TextView
         // private ColorOption selectColorOption;
         // private Coloring selectColoring;
         
-        HighlightSearchLayer() {
-            super(HIGHLIGHT_SEARCH_LAYER);
+        HighlightSearchLayer(Buffer buf) {
+            super(HIGHLIGHT_SEARCH_LAYER, buf);
             /*
             selectColorOption = (ColorOption)
                                 Options.getOption(Options.selectColor);
@@ -611,6 +615,7 @@ public class NbTextView extends TextView
     abstract static class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
         
         protected NbTextView tv;
+        protected Buffer buf;
         
         /** Pairs of start and end position */
         //int blocks[] = new int[] { -1, -1 };
@@ -634,8 +639,9 @@ public class NbTextView extends TextView
         /** Enabled flag */
         private boolean enabled;
         
-        protected HighlightBlocksLayer(String layerName) {
+        protected HighlightBlocksLayer(String layerName, Buffer buf) {
             super(layerName);
+            this.buf = buf;
         }
         
         public boolean isEnabled() {
@@ -644,6 +650,8 @@ public class NbTextView extends TextView
         
         private void setTextView(NbTextView tv) {
             this.tv = tv;
+            if(tv == null)
+                buf = null;
             setEnabled(false);
         }
         

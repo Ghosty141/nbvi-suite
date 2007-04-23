@@ -12,6 +12,7 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.ViTextView;
 import java.util.List;
+import javax.swing.text.Document;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
@@ -27,7 +28,8 @@ import org.openide.util.Lookup;
 public class NbBuffer extends Buffer {
     
     /** Creates a new instance of NbBuffer */
-    public NbBuffer() {
+    public NbBuffer(Document doc) {
+        super(doc);
     }
 
     public void viOptionSet(ViTextView tv, String name) {

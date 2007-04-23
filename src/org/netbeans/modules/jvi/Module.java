@@ -375,11 +375,6 @@ public class Module extends ModuleInstall {
                 NbTextView.testVisualHighlight(col1, col2, modulo, contig);
             }
         });
-        ColonCommands.register("jviDump", "jviDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ViManager.dump(System.err);
-            }
-        });
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {

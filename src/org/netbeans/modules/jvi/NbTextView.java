@@ -714,6 +714,7 @@ public class NbTextView extends TextView
         ViTextView tv = G.curwin;
         
         // enable the layer
+        /* NEEDSWORK: test visual highlight
         if(tv.getEditorComponent().getDocument() instanceof BaseDocument) {
             // Poke ??? that things have changed.
             BaseDocument doc = (BaseDocument) tv.getEditorComponent().getDocument();
@@ -725,7 +726,7 @@ public class NbTextView extends TextView
             if(dl != null) {
                 dl.setEnabled(true);
             }
-        }
+        }*/
         
         if(modulo != -1 && contig >= modulo)
             return;

@@ -765,6 +765,8 @@ public class Module extends ModuleInstall {
                 if(ep != null) {
                     activateTC(ep, evt.getNewValue(), "P_ACTV");
                     doOptionsInitHack(); // HORROR STORY
+                    // Do this for activate (but not for open)
+                    ViManager.requestSwitch(ep);
                 }
             } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
                 // For each top component we know about, see if it is still

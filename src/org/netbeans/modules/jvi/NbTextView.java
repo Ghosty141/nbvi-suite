@@ -11,15 +11,19 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
+import com.raelity.text.TextUtil;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
 import org.netbeans.editor.BaseDocument;
+import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
@@ -86,6 +90,7 @@ public class NbTextView extends TextView
             eui.addLayer(new HighlightSearchLayer(),
                          VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
         }
+        //correlateDocumentEvents();
     }
     
     public void shutdown() {
@@ -198,7 +203,8 @@ public class NbTextView extends TextView
         if(cache.isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
             setCaretPosition(cache.getUndoOffset());
-        }
+        } else
+            Util.vim_beep();
         // ops.xact(SystemAction.get(RedoAction.class)); // in openide
     }
     
@@ -218,7 +224,8 @@ public class NbTextView extends TextView
         if(cache.isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
             setCaretPosition(cache.getUndoOffset());
-        }
+        } else
+            Util.vim_beep();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
     }
     
@@ -762,5 +769,29 @@ public class NbTextView extends TextView
         }
         tBlocks[idx++] = -1;
         tBlocks[idx++] = -1;
+    }
+    
+    private void correlateDocumentEvents() {
+        Document doc = getEditorComponent().getDocument();
+        doc.addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+                //dumpDocEvent("change", e);
+            }
+            public void insertUpdate(DocumentEvent e) {
+                dumpDocEvent("insert", e);
+            }
+            public void removeUpdate(DocumentEvent e) {
+                dumpDocEvent("remove", e);
+            }
+        });
+    }
+    
+    private void dumpDocEvent(String tag, DocumentEvent e_) {
+        if(e_ instanceof BaseDocumentEvent) {
+            BaseDocumentEvent e = (BaseDocumentEvent) e_;
+            System.err.println(e.getType().toString() + ": "
+                               + e.getOffset() + ":" + e.getLength() + " "
+                               + "'" + TextUtil.debugString(e.getText()) + "'");
+        }
     }
 }

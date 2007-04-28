@@ -7,6 +7,8 @@ import com.raelity.jvi.swing.ViCaret;
 import com.raelity.jvi.swing.ViCaretDelegate;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import javax.swing.text.JTextComponent;
 import org.netbeans.editor.ext.ExtCaret;
 
@@ -18,14 +20,32 @@ import org.netbeans.editor.ext.ExtCaret;
  */
 public class NbCaret extends ExtCaret implements ViCaret {
   ViCaretDelegate viDelegate;
+  Method setMatchBraceOffset;
 
   public NbCaret() {
     super();
     viDelegate = new ViCaretDelegate(this);
+    try {
+      setMatchBraceOffset = getClass().getSuperclass()
+                                .getMethod("setMatchBraceOffset", int.class);
+    } catch (NoSuchMethodException ex) { }
   }
 
   public void setCursor(ViCursor cursor) {
     viDelegate.setCursor(cursor);
+    
+    // NEDSWORK: when development on NB6, can use a boolean to check
+    //           if method is available and ifso invoke directly.
+    
+    //setMatchBraceOffset(cursor.getMatchBraceOffset());
+    if(setMatchBraceOffset != null) {
+      try {
+        setMatchBraceOffset.invoke(this, cursor.getMatchBraceOffset());
+      } catch (InvocationTargetException ex) {
+      } catch (IllegalAccessException ex) {
+      }
+      updateMatchBrace(); // NEEDSWORK: put this in setMatchBraceOffset
+    }
   }
 
   public ViCursor getCursor() {

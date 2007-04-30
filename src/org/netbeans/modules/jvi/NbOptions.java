@@ -52,7 +52,7 @@ public class NbOptions {
         fsl = new FindSupportListener();
         
         // Listen to jVi options, and propogate some to NB
-        Options.getOptions().addPropertyChangeListener(jvil);
+        Options.addPropertyChangeListener(jvil);
         
         
         FindSupport fs = FindSupport.getFindSupport();
@@ -64,7 +64,7 @@ public class NbOptions {
             return;
         enabled = false;
         
-        Options.getOptions().removePropertyChangeListener(jvil);
+        Options.removePropertyChangeListener(jvil);
         
         FindSupport fs = FindSupport.getFindSupport();
         fs.removePropertyChangeListener(fsl);

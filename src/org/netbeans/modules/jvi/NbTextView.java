@@ -312,16 +312,20 @@ public class NbTextView extends TextView
      * Find matching brace for char at the cursor
      */
     public void findMatch() {
-        // NB's match brace action uses the character before the cursor
-        int startingOffset = getCaretPosition();
-        setCaretPosition(startingOffset + 1);
-        ops.xact(NbEditorKit.matchBraceAction);
-        if(getCaretPosition() != startingOffset + 1) {
-            // it moved, success match, need to backup
-            setCaretPosition(getCaretPosition()-1);
+        if(NbCaret.goodGotoMatchBehavior()) {
+            ops.xact(NbEditorKit.matchBraceAction);
         } else {
-            // match failed, back to original position (is this needed?)
-            setCaretPosition(startingOffset);
+            // NB's match brace action uses the character before the cursor
+            int startingOffset = getCaretPosition();
+            setCaretPosition(startingOffset + 1);
+            ops.xact(NbEditorKit.matchBraceAction);
+            if(getCaretPosition() != startingOffset + 1) {
+                // it moved, success match, need to backup
+                setCaretPosition(getCaretPosition()-1);
+            } else {
+                // match failed, back to original position (is this needed?)
+                setCaretPosition(startingOffset);
+            }
         }
     }
     

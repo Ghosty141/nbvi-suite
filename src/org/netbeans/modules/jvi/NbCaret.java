@@ -20,7 +20,7 @@ import org.netbeans.editor.ext.ExtCaret;
  */
 public class NbCaret extends ExtCaret implements ViCaret {
   ViCaretDelegate viDelegate;
-  Method setMatchBraceOffset;
+  static Method setMatchBraceOffset;
 
   public NbCaret() {
     super();
@@ -29,6 +29,10 @@ public class NbCaret extends ExtCaret implements ViCaret {
       setMatchBraceOffset = getClass().getSuperclass()
                                 .getMethod("setMatchBraceOffset", int.class);
     } catch (NoSuchMethodException ex) { }
+  }
+  
+  public static boolean goodGotoMatchBehavior() {
+      return setMatchBraceOffset != null;
   }
 
   public void setCursor(ViCursor cursor) {
@@ -40,11 +44,14 @@ public class NbCaret extends ExtCaret implements ViCaret {
     //setMatchBraceOffset(cursor.getMatchBraceOffset());
     if(setMatchBraceOffset != null) {
       try {
-        setMatchBraceOffset.invoke(this, cursor.getMatchBraceOffset());
+        int offset = cursor.getMatchBraceOffset();
+        if(offset == -1) {
+          offset = java.lang.Integer.MAX_VALUE;
+        }
+        setMatchBraceOffset.invoke(this, offset);
       } catch (InvocationTargetException ex) {
       } catch (IllegalAccessException ex) {
       }
-      updateMatchBrace(); // NEEDSWORK: put this in setMatchBraceOffset
     }
   }
 

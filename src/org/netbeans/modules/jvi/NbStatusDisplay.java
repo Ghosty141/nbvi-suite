@@ -37,6 +37,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     private String lastCmd = "";
     private Coloring lastMsgColoring = null;
     private String mode = "";
+    private boolean fFrozen;
 
     // a few things for working with the netbeans status bar.
     public static final String CELL_STATUS = "vi-status";
@@ -107,19 +108,26 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     }
 
     public void displayStatusMessage(String text) {
-        lastMsg = text;
-        lastMsgColoring = null;
-	setText(CELL_STATUS, modeString() + text);
+        fFrozen = false;
+        setMessageText(text);
     }
 
     public void displayErrorMessage(String text) {
+        fFrozen = false;
         lastMsg = text;
         lastMsgColoring = red;
 	setText(CELL_STATUS, modeString() + text, red);
     }
 
+    public void displayFrozenMessage(String text) {
+        fFrozen = true;
+        setMessageText(text);
+    }
+
     public void clearMessage() {
-	displayStatusMessage("");
+        if(fFrozen)
+            return;
+	setMessageText("");
     }
 
     public void refresh() {
@@ -127,6 +135,12 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         // document addition. But we need to keep the "-- INSERT --" visible.
         if(!useMyCells)
             setText(CELL_STATUS, modeString() + lastMsg + lastCmd, lastMsgColoring);
+    }
+
+    private void setMessageText(String text) {
+        lastMsg = text;
+        lastMsgColoring = null;
+	setText(CELL_STATUS, modeString() + text);
     }
 
     private void setText(String cellName, String text) {
@@ -167,3 +181,5 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 	return sb;
     }
 }
+
+// vi: ts=8 sw=4

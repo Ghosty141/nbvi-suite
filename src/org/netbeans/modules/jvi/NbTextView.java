@@ -11,19 +11,17 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
-import com.raelity.text.TextUtil;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
 import org.netbeans.editor.BaseDocument;
-import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
@@ -65,6 +63,9 @@ public class NbTextView extends TextView
                                         = "vi-visual-select-layer"; // NOI18N
     
     public static final int VI_VISUAL_SELECT_LAYER_VISIBILITY = 9600;
+
+    static Method beginUndo;
+    static Method endUndo;
     
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
@@ -74,6 +75,15 @@ public class NbTextView extends TextView
         // since NB insists that this is a shared variable
         // set the common value
         w_p_nu = showLineNumbers;
+        
+        try {
+            beginUndo = BaseDocument.class.getMethod("beginUndoGroup",
+                                                     (Class<?>[])null);
+            endUndo = BaseDocument.class.getMethod("endUndoGroup",
+                                                   (Class<?>[])null);
+        } catch (NoSuchMethodException ex) { }
+        if(endUndo == null)
+            beginUndo = null;
     }
     
     public void startup(Buffer buf) {
@@ -90,7 +100,6 @@ public class NbTextView extends TextView
             eui.addLayer(new HighlightSearchLayer(),
                          VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
         }
-        //correlateDocumentEvents();
     }
     
     public void shutdown() {
@@ -291,19 +300,38 @@ public class NbTextView extends TextView
         }
         super.endUndo();
     }
-    
     public void beginInsertUndo() {
         super.beginInsertUndo();
         Document doc = getDoc();
         if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
-            ((BaseDocument)doc).atomicLock();
+            // NEDSWORK: when development on NB6, can use a boolean to check
+            //           if method is available and ifso invoke directly.
+            BaseDocument bdoc = ((BaseDocument)doc);
+            
+            if(beginUndo != null) {
+                try {
+                    beginUndo.invoke(bdoc);
+                } catch (InvocationTargetException ex) {
+                } catch (IllegalAccessException ex) {
+                }
+            }
         }
     }
     
     public void endInsertUndo() {
         Document doc = getDoc();
         if(doc instanceof BaseDocument && G.isClassicUndo.getBoolean()) {
-            ((BaseDocument)doc).atomicUnlock();
+            // NEDSWORK: when development on NB6, can use a boolean to check
+            //           if method is available and ifso invoke directly.
+            BaseDocument bdoc = ((BaseDocument)doc);
+            
+            if(endUndo != null) {
+                try {
+                    endUndo.invoke(bdoc);
+                } catch (InvocationTargetException ex) {
+                } catch (IllegalAccessException ex) {
+                }
+            }
         }
         super.endInsertUndo();
     }
@@ -773,29 +801,5 @@ public class NbTextView extends TextView
         }
         tBlocks[idx++] = -1;
         tBlocks[idx++] = -1;
-    }
-    
-    private void correlateDocumentEvents() {
-        Document doc = getEditorComponent().getDocument();
-        doc.addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
-                //dumpDocEvent("change", e);
-            }
-            public void insertUpdate(DocumentEvent e) {
-                dumpDocEvent("insert", e);
-            }
-            public void removeUpdate(DocumentEvent e) {
-                dumpDocEvent("remove", e);
-            }
-        });
-    }
-    
-    private void dumpDocEvent(String tag, DocumentEvent e_) {
-        if(e_ instanceof BaseDocumentEvent) {
-            BaseDocumentEvent e = (BaseDocumentEvent) e_;
-            System.err.println(e.getType().toString() + ": "
-                               + e.getOffset() + ":" + e.getLength() + " "
-                               + "'" + TextUtil.debugString(e.getText()) + "'");
-        }
     }
 }

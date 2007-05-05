@@ -11,9 +11,15 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.ViTextView;
+import com.raelity.text.TextUtil;
 import java.util.List;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.Document;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.FormatterIndentEngine;
@@ -30,6 +36,13 @@ public class NbBuffer extends Buffer {
     /** Creates a new instance of NbBuffer */
     public NbBuffer(Document doc) {
         super(doc);
+        correlateDocumentEvents();
+    }
+
+    public void removeShare() {
+        if(getShare() == 1)
+            stopDocumentEvents();
+        super.removeShare();
     }
 
     public void viOptionSet(ViTextView tv, String name) {
@@ -106,5 +119,44 @@ public class NbBuffer extends Buffer {
                 bo = (BaseOptions)instances.get(0);
         }
         return bo;
+    }
+
+    private DocumentListener documentListener;
+    private UndoableEditListener undoableEditListener;
+
+    private void stopDocumentEvents() {
+        getDoc().removeDocumentListener(documentListener);
+        getDoc().removeUndoableEditListener(undoableEditListener);
+    }
+    
+    private void correlateDocumentEvents() {
+        Document doc = getDoc();
+        documentListener = new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+                //dumpDocEvent("change", e);
+            }
+            public void insertUpdate(DocumentEvent e) {
+                dumpDocEvent("insert", e);
+            }
+            public void removeUpdate(DocumentEvent e) {
+                dumpDocEvent("remove", e);
+            }
+        };
+        //doc.addDocumentListener(documentListener);
+        undoableEditListener = new UndoableEditListener() {
+            public void undoableEditHappened(UndoableEditEvent e) {
+                System.err.println("UndoableEditEvent = " + e );
+            }
+        };
+        //doc.addUndoableEditListener(undoableEditListener);
+    }
+    
+    private void dumpDocEvent(String tag, DocumentEvent e_) {
+        if(e_ instanceof BaseDocumentEvent) {
+            BaseDocumentEvent e = (BaseDocumentEvent) e_;
+            System.err.println(e.getType().toString() + ": "
+                               + e.getOffset() + ":" + e.getLength() + " "
+                               + "'" + TextUtil.debugString(e.getText()) + "'");
+        }
     }
 }

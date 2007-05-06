@@ -287,15 +287,6 @@ public class NbTextView extends TextView
         }
         super.endUndo();
     }
-    public void beginInsertUndo() {
-        super.beginInsertUndo();
-        buf.beginInsertUndo();
-    }
-    
-    public void endInsertUndo() {
-        buf.endInsertUndo();
-        super.endInsertUndo();
-    }
     
     /**
      * Find matching brace for char at the cursor

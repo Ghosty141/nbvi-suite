@@ -114,6 +114,14 @@ public class NbBuffer extends Buffer {
         }
     }
 
+    // In NB all the action for non-insert undo is happening in NbTextView
+    // Need this here, to insure base class doesn't get involved
+    public void beginUndo() {
+    }
+
+    public void endUndo() {
+    }
+
     public void beginInsertUndo() {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.

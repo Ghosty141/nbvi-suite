@@ -10,15 +10,21 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
+import com.raelity.jvi.G;
 import com.raelity.jvi.ViTextView;
 import com.raelity.text.TextUtil;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
+import javax.swing.text.AbstractDocument;
 import javax.swing.text.Document;
+import javax.swing.undo.UndoableEdit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
@@ -26,17 +32,47 @@ import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.options.BaseOptions;
 import org.openide.text.IndentEngine;
 import org.openide.util.Lookup;
+import org.openide.awt.UndoRedo;
 
 /**
  *
  * @author erra
  */
 public class NbBuffer extends Buffer {
+    private UndoRedo.Manager undoRedo;
+
+    private static Method beginUndo;
+    private static Method endUndo;
+    private static Method commitUndo;
     
     /** Creates a new instance of NbBuffer */
     public NbBuffer(Document doc) {
         super(doc);
-        correlateDocumentEvents();
+        //correlateDocumentEvents();
+        
+        UndoableEditListener l[] = ((AbstractDocument)doc).getUndoableEditListeners();
+        for (int i = 0; i < l.length; i++) {
+            if(l[i] instanceof UndoRedo.Manager) {
+                undoRedo = (UndoRedo.Manager) l[i];
+                break;
+            }
+        }
+
+        if(beginUndo == null) {
+            try {
+                beginUndo = UndoRedo.Manager.class.getMethod("beginUndoGroup",
+                                                             (Class<?>[])null);
+                endUndo = UndoRedo.Manager.class.getMethod("endUndoGroup",
+                                                           (Class<?>[])null);
+                commitUndo = UndoRedo.Manager.class.getMethod("commitUndoGroup",
+                                                              (Class<?>[])null);
+            } catch (NoSuchMethodException ex) { }
+            if(commitUndo == null || endUndo == null || commitUndo == null) {
+                beginUndo = null;
+                endUndo = null;
+                commitUndo = null;
+            }
+        }
     }
 
     public void removeShare() {
@@ -77,6 +113,31 @@ public class NbBuffer extends Buffer {
             ie.setExpandTabs(b_p_et);
         }
     }
+
+    public void beginInsertUndo() {
+        // NEDSWORK: when development on NB6, and method in NB6, use boolean
+        //           for method is available and ifso invoke directly.
+        if(G.isClassicUndo.getBoolean()) {
+            if(beginUndo != null && undoRedo != null) {
+                try {
+                    beginUndo.invoke(undoRedo);
+                } catch (InvocationTargetException ex) {
+                } catch (IllegalAccessException ex) { }
+            }
+        }
+    }
+
+    public void endInsertUndo() {
+        if(G.isClassicUndo.getBoolean()) {
+            if(endUndo != null && undoRedo != null) {
+                try {
+                    endUndo.invoke(undoRedo);
+                } catch (InvocationTargetException ex) {
+                } catch (IllegalAccessException ex) { }
+            }
+        }
+    }
+
     
     private FormatterIndentEngine fetchIndentEngine(ViTextView tv) {
         FormatterIndentEngine fie = null;
@@ -142,13 +203,16 @@ public class NbBuffer extends Buffer {
                 dumpDocEvent("remove", e);
             }
         };
-        //doc.addDocumentListener(documentListener);
+        doc.addDocumentListener(documentListener);
         undoableEditListener = new UndoableEditListener() {
             public void undoableEditHappened(UndoableEditEvent e) {
-                System.err.println("UndoableEditEvent = " + e );
+                UndoableEdit ue = e.getEdit();
+                System.err.println(ue.getClass().getSimpleName()
+                                   + " sig: " + ue.isSignificant());
+                //System.err.println("UndoableEditEvent = " + e );
             }
         };
-        //doc.addUndoableEditListener(undoableEditListener);
+        doc.addUndoableEditListener(undoableEditListener);
     }
     
     private void dumpDocEvent(String tag, DocumentEvent e_) {

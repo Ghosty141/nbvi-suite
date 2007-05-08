@@ -377,6 +377,18 @@ public class NbTextView extends TextView
             Util.vim_beep();
         }
     }
+
+    public void reindent(int line, int count) {
+        if(getDoc() instanceof BaseDocument) {
+            try {
+                Utilities.reformat((BaseDocument)getDoc(),
+                                   getLineStartOffset(line),
+                                   getLineEndOffset(line + count - 1));
+                return;
+            } catch (BadLocationException ex) { }
+        }
+        Util.vim_beep();
+    }
     
     //
     // Widow manipulation operations

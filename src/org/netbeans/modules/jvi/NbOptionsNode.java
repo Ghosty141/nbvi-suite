@@ -19,6 +19,7 @@ public class NbOptionsNode extends BeanNode {
     private static final String NODE_MISC = "Misc";
     private static final String NODE_SEARCH = "Search";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
+    private static final String NODE_BANG = "Bang (!) Commands";
     private static final String NODE_KEY_BINDINGS = "KeyBindings";
     private static final String NODE_KEYPAD_BINDINGS = "KeypadBindings";
     private static final String NODE_DEBUG = "Debug";
@@ -66,6 +67,8 @@ public class NbOptionsNode extends BeanNode {
 		    nodes[0] = new SearchNode();
                 } else if(object.equals(NODE_CURSOR_WRAP)) {
 		    nodes[0] = new CursorWrapNode();
+                } else if(object.equals(NODE_BANG)) {
+		    nodes[0] = new BangNode();
                 } else if(object.equals(NODE_DEBUG)) {
 		    nodes[0] = new DebugNode();
                 }
@@ -80,6 +83,7 @@ public class NbOptionsNode extends BeanNode {
            c.add(NODE_MISC);
            c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);
+           c.add(NODE_BANG);
            c.add(NODE_KEY_BINDINGS);
            c.add(NODE_KEYPAD_BINDINGS);
            c.add(NODE_DEBUG);
@@ -165,7 +169,28 @@ public class NbOptionsNode extends BeanNode {
             });
 	}    
     }
-    
+
+    private static class BangNode extends BeanNode {
+	public BangNode() throws IntrospectionException {
+	    super(new OptionsBean.BangOptions() {
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
+	}    
+    }
+
     private static class DebugNode extends BeanNode {
 	public DebugNode() throws IntrospectionException {
 	    super(new NbDebugOptions() {

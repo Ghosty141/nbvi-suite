@@ -1,6 +1,7 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
+import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
@@ -34,6 +35,7 @@ import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
 import org.openide.windows.TopComponent;
+import static com.raelity.jvi.Constants.*;
 
 /**
  * Pretty much the TextView used for standard swing.
@@ -184,42 +186,37 @@ public class NbTextView extends TextView
  */
 
     public void redo() {
-        if( ! isEditable()) {
-            Util.vim_beep();
-            return;
-        }
-        if(isInUndo()||isInInsertUndo()) {
-            ViManager.dumpStack("Redo while in begin/endUndo");
-            return;
-        }
-        // NEEDSWORK: check can undo for beep
-        
-        cache.isUndoChange(); // clears the flag
-        ops.xact(NbEditorKit.redoAction);
-        if(cache.isUndoChange()) {
-            // NEEDSWORK: check if need newline adjust
-            setCaretPosition(cache.getUndoOffset());
-        } else
-            Util.vim_beep();
-        // ops.xact(SystemAction.get(RedoAction.class)); // in openide
+        undoOrRedo("Redo", NbEditorKit.redoAction);
     }
     
     public void undo() {
+        undoOrRedo("Undo", NbEditorKit.undoAction);
+    }
+    
+    private void undoOrRedo(String tag, String action) {
         if( ! isEditable()) {
             Util.vim_beep();
             return;
         }
         if(isInUndo()||isInInsertUndo()) {
-            ViManager.dumpStack("Undo while in begin/endUndo");
+            ViManager.dumpStack(tag + " while in begin/endUndo");
             return;
         }
         // NEEDSWORK: check can undo for beep
         
         cache.isUndoChange(); // clears the flag
-        ops.xact(NbEditorKit.undoAction);
+        int n = getLineCount();
+        ops.xact(action);
         if(cache.isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
             setCaretPosition(cache.getUndoOffset());
+            try {
+                if(n != getLineCount())
+                    Edit.beginline(BL_WHITE);
+                else if ("\n".equals(getText(getCaretPosition(), 1))) {
+                    Misc.check_cursor_col();
+                }
+            } catch (BadLocationException ex) { }
         } else
             Util.vim_beep();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide

@@ -22,6 +22,7 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Document;
+import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoableEdit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.editor.BaseDocument;
@@ -34,6 +35,7 @@ import org.openide.text.IndentEngine;
 import org.openide.util.Lookup;
 import org.openide.awt.UndoRedo;
 
+
 /**
  *
  * @author erra
@@ -44,6 +46,9 @@ public class NbBuffer extends Buffer {
     private static Method beginUndo;
     private static Method endUndo;
     private static Method commitUndo;
+
+//    private CompoundEdit compoundEdit;
+//    private static Method undoRedoFireChangeMethod;
     
     /** Creates a new instance of NbBuffer */
     public NbBuffer(Document doc) {
@@ -58,6 +63,12 @@ public class NbBuffer extends Buffer {
             }
         }
 
+//        if(undoRedoFireChangeMethod == null) {
+//            try {
+//                undoRedoFireChangeMethod = UndoRedo.Manager.class.getMethod(
+//                                            "fireChange", (Class<?>[])null);
+//            } catch (NoSuchMethodException ex) { }
+//        }
         if(beginUndo == null) {
             try {
                 beginUndo = UndoRedo.Manager.class.getMethod("beginUndoGroup",
@@ -122,10 +133,21 @@ public class NbBuffer extends Buffer {
     public void endUndo() {
     }
 
+//    private class CoalesceEdit extends CompoundEdit {}
     public void beginInsertUndo() {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
+//            if(undoRedo != null) {
+//                // see issue 103467 for why adding two edits.
+//                compoundEdit = new CompoundEdit();
+//                compoundEdit.end();
+//                undoRedo.undoableEditHappened(
+//                            new UndoableEditEvent(getDoc(), compoundEdit));
+//                compoundEdit = new CoalesceEdit();
+//                undoRedo.undoableEditHappened(
+//                            new UndoableEditEvent(getDoc(), compoundEdit));
+//            }
             if(beginUndo != null && undoRedo != null) {
                 try {
                     beginUndo.invoke(undoRedo);
@@ -137,6 +159,9 @@ public class NbBuffer extends Buffer {
 
     public void endInsertUndo() {
         if(G.isClassicUndo.getBoolean()) {
+//            compoundEdit.end();
+//            compoundEdit = null;
+//            undoRedo.fireChange();
             if(endUndo != null && undoRedo != null) {
                 try {
                     endUndo.invoke(undoRedo);
@@ -190,6 +215,11 @@ public class NbBuffer extends Buffer {
         return bo;
     }
 
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Following stuff is for play
+    //
+
     private DocumentListener documentListener;
     private UndoableEditListener undoableEditListener;
 
@@ -220,13 +250,17 @@ public class NbBuffer extends Buffer {
                 //System.err.println("UndoableEditEvent = " + e );
             }
         };
-        doc.addUndoableEditListener(undoableEditListener);
+        //doc.addUndoableEditListener(undoableEditListener);
     }
     
     private void dumpDocEvent(String tag, DocumentEvent e_) {
+        if("change".equals(tag)) {
+            System.err.println(tag + ": " + e_);
+            return;
+        }
         if(e_ instanceof BaseDocumentEvent) {
             BaseDocumentEvent e = (BaseDocumentEvent) e_;
-            System.err.println(e.getType().toString() + ": "
+            System.err.println(tag + ": " + e.getType().toString() + ": "
                                + e.getOffset() + ":" + e.getLength() + " "
                                + "'" + TextUtil.debugString(e.getText()) + "'");
         }

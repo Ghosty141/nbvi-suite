@@ -19,7 +19,7 @@ public class NbOptionsNode extends BeanNode {
     private static final String NODE_MISC = "Misc";
     private static final String NODE_SEARCH = "Search";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
-    private static final String NODE_BANG = "Bang (!) Commands";
+    private static final String NODE_EXTERNAL_PROCESS = "External Process";
     private static final String NODE_KEY_BINDINGS = "KeyBindings";
     private static final String NODE_KEYPAD_BINDINGS = "KeypadBindings";
     private static final String NODE_DEBUG = "Debug";
@@ -67,8 +67,8 @@ public class NbOptionsNode extends BeanNode {
 		    nodes[0] = new SearchNode();
                 } else if(object.equals(NODE_CURSOR_WRAP)) {
 		    nodes[0] = new CursorWrapNode();
-                } else if(object.equals(NODE_BANG)) {
-		    nodes[0] = new BangNode();
+                } else if(object.equals(NODE_EXTERNAL_PROCESS)) {
+		    nodes[0] = new ExternalProcessNode();
                 } else if(object.equals(NODE_DEBUG)) {
 		    nodes[0] = new DebugNode();
                 }
@@ -83,7 +83,7 @@ public class NbOptionsNode extends BeanNode {
            c.add(NODE_MISC);
            c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);
-           c.add(NODE_BANG);
+           c.add(NODE_EXTERNAL_PROCESS);
            c.add(NODE_KEY_BINDINGS);
            c.add(NODE_KEYPAD_BINDINGS);
            c.add(NODE_DEBUG);
@@ -170,9 +170,9 @@ public class NbOptionsNode extends BeanNode {
 	}    
     }
 
-    private static class BangNode extends BeanNode {
-	public BangNode() throws IntrospectionException {
-	    super(new OptionsBean.BangOptions() {
+    private static class ExternalProcessNode extends BeanNode {
+	public ExternalProcessNode() throws IntrospectionException {
+	    super(new OptionsBean.ExternalProcess() {
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);

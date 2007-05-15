@@ -9,18 +9,11 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Option;
 import com.raelity.jvi.Options;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.List;
-import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.editor.FindSupport;
 import org.netbeans.editor.SettingsNames;
-import org.netbeans.editor.ext.java.JavaFormatter;
-import org.netbeans.modules.editor.java.JavaIndentEngine;
-import org.netbeans.modules.editor.options.BaseOptions;
-import org.openide.util.Lookup;
 
 /**
  *
@@ -75,27 +68,6 @@ public class NbOptions {
     
     private static PropertyChangeListener jvil;
     private static PropertyChangeListener fsl;
-    
-    private static JavaIndentEngine findJavaIndentEngine() {
-        // 
-        // BaseOptions bo = MimeLookup.getLookup(MimePath.parse("text/x-java"))
-        //                                    .lookup(BaseOptions.class);
-        // IndentEngine ie = bo.getIndentEngine();
-        // ie.addPropertyChangeListener(yourListener);
-        // BUT MimePath does not exist on NB55
-        //
-        Lookup.Result result = MimeLookup.getMimeLookup("text/x-java")
-                            .lookup(new Lookup.Template(BaseOptions.class));
-        
-        // Its really a list (see the docs)
-        // and directly access the rest of the type casts.
-        
-        List instances = (List)result.allInstances();
-        BaseOptions bo = (BaseOptions)instances.get(0);
-        JavaIndentEngine ie = (JavaIndentEngine)bo.getIndentEngine();
-        
-        return ie;
-    }
     
     private static void init() {
         

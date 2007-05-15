@@ -31,17 +31,12 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.ColonCommands.ColonAction;
 import com.raelity.jvi.ColonCommands.ColonEvent;
-import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.Action;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
-import org.netbeans.modules.editor.java.JavaFastOpenAction;
 import org.netbeans.spi.project.ActionProvider;
 import org.openide.util.Lookup;
-import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 
 public class NbColonCommands {

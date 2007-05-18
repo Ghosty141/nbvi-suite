@@ -545,6 +545,13 @@ public class NbTextView extends TextView
     // Draw Layer based on integer array of blocks to highlight
     //
     
+    static void dumpBlocks(String tag, int[] b) {
+        System.err.print(tag + ":");
+        for(int i = 0; i < b.length; i += 2)
+            System.err.print(String.format(" {%d,%d}", b[i], b[i+1]));
+        System.err.println("");
+    }
+
     static int[] getInterestingBlocks(int[] allBlocks,
                                        int startOffset,
                                        int endOffset) {
@@ -564,6 +571,8 @@ public class NbTextView extends TextView
         // find the first block of interest
         //
         
+        // System.err.println("XXX: " + startOffset + "," + endOffset);
+        //dumpBlocks(" IN", allBlocks);
         // skip blocks until startOffset within or after block
         int idx = 0;
         for(;
@@ -571,7 +580,7 @@ public class NbTextView extends TextView
             && allBlocks[idx +2] != -1
             && allBlocks[idx +1] < startOffset ;
             idx += 2);
-        if(startOffset > allBlocks[idx +1])
+        if(startOffset >= allBlocks[idx +1])
             idx += 2;
         
         // copy what's needed
@@ -584,6 +593,7 @@ public class NbTextView extends TextView
             t[0] = startOffset;
         t[t.length -2] = -1;
         t[t.length -1] = -1;
+        //dumpBlocks("OUT", t);
         return t;
     }
     

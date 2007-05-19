@@ -48,6 +48,10 @@ final public class NbFactory extends DefaultViFactory {
     static Set<Document> getDocSet() {
         return Collections.unmodifiableSet(((NbFactory)INSTANCE).docSet.keySet());
     }
+
+    public boolean isStandalone() {
+        return false;
+    }
     
     public ViFS getFS() {
         return fs;

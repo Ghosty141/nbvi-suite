@@ -460,6 +460,7 @@ public class NbTextView extends TextView
     }
     
     public void updateVisualState() {
+        updateVisualSelectDisplay();
         EditorUI eui = Utilities.getEditorUI(getEditorComponent());
         if(eui != null) {
             // Enable/disable the visual select layer
@@ -479,6 +480,7 @@ public class NbTextView extends TextView
     
     public int[] getVisualSelectBlocks(int startOffset, int endOffset) {
         int[] xBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
+        //return xBlocks;
         return getInterestingBlocks(xBlocks, startOffset, endOffset);
     }
     
@@ -544,15 +546,36 @@ public class NbTextView extends TextView
     //
     // Draw Layer based on integer array of blocks to highlight
     //
-    
-    static void dumpBlocks(String tag, int[] b) {
-        System.err.print(tag + ":");
-        for(int i = 0; i < b.length; i += 2)
-            System.err.print(String.format(" {%d,%d}", b[i], b[i+1]));
-        System.err.println("");
-    }
 
     static int[] getInterestingBlocks(int[] allBlocks,
+                                      int startOffset,
+                                      int endOffset) {
+        
+        // NEEDWORK: use this method to return the index of the
+        //           first block of interest. Then can fixup
+        //           HighlightBlocksLayer.init to set the index
+        //           and isActive to check for inbounds. This will avoid
+        //           any array copies.
+        //
+        //           The array is not a cache anymore, so it can be modified,
+        //           that avoids the arraycopy. Eventually, should be able
+        //           to get rid of this method entirely by trimming the bounds
+        //           elsewhere.
+        
+        // return relevent blocks properly bounded
+        if(allBlocks[0] < 0) {
+            return allBlocks;
+        }
+
+        // If within block, then adjust the start of the block
+        if(allBlocks[0] <= startOffset && allBlocks[0] >= 0)
+            allBlocks[0] = startOffset;
+        //TextView.dumpBlocks("OUT", allBlocks);
+        return allBlocks;
+    }
+    
+
+    /*static int[] getInterestingBlocksOrig(int[] allBlocks,
                                        int startOffset,
                                        int endOffset) {
         
@@ -571,8 +594,8 @@ public class NbTextView extends TextView
         // find the first block of interest
         //
         
-        // System.err.println("XXX: " + startOffset + "," + endOffset);
-        //dumpBlocks(" IN", allBlocks);
+        System.err.println("XXX: " + startOffset + "," + endOffset);
+        TextView.dumpBlocks(" IN", allBlocks);
         // skip blocks until startOffset within or after block
         int idx = 0;
         for(;
@@ -593,9 +616,9 @@ public class NbTextView extends TextView
             t[0] = startOffset;
         t[t.length -2] = -1;
         t[t.length -1] = -1;
-        //dumpBlocks("OUT", t);
+        TextView.dumpBlocks("OUT", t);
         return t;
-    }
+    }*/
     
     /** Highlight blocks layer highlights all occurences
      * indicated by the blocks array.

@@ -74,21 +74,48 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         // Poke at some internal StatusBar structures
         // 
 	String nbMode = mode; // may be blank for command mode
+        boolean jviOnlyMode = false;
+        String tip = "";
 	if(mode.equals(Edit.VI_MODE_INSERT)) {
 	    nbMode = "INS";
 	} else if(mode.equals(Edit.VI_MODE_REPLACE)) {
 	    nbMode = "OVR";
-	} else if(!mode.equals("")) {
-	    nbMode = "???";
+	} else {
+            jviOnlyMode = true;
+            if(mode.equals("")) {
+                tip = "Command Mode";
+            } else if(G.VIsual_active){
+                if (G.VIsual_select) {
+                    nbMode = "VIS";
+                    tip = "Visual Select Mode";
+                } else {
+                    // It may be "VISUAL, "VISUAL BLOCK" or "VISUAl LINE"
+                    if (G.VIsual_mode == (0x1f & (int)('V'))) { // Ctrl('V')
+                        nbMode = "VIB";
+                        tip = "Visual Block Mode";
+                    } else if (G.VIsual_mode == 'V') {
+                        nbMode = "VIL";
+                        tip = "Visual Line Mode";
+                    } else {
+                        nbMode = "VI";
+                        tip = "Visual Mode";
+                    }
+                }
+
+            }
+            else {
+                nbMode = "???";
+                tip = "Unexpected Mode";
+            }
 	}
-	if(nbMode != "") {
+	if(!jviOnlyMode) {
 	    setText(StatusBar.CELL_TYPING_MODE, nbMode);
 	} else {
 	    StatusBar sb = getStatusBar();
 	    if(sb != null) {
 		JLabel cell = sb.getCellByName(StatusBar.CELL_TYPING_MODE);
 		cell.setText(nbMode);
-		cell.setToolTipText("Command Mode");
+		cell.setToolTipText(tip);
 	    }
 	}
     }

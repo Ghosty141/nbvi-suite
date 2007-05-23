@@ -40,6 +40,9 @@ public class NbOutputStream extends OutputStreamAdaptor {
     String fnTag;
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
+
+    static int nOpen;
+    static boolean checkOpenClose = true;
     
     /** Creates a new instance of NbOutputStream.
      * Type of ViOutputStream.OUTPUT is plain command output, the other
@@ -61,6 +64,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             ow = getIO(tabTag, true); // make a new tab
             fnTag = tv.getDisplayFileName() + ":";
         }
+        checkOpen();
     }
     
     private OutputWriter getIO(String tabTag, boolean fNew) {
@@ -109,6 +113,19 @@ public class NbOutputStream extends OutputStreamAdaptor {
         ow.close();
         ow = null;
         tv = null;
+        checkClose();
+    }
+
+    private synchronized static void checkOpen() {
+        if(nOpen > 0) {
+            System.err.println("UNBALANCED OPEN/CLOSE, RESETTING.");
+            nOpen = 0;
+        }
+        nOpen++;
+    }
+    
+    private synchronized static void checkClose() {
+        nOpen--;
     }
     
     private static class OutList implements OutputListener {

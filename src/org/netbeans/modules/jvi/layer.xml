@@ -3,8 +3,8 @@
 <filesystem>
     <folder name="Menu">
         <folder name="Tools">
-            <attr name="org-netbeans-modules-autoupdate-UpdateAction.instance/org-netbeans-modules-jvi-Module$JViEnableAction.instance" boolvalue="true"/>
             <attr name="org-netbeans-modules-autoupdate-UpdateAction.instance/Separator3_1.instance" boolvalue="true"/>
+            <attr name="org-netbeans-modules-options-OptionsWindowAction.shadow/Separator3_1.instance" boolvalue="true"/>
             <file name="Separator3_1.instance" url="Separator3_1.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
             </file>

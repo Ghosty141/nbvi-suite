@@ -84,10 +84,13 @@ import org.openide.windows.WindowManager;
 public class Module extends ModuleInstall {
     
     private static boolean jViEnabled;
+    static boolean nb6;
+
     private static final String MOD = "Module-" +
             System.identityHashCode(Module.class.getClassLoader()) + ": ";
     
     private static final String PROP_JEP = "ViJEditorPane";
+    private static final String PREF_ENABLED = "viEnabled";
     
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
@@ -105,6 +108,24 @@ public class Module extends ModuleInstall {
     
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
+
+    static {
+        try {
+            Class.forName("org.openide.util.NbPreferences");
+            nb6 = true;
+        } catch (ClassNotFoundException ex) { }
+    }
+
+    public boolean isNb6() {
+        return nb6;
+    }
+
+    /** @return the module specific preferences.
+     */
+    public static Preferences getModulePreferences() {
+        return ViManager.getViFactory().getPreferences()
+                        .userNodeForPackage(Module.class);
+    }
     
     /** called when the module is loaded (at netbeans startup time) */
     public void restored() {
@@ -114,8 +135,14 @@ public class Module extends ModuleInstall {
             
         JViEnableAction jvi
                 = (JViEnableAction)SystemAction.get(JViEnableAction.class);
-        jvi.setSelected(true);
-        runInDispatch(true, runJViEnable);
+
+        Preferences prefs = getModulePreferences();
+        if(prefs.getBoolean(PREF_ENABLED, true)) {
+            jvi.setSelected(true);
+            runInDispatch(true, runJViEnable);
+        } else {
+            jvi.setSelected(false);
+        }
     }
 
     public void uninstalled() {
@@ -558,8 +585,9 @@ public class Module extends ModuleInstall {
                 // mapped to multiple events; so VK_UP --> "caret-up" is removed
                 // So add mappings for VK_KP_UP/DOWN, then there will be no
                 // bindings for "caret-up" and the defaults for code comletion
-                //will be used. (This means that VK_KP_UP won't work, sigh.)
-                // (see CompletionScrollPane if you're interested)
+                // will be used. (This means that VK_KP_UP won't work, sigh.)
+                // If interested see editor/completion/src/org/netbeans/modules
+                //                      /editor/completion/CompletionScrollPane
                 l.add(new JTextComponent.KeyBinding(
                         KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0),
                                                "ViUpKey"));
@@ -926,22 +954,35 @@ public class Module extends ModuleInstall {
         }
     }
     
-    /** The action used for the NB system */
+    /** The action used for the NB system.
+     * NEEDSWORK: want to plug the action into the checkbox
+     *            but see icon comment in constructor.
+     */
     private static class JViEnableAction extends CallableSystemAction {
         protected static final String NAME="jVi";
         private JCheckBoxMenuItem cb;
+
+        private static class MyBox extends JCheckBoxMenuItem {
+            MyBox() { super(NAME); }
+            public void addNotify() {
+                super.addNotify();
+                setSelected(jViEnabled);
+            }
+        }
         
         JViEnableAction() {
             super();
             putValue("noIconInMenu", Boolean.TRUE); // NOI18N
-            cb = new JCheckBoxMenuItem(NAME);
+
+            cb = new MyBox();
+
             // Note if "this" is added with setAction, then icon
             cb.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     doAction(cb.isSelected());
                 }
             });
-            cb.setSelected(true);
+            /*cb.setSelected(true);*/
         }
         
         public boolean isEnabled() {
@@ -956,6 +997,9 @@ public class Module extends ModuleInstall {
             return cb.isSelected();
         }
         
+        /** This is only to change the state of the checkbox,
+         * there should be no other behavior here
+         */
         void setSelected(boolean b) {
             cb.setSelected(b);
         }
@@ -980,6 +1024,7 @@ public class Module extends ModuleInstall {
                         runJViDisable.run();
                 }
             });
+            getModulePreferences().putBoolean(PREF_ENABLED, enabled);
         }
         
         public HelpCtx getHelpCtx() {

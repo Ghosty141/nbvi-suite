@@ -74,12 +74,6 @@ public class NbOptions {
         // NB seems to handle read only files ok, so hide this one.
         Options.getOption(Options.readOnlyHack).setHidden(true);
         
-        // Since we track NB's settings, make these expert.
-        // Note: NB doesn't have tabStop, it has shift width only.
-        Options.getOption(Options.expandTabs).setExpert(true);
-        Options.getOption(Options.shiftWidth).setExpert(true);
-        Options.getOption(Options.tabStop).setExpert(true);
-        
         establishFindSupportOptions();
         
         //

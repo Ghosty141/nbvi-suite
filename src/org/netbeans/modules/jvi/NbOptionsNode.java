@@ -16,7 +16,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 
 public class NbOptionsNode extends BeanNode {
-    private static final String NODE_MISC = "Misc";
+    private static final String NODE_MODIFY = "Modify";
     private static final String NODE_SEARCH = "Search";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
     private static final String NODE_EXTERNAL_PROCESS = "External Process";
@@ -61,8 +61,8 @@ public class NbOptionsNode extends BeanNode {
 		    nodes[0] = new KeyBindingNode();
                 } else if(object.equals(NODE_KEYPAD_BINDINGS)) {
 		    nodes[0] = new KeypadBindingNode();
-                } else if(object.equals(NODE_MISC)) {
-		    nodes[0] = new MiscNode();
+                } else if(object.equals(NODE_MODIFY)) {
+		    nodes[0] = new ModifyNode();
                 } else if(object.equals(NODE_SEARCH)) {
 		    nodes[0] = new SearchNode();
                 } else if(object.equals(NODE_CURSOR_WRAP)) {
@@ -80,7 +80,7 @@ public class NbOptionsNode extends BeanNode {
 
         protected void addNotify() {
            Collection c = new ArrayList();
-           c.add(NODE_MISC);
+           c.add(NODE_MODIFY);
            c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);
            c.add(NODE_EXTERNAL_PROCESS);
@@ -128,9 +128,9 @@ public class NbOptionsNode extends BeanNode {
 	}    
     }
     
-    private static class MiscNode extends BeanNode {
-	public MiscNode() throws IntrospectionException {
-	    super(new OptionsBean.Misc() {
+    private static class ModifyNode extends BeanNode {
+	public ModifyNode() throws IntrospectionException {
+	    super(new OptionsBean.Modify() {
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);

@@ -101,8 +101,19 @@ public class NbCaret extends ExtCaret implements ViCaret {
   }
    */
 
-  // Following methods are intercepted to workaround the missing
-  // positionCaret functionality.
+
+    public void setDot(int i) {
+        if(isMouseAction || mouseButtonDown) {
+            i = ViManager.mouseSetDot(i, mouseComponent, mouseEvent);
+        }
+        super.setDot(i);
+    }
+    
+    public void moveDot(int i) {
+        if(mouseButtonDown)
+            i = ViManager.mouseMoveDot(i, mouseComponent, mouseEvent);
+        super.moveDot(i);
+    }
   
     boolean mouseButtonDown;
 
@@ -116,6 +127,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     public void mouseReleased(MouseEvent mouseEvent) {
         beginClickHack(mouseEvent);
         super.mouseReleased(mouseEvent);
+        ViManager.mouseRelease(mouseEvent);
         endClickHack();
         mouseButtonDown = false;
     }
@@ -125,24 +137,19 @@ public class NbCaret extends ExtCaret implements ViCaret {
         super.mouseClicked(mouseEvent);
         endClickHack();
     }
+    public void mouseDragged(MouseEvent mouseEvent) {
+        beginClickHack(mouseEvent);
+        super.mouseDragged(mouseEvent);
+        endClickHack();
+    }
 
     boolean isMouseAction = false;
     JTextComponent mouseComponent;
-    public void setDot(int i) {
-        if(isMouseAction || mouseButtonDown) {
-            i = ViManager.mouseSetDot(i, mouseComponent);
-        }
-        super.setDot(i);
-    }
-    
-    public void moveDot(int i) {
-        if(mouseButtonDown)
-            i = ViManager.mouseMoveDot(i, mouseComponent);
-        super.moveDot(i);
-    }
+    MouseEvent mouseEvent;
     
     private void beginClickHack(MouseEvent mouseEvent) {
         isMouseAction = true;
+        this.mouseEvent = mouseEvent;
         mouseComponent = (JTextComponent)getEventComponent(mouseEvent);
     }
     

@@ -522,7 +522,8 @@ public class Module extends ModuleInstall {
         } catch (DataObjectNotFoundException ex) { }
         if(ck != null) {
             try {
-                act = SystemAction.get(ck.instanceClass());
+                if(SystemAction.class.isAssignableFrom(ck.instanceClass()))
+                    act = SystemAction.get((Class<SystemAction>)ck.instanceClass());
             } catch (Exception ex) { }
             if(act == null) {
                 // if its not a SystemAction try creating one

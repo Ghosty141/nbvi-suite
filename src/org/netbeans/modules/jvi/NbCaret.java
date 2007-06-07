@@ -1,6 +1,7 @@
 
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.G;
 import com.raelity.jvi.ViCursor;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.ViCaret;
@@ -19,20 +20,45 @@ import org.netbeans.editor.ext.ExtCaret;
  * // NEEDSWORK: cache the current font metric, listen to font property changes
  */
 public class NbCaret extends ExtCaret implements ViCaret {
+  // taken from MasterMatcher
+  public static final String PROP_SEARCH_DIRECTION
+                          = "nbeditor-bracesMatching-searchDirection"; //NOI18N
+  public static final String D_BACKWARD = "backward-preferred"; //NOI18N
+  public static final String D_FORWARD = "forward-preferred"; //NOI18N
+  
+  public static final String PROP_CARET_BIAS
+                          = "nbeditor-bracesMatching-caretBias"; //NOI18N
+  public static final String B_BACKWARD = "backward"; //NOI18N
+  public static final String B_FORWARD = "forward"; //NOI18N
+  
+  public static final String PROP_MAX_BACKWARD_LOOKAHEAD
+                    = "nbeditor-bracesMatching-maxBackwardLookahead"; //NOI18N
+  public static final String PROP_MAX_FORWARD_LOOKAHEAD
+                    = "nbeditor-bracesMatching-maxForwardLookahead"; //NOI18N
+  
   ViCaretDelegate viDelegate;
   static Method setMatchBraceOffset;
+  static boolean matcher6;
 
   public NbCaret() {
     super();
-    viDelegate = new ViCaretDelegate(this);
-    try {
-      setMatchBraceOffset = getClass().getSuperclass()
-                                .getMethod("setMatchBraceOffset", int.class);
-    } catch (NoSuchMethodException ex) { }
+    viDelegate = new com.raelity.jvi.swing.ViCaretDelegate(this);
+    if(!goodGotoMatchBehavior()) {
+      try {
+        java.lang.Class.forName(
+                "org.netbeans.spi.editor.bracesmatching.BracesMatcher");
+        matcher6 = true;
+        ViManager.setPlatformFindMatch(true);
+      }catch(ClassNotFoundException ex) { }
+      try {
+        setMatchBraceOffset = getClass().getSuperclass()
+                .getMethod("setMatchBraceOffset", int.class);
+      } catch(java.lang.NoSuchMethodException ex) { }
+    }
   }
   
   public static boolean goodGotoMatchBehavior() {
-      return setMatchBraceOffset != null;
+      return matcher6 || setMatchBraceOffset != null;
   }
 
   public void setCursor(ViCursor cursor) {
@@ -42,9 +68,41 @@ public class NbCaret extends ExtCaret implements ViCaret {
     //           if method is available and ifso invoke directly.
     
     //setMatchBraceOffset(cursor.getMatchBraceOffset());
-    if(setMatchBraceOffset != null) {
+    int offset = cursor.getMatchBraceOffset();
+    if(matcher6) {
+      if(G.p_pbm.getBoolean()) {
+        if(offset == 0) { // command mode
+          getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                  B_FORWARD);
+        } else {
+          getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                  B_BACKWARD);
+        }
+        getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
+                D_FORWARD);
+        getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
+                new Integer(250));
+        getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
+                new Integer(250));
+        
+      } else {
+        if(offset == 0) { // command mode
+          getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                  B_FORWARD);
+        } else {
+          getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                  B_BACKWARD);
+        }
+        getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
+                D_FORWARD);
+        getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
+                new Integer(0));
+        getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
+                new Integer(0));
+      }
+    }
+    else if(setMatchBraceOffset != null) {
       try {
-        int offset = cursor.getMatchBraceOffset();
         if(offset == -1) {
           offset = java.lang.Integer.MAX_VALUE;
         }
@@ -158,3 +216,4 @@ public class NbCaret extends ExtCaret implements ViCaret {
     }
 }
 
+// vi:set sw=2 ts=8:

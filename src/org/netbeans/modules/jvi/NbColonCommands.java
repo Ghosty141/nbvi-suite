@@ -79,12 +79,6 @@ public class NbColonCommands {
         ColonCommands.register("deb", "debug",
          */
         
-        
-
-        // ColonCommands.register("N", "Next", Browser.ACTION_NavigateBack);
-        // ColonCommands.register("n", "next", Browser.ACTION_NavigateForward);
-        
-
         /*
         initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);

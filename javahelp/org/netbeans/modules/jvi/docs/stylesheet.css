@@ -1,0 +1,53 @@
+
+/* Define colors, fonts and other style attributes here to override the defaults
+ */
+
+tt { font-size: 130% }
+
+/* Page background color */
+
+/*
+
+// some yellowish colors
+//body { background-color: #FEE7C7 }
+body { background-color: #F0E0C0 }      // darker
+//body { background-color: #FFF0D0 }    // lighter
+
+A.critical:link {color: red; font-weight: bold}
+A.critical:active {color: red; font-weight: bold}
+A.critical:visited {color: red; font-weight: bold}
+
+A.note:link {color: green; font-weight: bold}
+A.note:active {color: green; font-weight: bold}
+A.note:visited {color: green; font-weight: bold}
+
+
+/* Table colors */
+/* .TableHeadingColor     { background: #CCCCFF } /* Dark mauve */
+/* .TableSubHeadingColor  { background: #EEEEFF } /* Light mauve */
+/* .TableRowColor         { background: #FFFFFF } /* White */
+
+/* Font used in left-hand frame lists */
+/* .IndexTitleFont   { font-size: normal; font-family: normal }
+.IndexHeadingFont { font-size: normal; font-family: normal }
+.IndexSec00Font { font-size: 15pt; font-family: normal; font-weight: normal }
+.IndexItemFont    { font-size: normal; font-family: normal }
+
+/* Attributes for main body */
+/* .MainSec00Font { font-size: large }
+.MainSec01Font { font-size: medium }
+
+em.heavy { font-weight: bold }
+
+/* Example of smaller, sans-serif font in frames */
+/* .FrameItemFont  { font-size: 10pt; font-family: Helvetica, Arial, sans-serif } */
+
+/* Navigation bar fonts and colors */
+/*.NavBarCell1    { background-color:#EEEEFF;}/* Light mauve */
+/*.NavBarCell1Rev { background-color:#00008B;}/* Dark Blue */
+/*.NavBarFont1    { font-family: Arial, Helvetica, sans-serif; color:#000000;}
+.NavBarFont1Rev { font-family: Arial, Helvetica, sans-serif; color:#FFFFFF;}
+
+.NavBarCell2    { font-family: Arial, Helvetica, sans-serif; background-color:#FFFFFF;}
+.NavBarCell3    { font-family: Arial, Helvetica, sans-serif; background-color:#FFFFFF;}
+*/

@@ -1,30 +1,58 @@
 <html>
     <head>
-        <title>jVi Visual Block Mode</title>
+        <title>Visual Block Mode</title>
         <link rel="stylesheet" href="nbdocs:/org/netbeans/modules/usersguide/ide.css" type="text/css">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <LINK REL="stylesheet" TYPE="text/css" HREF="stylesheet.css">
     </head>
     <body>
-        <h2>jVi Visual Block Mode</h2>
+        <h2>Visual Block Mode</h2>
+
+        (This reference page is modified from Sandip Chitale's Rectangular Edit documentation. Thanks Sandip.)
+
+        <p>
+          <img SRC="jvi-vis-block-select.png"
+               ALT="Built for NetBeans"
+               align="right" border="0"/>
+               This NetBeans screenshot shows a visual block mode selection.
+               Notice that the status bar display jVi's current
+               mode and the dimensions of the block mode selection.
+               The cursor is in the lower right corner of the selected
+               block. It can be
+               moved around with the cursor keys to extend and shrink
+               the selection. There are commands to move the cursor
+               to other corners.
+         </p>
+
+        <h4>Notes for non vi/vim users using Block Mode</h4>
+        <ul>
+          <li>jVi is turned on/off with a checkbox in the Tools menu</li>
+          <li>The current mode displays in the status bar beneath editor region.</li>
+          <li>Use <tt>&lt;ESC&gt;</tt> to cancel the current mode or operation.</li>
+          <li><tt>gv</tt> starts visual mode with the previous visual selection</li>
+          <li><tt>u</tt> and <tt>Ctrl-R</tt> are undo and redo in command mode.</li>
+        </ul>
 
         <h4>Selecting a Rectangular Region</h4>
-        There are two techniques for selecting a block.
         <ul>
-          <li>
-            mouse<br/>
-            Drag the mouse so the the corners of the selection mark the rectangular region
-            of interest.
-            Then enter <tt>Ctrl-V</tt> to begin visual block mode. After Ctrl-V use the
-            arrow keys.
+          <li><b>Converting a normal selection</b><br/>
+            Create a selection, for example drag the mouse, so the the endpoints of the selection
+            are  the corners of the rectangular region of interest.
+            Then enter <tt>Ctrl-V</tt> to begin visual block mode. Then use the
+            arrow keys if needed.
           </li>
-          <li>
-            arrow keys<br/>
-            Enter <tt>Ctrl-V</tt> and then use the arrow keys to move move the cursor.
-            In block mode, cursor motion adjust a corner of the block. See the following
-            example to see how the cursor is moved to other corners of the block.
-            Note that any vi/vim motion commands may be used to move the cursor and extend
-            the block.
+          <li><b>arrow keys</b><br/>
+            If not already in visual block mode, enter <tt>Ctrl-V</tt>
+            and then use the arrow keys to move move the cursor.
+            In block mode, cursor motion adjust a corner of the block.
+            Note that any vi/vim motion commands (such as a pattern search,
+            eg <tt>/class</tt>) may be used to move the cursor and 
+            so extend or shrink the block.
+          </li>
+          <li><b>moving the cursor to other corners</b><br/>
+            The following illustration shows how the cursor is moved to other
+            corners of the block.
+          </li>
         </ul>
         <table style="WIDTH: 350px; TEXT-ALIGN: left" cellspacing="5" cellpadding="2" border="0">
             <tbody>
@@ -68,8 +96,30 @@
 
         Notice that entering <tt>oOoO</tt> touches all four corners returning the cursor to its original position.
 
+        <p>When there are TABS in the selection,
+        the display may not look correct,
+        however the commands behave correctly.</p>
+
         <h4>Block Mode Commands</h4>
-        <table style="WIDTH: 350px; TEXT-ALIGN: left" cellspacing="5" cellpadding="2" border="0">
+        Note that most commands that add text take an optional count, in particular the
+        <tt>p</tt>, <tt>P</tt>, <tt>I</tt> and <tt>A</tt> commands,
+        this results in tiling the block. See the last example.
+        <p>
+        By default the delete, yank and put commands operate on an internal
+        buffer. To use them with the clipboard, prepend the command with <tt>"*</tt>.
+        For example, <b><tt>"*d</tt></b> deletes the block and places the text in the clipboard.
+        (the double quote is part of the command).
+        </p><p>
+        When jvi (vim) puts block mode data into a buffer, the <tt>d</tt> and <tt>y</tt>
+        commands, it marks that buffer as containing block mode data. The <tt>P</tt> command
+        behaves differently if the buffer does not contain block mode data.
+        </p><p>
+        The following examples all assume the buffer has block mode data.
+        The last examples show advanced command features in action.
+        </p><p>
+        If there are TABS in the selection, they are "split" as needed to square things up.
+        </p>
+        <table style="WIDTH: 400px; TEXT-ALIGN: left" cellspacing="5" cellpadding="2" border="0">
             <tbody>
                 <tr>
                     <td style="FONT-WEIGHT: bold; VERTICAL-ALIGN: top; TEXT-ALIGN: left">Selection<br /></td>
@@ -125,7 +175,7 @@
                         <pre>01234<br />01--   234<br />01++++ 234<br />01*****234<br />01234</pre>
                     </td>
                     <td style="VERTICAL-ALIGN: top">
-                      <pre>--<br />++++<br />*****</pre>no change
+                      <pre>--<br />++++<br />*****</pre>no&nbsp;change
                     </td>
                 </tr>
 
@@ -148,6 +198,12 @@
                 </tr>
 
                 <tr>
+                  <td colspan="4">
+                    In next, buffer first provides the source data,
+                    <br/>then it is replaced by what was deleted.
+                  </td>
+                </tr>
+                <tr>
                     <td style="VERTICAL-ALIGN: top">
                         <pre>01234567
 01<font style="BACKGROUND-COLOR: #ffe588">234</font>567
@@ -160,7 +216,7 @@
                         <pre>01234567<br/>01--   567<br/>01++++ 567<br/>01*****567<br/>01234567<br/></pre>
                     </td>
                     <td style="VERTICAL-ALIGN: top">
-                      <pre>234<br />234<br />234</pre>after
+                      after<pre>234<br />234<br />234</pre>
                     </td>
                 </tr>
 
@@ -187,7 +243,7 @@
 01<font style="BACKGROUND-COLOR: #ffe588">23456</font>789
 0123456789<br /></pre>
                     </td>
-                    <td style="VERTICAL-ALIGN: top"><tt>c-+*</tt>&lt;ESC&gt;<br/>change with<br/>user text</td>
+                    <td style="VERTICAL-ALIGN: top"><tt>c-+*</tt>&lt;ESC&gt;<br/>change each<br/>line selection<br/>to user text</td>
                     <td style="VERTICAL-ALIGN: top">
                         <pre>0123456789<br />01-+*789<br />01-+*789<br />01-+*789<br />0123456789</pre>
                     </td>
@@ -226,17 +282,144 @@ aBcDeFgHiJ<br /></pre>
 
                 <tr>
                     <td style="VERTICAL-ALIGN: top">
-                        <pre>0123456789
-01<font style="BACKGROUND-COLOR: #ffe588">23456</font>789
-01<font style="BACKGROUND-COLOR: #ffe588">23456</font>789
-01<font style="BACKGROUND-COLOR: #ffe588">23456</font>789
-0123456789<br /></pre>
+                        <pre>01234
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+01234<br /></pre>
                     </td>
-                    <td style="VERTICAL-ALIGN: top">Rectang<br/>Delete<br /></td>
+                    <td style="VERTICAL-ALIGN: top"><tt>I#*&lt;ESC&gt;</tt><br/>insert<br/>before block
+                    </td>
                     <td style="VERTICAL-ALIGN: top">
-                        <pre>0123456789<br />01789<br />01789<br />01789<br />0123456789</pre>
+                        <pre>01234<br />0#*1234<br />0#*1234<br />0#*1234<br />01234</pre>
                     </td>
-                    <td style="VERTICAL-ALIGN: top">no change</td>
+                    <td style="VERTICAL-ALIGN: top">
+                      no change
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+0<font style="BACKGROUND-COLOR: #ffe588">123</font>4
+01234<br /></pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top"><tt>A*#&lt;ESC&gt;</tt><br/>append<br/>after block
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234<br />0123*#4<br />0123*#4<br />0123*#4<br />01234</pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                      no change
+                    </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    Notice that the behavior of <tt>I</tt> and <tt>A</tt> are different
+                    when short lines are included in the selection. This is intentional
+                    so that both types of behavior are available.
+                  </td>
+                </tr>
+
+                <tr>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234
+01<font style="BACKGROUND-COLOR: #ffe588">23</font>4
+0
+0
+01<font style="BACKGROUND-COLOR: #ffe588">23</font>4
+01234<br /></pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top"><tt>I+=&lt;ESC&gt;</tt><br/>insert<br/>before block
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234<br />01+=234<br />0<br />0<br />01+=234<br/>01234</pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                      no change
+                    </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    <tt>I</tt>, insert, does not affect short lines (above).<br/>
+                    <tt>A</tt>, append, modifies short lines (below).
+                  </td>
+                </tr>
+
+                <tr>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234
+01<font style="BACKGROUND-COLOR: #ffe588">23</font>4
+0
+0
+01<font style="BACKGROUND-COLOR: #ffe588">23</font>4
+01234<br /></pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top"><tt>A++&lt;ESC&gt;</tt><br/>append<br/>after block
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234<br />0123++4<br />0   ++<br />0   ++<br />0123++4<br/>01234</pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                      no change
+                    </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    The following example shows how <tt>p</tt>, the put command, inserts blanks
+                    after short lines to complete a put. The <tt>$</tt> in the example command
+                    move the cursor to the end of the line.
+                  </td>
+                </tr>
+
+                <tr>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234
+<font style="BACKGROUND-COLOR: #ffe588">012</font>34
+<font style="BACKGROUND-COLOR: #ffe588">0</font>
+<font style="BACKGROUND-COLOR: #ffe588">0</font>
+<font style="BACKGROUND-COLOR: #ffe588">012</font>
+01234<br /></pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top"><tt>y$p</tt><br/>put extends<br/>short lines<br/>if needed
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>01234<br />01234012<br />0    0<br />0    0<br />01234012<br/>01234</pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                      <pre>012<br/>0<br/>0<br/>012</pre>
+                    </td>
+                </tr>
+
+                <tr>
+                  <td colspan="4">
+                    Here is an example using a count with the put command.
+                    The buffer contents are shown before the command is
+                    exectued.
+                  </td>
+                </tr>
+
+                <tr>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>0123
+0<font style="BACKGROUND-COLOR: #000000; color: #ffffff">1</font>23
+0123
+0123
+0123<br /></pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top"><tt>3p</tt><br/>tile three<br/>copies of<br/>buffer
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                        <pre>0123<br />01ababab23<br />01cdcdcd23<br />01efefef23<br />0123</pre>
+                    </td>
+                    <td style="VERTICAL-ALIGN: top">
+                      <pre>ab<br/>cd<br/>ef</pre>no change
+                    </td>
                 </tr>
 
 

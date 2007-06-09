@@ -3,6 +3,6 @@
 <toc version="2.0">
   <tocitem text="jVi KeyBindings">
   <tocitem text="About jVi KeyBindings" target="org.netbeans.modules.jvi.about"/>
-  <tocitem text="jVi Visual Block Mode" target="org.netbeans.modules.jvi.vis_block"/>
+  <tocitem text="Visual Block Mode" target="org.netbeans.modules.jvi.vis_block"/>
   </tocitem>
 </toc>

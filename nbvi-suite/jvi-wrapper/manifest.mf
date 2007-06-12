@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
 OpenIDE-Module: com.raelity.jvi/0
-OpenIDE-Module-Implementation-Version: 4
+OpenIDE-Module-Implementation-Version: 5
 OpenIDE-Module-Localizing-Bundle: com/raelity/jvi/Bundle.properties
 

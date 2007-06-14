@@ -14,6 +14,7 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import java.awt.Color;
+import java.awt.Font;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import org.netbeans.editor.Coloring;
@@ -43,6 +44,10 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     public static final String CELL_STATUS = "vi-status";
     public static final String CELL_COMMAND = "vi-command";
     private static Coloring red = new Coloring(null, Color.red, null);
+    private static Coloring green = new Coloring(new Font(null, Font.BOLD, 0),
+                                                 Coloring.FONT_MODE_APPLY_STYLE,
+                                                 Color.green.darker().darker(),
+                                                 null);
     
     /** Creates a new instance of NbStatusDisplay */
     public NbStatusDisplay(ViTextView textView) {
@@ -144,6 +149,13 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         lastMsg = text;
         lastMsgColoring = red;
 	setText(CELL_STATUS, modeString() + text, red);
+    }
+
+    public void displayWarningMessage(String text) {
+        fFrozen = false;
+        lastMsg = text;
+        lastMsgColoring = green;
+	setText(CELL_STATUS, modeString() + text, green);
     }
 
     public void displayFrozenMessage(String text) {

@@ -51,11 +51,12 @@ public class NbBuffer extends Buffer {
 //    private static Method undoRedoFireChangeMethod;
     
     /** Creates a new instance of NbBuffer */
-    public NbBuffer(Document doc) {
-        super(doc);
+    public NbBuffer(ViTextView tv) {
+        super(tv);
         //correlateDocumentEvents();
         
-        UndoableEditListener l[] = ((AbstractDocument)doc).getUndoableEditListeners();
+        UndoableEditListener l[] = ((AbstractDocument)getDoc())
+                                                .getUndoableEditListeners();
         for (int i = 0; i < l.length; i++) {
             if(l[i] instanceof UndoRedo.Manager) {
                 undoRedo = (UndoRedo.Manager) l[i];

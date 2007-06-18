@@ -93,8 +93,8 @@ final public class NbFactory extends DefaultViFactory {
         return new NbTextView(editorPane);
     }
     
-    protected Buffer createBuffer(JEditorPane editorPane) {
-        return new NbBuffer(editorPane.getDocument());
+    protected Buffer createBuffer(ViTextView tv) {
+        return new NbBuffer(tv);
     }
     
     public void registerEditorPane(JEditorPane ep) {

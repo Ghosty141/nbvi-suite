@@ -138,6 +138,8 @@ public class NbTextView extends TextView
     public void displayFileInfo() {
         StringBuffer sb = new StringBuffer();
         sb.append("\"" + getDisplayFileName() + "\"");
+        if(ViManager.getViFactory().getFS().isModified(this))
+            sb.append(" [Modified]");
         int l = getLineCount();
         sb.append(" " + l + " line" + Misc.plural(l));
         sb.append(" --" + (int)((cache.getCursor().getLine() * 100)
@@ -551,13 +553,7 @@ public class NbTextView extends TextView
                                       int startOffset,
                                       int endOffset) {
         
-        // NEEDWORK: use this method to return the index of the
-        //           first block of interest. Then can fixup
-        //           HighlightBlocksLayer.init to set the index
-        //           and isActive to check for inbounds. This will avoid
-        //           any array copies.
-        //
-        //           The array is not a cache anymore, so it can be modified,
+        // NEEDWORK: The array is not a cache anymore, so it can be modified,
         //           that avoids the arraycopy. Eventually, should be able
         //           to get rid of this method entirely by trimming the bounds
         //           elsewhere.
@@ -573,52 +569,6 @@ public class NbTextView extends TextView
         //TextView.dumpBlocks("OUT", allBlocks);
         return allBlocks;
     }
-    
-
-    /*static int[] getInterestingBlocksOrig(int[] allBlocks,
-                                       int startOffset,
-                                       int endOffset) {
-        
-        // NEEDWORK: use this method to return the index of the
-        //           first block of interest. Then can fixup
-        //           HighlightBlocksLayer.init to set the index
-        //           and isActive to check for inbounds. This will avoid
-        //           any array copies.
-        
-        // return relevent blocks properly bounded
-        if(allBlocks[0] < 0) {
-            return allBlocks;
-        }
-        
-        //
-        // find the first block of interest
-        //
-        
-        System.err.println("XXX: " + startOffset + "," + endOffset);
-        TextView.dumpBlocks(" IN", allBlocks);
-        // skip blocks until startOffset within or after block
-        int idx = 0;
-        for(;
-               idx < allBlocks.length
-            && allBlocks[idx +2] != -1
-            && allBlocks[idx +1] < startOffset ;
-            idx += 2);
-        if(startOffset >= allBlocks[idx +1])
-            idx += 2;
-        
-        // copy what's needed
-        int t[] = new int[allBlocks.length];
-        System.arraycopy(allBlocks, idx, t, 0,
-                         Math.min(allBlocks.length - idx, t.length - 1));
-        
-        // If within block, then adjust the start of the block
-        if(t[0] <= startOffset && t[0] >= 0)
-            t[0] = startOffset;
-        t[t.length -2] = -1;
-        t[t.length -1] = -1;
-        TextView.dumpBlocks("OUT", t);
-        return t;
-    }*/
     
     /** Highlight blocks layer highlights all occurences
      * indicated by the blocks array.

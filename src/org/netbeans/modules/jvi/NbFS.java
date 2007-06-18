@@ -17,32 +17,43 @@ import org.openide.windows.TopComponent;
 
 public class NbFS implements ViFS
 {
-    public void write(ViTextView tv, boolean force) {
+    private DataObject getDataObject(ViTextView tv) {
 	Document doc = tv.getEditorComponent().getDocument();
+        DataObject dobj = null;
 	if(doc != null) {
 	    FileObject fo = NbEditorUtilities.getFileObject(doc);
 	    if(fo == null) {
 		Msg.emsg("Internal Error: null FileObject??");
-                return;
+                return null;
 	    }
-	    DataObject dobj = NbEditorUtilities.getDataObject(doc);
-	    if(dobj != null) {
-		//SaveAction s = (SaveAction)SystemAction.get(SaveAction.class);
-		// NB6.0 s.createContextAwareInstance(dobj.Lookup());
-		//s.performAction((Node[])null);
-		SaveCookie sc = (SaveCookie)dobj.getCookie(SaveCookie.class);
-		if(sc != null) {
-                    try {
-                        sc.save();
-                        Msg.smsg(tv.getDisplayFileNameAndSize() + " written");
-                    } catch (IOException ex) {
-                        Msg.emsg("error writing " + fo.getNameExt());
-                    }
-		} else {
-		    // Msg.wmsg(fo.getNameExt() + " not dirty");
-		}
-	    }
-	}
+	    dobj = NbEditorUtilities.getDataObject(doc);
+        }
+        return dobj;
+    }
+
+    public boolean isModified(ViTextView tv) {
+        DataObject dobj = getDataObject(tv);
+        return dobj != null ? dobj.isModified() : true;
+    }
+
+    public void write(ViTextView tv, boolean force) {
+        DataObject dobj = getDataObject(tv);
+        if(dobj != null) {
+            //SaveAction s = (SaveAction)SystemAction.get(SaveAction.class);
+            // NB6.0 s.createContextAwareInstance(dobj.Lookup());
+            //s.performAction((Node[])null);
+            SaveCookie sc = (SaveCookie)dobj.getCookie(SaveCookie.class);
+            if(sc != null) {
+                try {
+                    sc.save();
+                    Msg.smsg(tv.getDisplayFileNameAndSize() + " written");
+                } catch (IOException ex) {
+                    Msg.emsg("error writing " + tv.getDisplayFileName());
+                }
+            } else {
+                // Msg.wmsg(fo.getNameExt() + " not dirty");
+            }
+        }
     }
 
     public void writeAll(boolean force) {

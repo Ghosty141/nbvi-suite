@@ -31,11 +31,15 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.ColonCommands.ColonAction;
 import com.raelity.jvi.ColonCommands.ColonEvent;
+import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
+import javax.swing.Action;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.spi.project.ActionProvider;
+import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 
@@ -65,13 +69,8 @@ public class NbColonCommands {
                                new Module.DelegateFileSystemAction(
            "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
         
-        /*
         // This action is not well behaved.
-        ColonCommands.register("gr","grep",
-                               new Module.DelegateFileSystemAction(
-            "Actions/Refactoring/"
-            + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance"));
-        */
+        ColonCommands.register("fu","fu", ACTION_fu);
         
         ColonCommands.register("mak","make", new Make());
         /*
@@ -83,6 +82,35 @@ public class NbColonCommands {
         initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);
         */
+    }
+
+    public static ColonAction ACTION_fu = new Grep();
+
+    private static void doWhereUsed() {
+        Action act = Module.fetchFileSystemAction("Actions/Refactoring/"
+            + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance");
+        TopComponent tc = TopComponent.getRegistry().getActivated();
+        act = ((ContextAwareAction) act)
+                            .createContextAwareInstance(tc.getLookup());
+        ActionEvent ev = new ActionEvent(tc,
+                                            ActionEvent.ACTION_PERFORMED,
+                                            "");//Utilities.keyToString(ks));
+        if(act.isEnabled())
+            act.actionPerformed(ev);
+        else
+            Util.vim_beep();
+    }
+
+    static private class Grep extends ColonAction {
+        public void actionPerformed(ActionEvent e) {
+            // The execution must be defered for the focus transfer to
+            // the JEP to complete.
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    doWhereUsed();
+                }
+            });
+        }
     }
     
     private static ColonAction ACTION_next = new Next(true);

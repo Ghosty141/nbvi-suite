@@ -34,6 +34,7 @@ import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.windows.TopComponent;
 import static com.raelity.jvi.Constants.*;
 
@@ -151,6 +152,10 @@ public class NbTextView extends TextView
         Document doc = getDoc();
         if(doc != null) {
             FileObject fo = NbEditorUtilities.getFileObject(doc);
+            /*System.err.println("getPath = " + fo.getPath());
+            System.err.println("getFileDisplayName = "
+                               + FileUtil.getFileDisplayName(fo));
+            System.err.println("toFile = " + FileUtil.toFile(fo));*/
             if(fo != null)
                 return fo.getNameExt();
         }

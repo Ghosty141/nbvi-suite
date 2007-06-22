@@ -84,7 +84,7 @@ public class NbColonCommands {
         */
     }
 
-    public static ColonAction ACTION_fu = new Grep();
+    public static ColonAction ACTION_fu = new FindUsages();
 
     private static void doWhereUsed() {
         Action act = Module.fetchFileSystemAction("Actions/Refactoring/"
@@ -101,7 +101,7 @@ public class NbColonCommands {
             Util.vim_beep();
     }
 
-    static private class Grep extends ColonAction {
+    static private class FindUsages extends ColonAction {
         public void actionPerformed(ActionEvent e) {
             // The execution must be defered for the focus transfer to
             // the JEP to complete.

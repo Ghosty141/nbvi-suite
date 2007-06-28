@@ -70,7 +70,7 @@ public class NbColonCommands {
            "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
         
         // This action is not well behaved.
-        ColonCommands.register("fu","fu", ACTION_fu);
+        ColonCommands.register("gr","grep", ACTION_fu);
         
         ColonCommands.register("mak","make", new Make());
         /*

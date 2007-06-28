@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.BooleanOption;
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
@@ -14,6 +15,7 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -155,14 +157,58 @@ public class NbTextView extends TextView
             /*System.err.println("getPath = " + fo.getPath());
             System.err.println("getFileDisplayName = "
                                + FileUtil.getFileDisplayName(fo));
-            System.err.println("toFile = " + FileUtil.toFile(fo));*/
+            System.err.println("toFileAbs = " + FileUtil.toFile(fo).getAbsolutePath());
+            System.err.println("toFileRel = " + FileUtil.toFile(fo).getPath());
+            System.err.println("toFileParent = " + FileUtil.toFile(fo).getParent());*/
             if(fo != null)
                 return fo.getNameExt();
         }
         return "UNKNOWN";
     }
     
-/* FROM ActionFactory
+    public String getFileName(char option) {
+        Document doc = getDoc();
+        if(doc != null) {
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
+            if(fo != null){
+                String filename;
+                File fi = FileUtil.toFile(fo);
+                switch (option){
+                    case 'p':
+                        filename = fi.getAbsolutePath();
+                        break;
+                    case 'e':
+                        filename = fo.getExt(); // not in Java
+                        break;
+                    case 't':
+                        filename = fi.getName();
+                        break;
+                    case 'h':
+                        if(fi.isAbsolute()) {
+                            filename = fi.getParent();
+                            break;
+                        }
+                        // FALLTHROUGH
+                    case ' ':
+                        filename = fi.getPath();
+                        break;
+                    default:
+                        filename = fi.getPath()
+                                   + ":" + new String(new char[] {option});
+                        break;
+                }
+                
+                if(G.p_ssl.getBoolean()){
+                    // Shellslash is on, replace \ with /
+                    filename = filename.replace('\\','/');
+                } 
+                return filename;
+            }
+        }
+        return "";
+    }
+
+   /* FROM ActionFactory
     public static class UndoAction extends LocalBaseAction {
  
         static final long serialVersionUID =8628586205035497612L;

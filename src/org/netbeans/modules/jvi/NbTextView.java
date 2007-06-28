@@ -166,6 +166,17 @@ public class NbTextView extends TextView
         return "UNKNOWN";
     }
     
+    /**
+     * NEEDSWORK: getFileName (getModifiedFileName)
+     * In the future, to support multiple file modifiers, could take a File
+     * as an argument, and return a File.
+     *
+     * At some point the guts can go into jVi Core, and only the translation
+     * from FileObject to Object needs to be in here.
+     * Probably have something like tv.getFile().
+     *
+     * The code that deals with extensions, :r, :e should just "do it".
+     */
     public String getFileName(char option) {
         Document doc = getDoc();
         if(doc != null) {
@@ -179,6 +190,13 @@ public class NbTextView extends TextView
                         break;
                     case 'e':
                         filename = fo.getExt(); // not in Java
+                        break;
+                    case 'r':
+                        // NEEDSWORK: this ":r" code may not work in corner
+                        // cases or with relative paths, but should cover all
+                        // use cases in NetBeans
+                        filename = fi.getParent() + fi.separator
+                                    + fo.getName(); // not in Java
                         break;
                     case 't':
                         filename = fi.getName();

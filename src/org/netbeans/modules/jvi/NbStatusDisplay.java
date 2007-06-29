@@ -148,14 +148,14 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         fFrozen = false;
         lastMsg = text;
         lastMsgColoring = red;
-	setText(CELL_STATUS, modeString() + text, red);
+	setText(CELL_STATUS, modeString() + text, lastMsgColoring);
     }
 
     public void displayWarningMessage(String text) {
         fFrozen = false;
         lastMsg = text;
-        lastMsgColoring = green;
-	setText(CELL_STATUS, modeString() + text, green);
+        lastMsgColoring = red;
+	setText(CELL_STATUS, modeString() + text, lastMsgColoring);
     }
 
     public void displayFrozenMessage(String text) {

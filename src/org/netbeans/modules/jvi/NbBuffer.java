@@ -126,6 +126,14 @@ public class NbBuffer extends Buffer {
         }
     }
 
+    protected String getRemovedText(DocumentEvent e) {
+        String s = null;
+        if(e instanceof BaseDocumentEvent) {
+            s = ((BaseDocumentEvent)e).getText();
+        }
+        return s;
+    }
+
     // In NB all the action for non-insert undo is happening in NbTextView
     // Need this here, to insure base class doesn't get involved
     public void beginUndo() {

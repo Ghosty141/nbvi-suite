@@ -88,16 +88,24 @@ public class NbColonCommands {
 
     private static void doWhereUsed() {
         Action act = Module.fetchFileSystemAction("Actions/Refactoring/"
-            + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance");
-        TopComponent tc = TopComponent.getRegistry().getActivated();
-        act = ((ContextAwareAction) act)
-                            .createContextAwareInstance(tc.getLookup());
-        ActionEvent ev = new ActionEvent(tc,
-                                            ActionEvent.ACTION_PERFORMED,
-                                            "");//Utilities.keyToString(ks));
-        if(act.isEnabled())
-            act.actionPerformed(ev);
-        else
+          + "org-netbeans-modules-refactoring-api-ui-WhereUsedAction.instance");
+        if(act == null) {
+            act = Module.fetchFileSystemAction("Actions/Refactoring/"
+              + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance");
+        }
+        if(act != null) {
+            TopComponent tc = TopComponent.getRegistry().getActivated();
+            act = ((ContextAwareAction) act)
+                    .createContextAwareInstance(tc.getLookup());
+            ActionEvent ev = new ActionEvent(tc,
+                                             ActionEvent.ACTION_PERFORMED,
+                                             "");//Utilities.keyToString(ks));
+            if(act != null && act.isEnabled())
+                act.actionPerformed(ev);
+            else
+                act = null;
+        }
+        if(act == null)
             Util.vim_beep();
     }
 

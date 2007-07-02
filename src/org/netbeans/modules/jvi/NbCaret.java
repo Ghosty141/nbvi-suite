@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.swing.text.JTextComponent;
 import org.netbeans.editor.ext.ExtCaret;
+import org.openide.util.Lookup;
 
 
 /**
@@ -45,8 +46,9 @@ public class NbCaret extends ExtCaret implements ViCaret {
     viDelegate = new com.raelity.jvi.swing.ViCaretDelegate(this);
     if(!goodGotoMatchBehavior()) {
       try {
-        java.lang.Class.forName(
-                "org.netbeans.spi.editor.bracesmatching.BracesMatcher");
+        ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
+            .loadClass("org.netbeans.spi.editor.bracesmatching.BracesMatcher");
+        // java.lang.Class.forName("org.netbeans.spi.editor.bracesmatching.BracesMatcher");
         matcher6 = true;
         ViManager.setPlatformFindMatch(true);
       }catch(ClassNotFoundException ex) { }

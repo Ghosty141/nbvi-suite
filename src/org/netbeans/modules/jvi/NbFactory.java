@@ -362,8 +362,13 @@ final public class NbFactory extends DefaultViFactory {
     
     public void tagDialog(ColonCommands.ColonEvent ce) {
         Action act = Module.fetchFileSystemAction(
+            "Actions/Edit/org-netbeans-modules-jumpto-type-GoToType.instance");
+        if(act == null) {
+            // Try other NB6 action
+            act = Module.fetchFileSystemAction(
                 "/Actions/Edit"
                 + "/org-netbeans-modules-java-actions-GoToType.instance");
+        }
         if(act == null) {
             // Not found, try the NB5.5 action
             act = Module.fetchFileSystemAction(

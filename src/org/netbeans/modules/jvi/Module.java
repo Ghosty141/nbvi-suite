@@ -46,6 +46,7 @@ import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
+import org.netbeans.modules.editor.MainMenuAction;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
@@ -533,6 +534,10 @@ public class Module extends ModuleInstall {
                 } catch (Exception ex) { }
                 if(o instanceof Action)
                     act = (Action) o;
+                // else if(o instanceof MainMenuAction) {
+                //     MainMenuAction mma = (MainMenuAction)o;
+                //     act = mma
+                // }
             }
         }
         return act;

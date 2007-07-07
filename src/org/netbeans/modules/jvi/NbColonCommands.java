@@ -69,8 +69,9 @@ public class NbColonCommands {
                                new Module.DelegateFileSystemAction(
            "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
         
-        // This action is not well behaved.
         ColonCommands.register("gr","grep", ACTION_fu);
+
+        ColonCommands.register("fixi","fiximports", ACTION_fiximports);
         
         ColonCommands.register("mak","make", new Make());
         /*
@@ -82,6 +83,19 @@ public class NbColonCommands {
         initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);
         */
+    }
+
+    public static ColonAction ACTION_fiximports = new FixImports();
+    static private class FixImports extends ColonAction {
+        // new Module.DelegateFileSystemAction(
+        // "Menu/Source/org-netbeans-modules-editor-java"
+        // + "-JavaFixAllImports$MainMenuWrapper.instance"));
+        public void actionPerformed(ActionEvent e) {
+            Object o = ViManager.getViFactory()
+                        .getExistingViTextView(e.getSource());
+            NbTextView tv = (NbTextView)o;
+            tv.getOp().xact("fix-imports");
+        }
     }
 
     public static ColonAction ACTION_fu = new FindUsages();

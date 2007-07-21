@@ -7,14 +7,19 @@ import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -34,27 +39,38 @@ import java.util.WeakHashMap;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
 import javax.swing.text.TextAction;
+import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
-import org.netbeans.modules.editor.MainMenuAction;
+import org.netbeans.spi.editor.completion.CompletionItem;
+import org.netbeans.spi.editor.completion.CompletionProvider;
+import org.netbeans.spi.editor.completion.CompletionResultSet;
+import org.netbeans.spi.editor.completion.CompletionTask;
+import org.netbeans.spi.editor.completion.support.CompletionUtilities;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
 import org.netbeans.editor.SettingsNames;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.openide.ErrorManager;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.filesystems.FileObject;
@@ -1041,9 +1057,413 @@ public class Module extends ModuleInstall {
             return NAME;
         }
 
+        @Override
         protected String iconResource() {
             return "/com/raelity/jvi/resources/jViLogo.png";
         }
         
+    }
+
+    private static JTextComponent ceText;
+    private static DocumentListener ceDocListen;
+    private static boolean ceInSubstitute;
+    private static BooleanOption dbgCompl;
+    static void commandEntryAssist(ViCmdEntry cmdEntry) {
+        if(dbgCompl == null)
+            dbgCompl = (BooleanOption)Options.getOption(Options.dbgCompletion);
+        if(cmdEntry == null) {
+            Completion.get().hideAll();
+            ceText.getDocument().removeDocumentListener(ceDocListen);
+            ceText = null;
+            ceDocListen = null;
+            return;
+        }
+        assert ceText == null;
+
+        ceText = cmdEntry.getTextComponent();
+        Document ceDoc = ceText.getDocument();
+        ceDocListen = new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+            }
+            public void insertUpdate(DocumentEvent e) {
+                ceDocCheck(e.getDocument());
+            }
+            public void removeUpdate(DocumentEvent e) {
+                ceDocCheck(e.getDocument());
+            }
+        };
+        ceDoc.addDocumentListener(ceDocListen);
+
+        String text = null;
+        try {
+            text = ceText.getDocument()
+                            .getText(0, ceText.getDocument().getLength());
+        } catch(BadLocationException ex) {}
+
+        // see if initial conditions warrent bringing up completion
+        if(text.startsWith("e#")) {
+            // Wait till combo's ready to go.
+            // It takes two trips.
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            if(dbgCompl.getBoolean())
+                                System.err.println("INIT SHOW:");
+                            Completion.get().showCompletion();
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private static void ceDocCheck(Document doc) {
+        try {
+            if(doc.getLength() == 2 && !ceInSubstitute) {
+                if("e#".equals(doc.getText(0, doc.getLength()))) {
+                    if(dbgCompl.getBoolean())
+                        System.err.println("SHOW:");
+                    Completion.get().showCompletion();
+                }
+            } else if(doc.getLength() < 2) {
+                if(dbgCompl.getBoolean())
+                    System.err.println("HIDE:");
+                Completion.get().hideCompletion();
+            }
+        } catch (BadLocationException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static class ViCommandCompletionProvider
+    implements CompletionProvider {
+        /*public CompletionTask createTask(int queryType,
+                                         JTextComponent jtc) {
+            return new AsyncCompletionTask(
+                    new ViCommandAsyncCompletionQuery(jtc), jtc);
+
+        }*/
+
+        public CompletionTask createTask(int queryType,
+                                         JTextComponent jtc) {
+            if (queryType != CompletionProvider.COMPLETION_QUERY_TYPE)
+                return null;
+            return new ViCommandCompletionTask(jtc);
+        }
+
+        public int getAutoQueryTypes(JTextComponent jtc,
+                                     String typedText) {
+            return 0;
+        }
+    }
+
+    private static boolean filterDigit(String filter) {
+        return filter.length() > 0 && Character.isDigit(filter.charAt(0));
+    }
+
+    public static class ViCommandCompletionTask implements CompletionTask {
+
+        JTextComponent jtc;
+        List<String> names;
+        List<Integer> nums;
+        List<ImageIcon> icons;
+
+        public ViCommandCompletionTask(JTextComponent jtc) {
+            this.jtc = jtc;
+        }
+        
+        public void query(CompletionResultSet resultSet) {
+            assert names == null;
+            names = new ArrayList<String>();
+            nums = new ArrayList<Integer>();
+            icons = new ArrayList<ImageIcon>();
+
+            int i = 0;
+            Object o;
+            while((o = ViManager.getTextBuffer(++i)) != null) {
+                TopComponent tc = (TopComponent)o;
+
+                String foo = tc.getHtmlDisplayName();
+                ImageIcon icon = tc.getIcon() != null
+                        ? new ImageIcon(tc.getIcon())
+                        : null;
+
+                Set<JEditorPane> jepSet = fetchEpFromTC(tc);
+                String name = null;
+                if(jepSet.size() == 1) {
+                    for (JEditorPane jep : jepSet) {
+                        Document doc = jep.getDocument();
+                        //TopComponent.getRegistry().getActivated();
+                        //NbEditorUtilities.getDataObject(doc).isModified();
+                        name = NbEditorUtilities.getFileObject(doc).getNameExt();
+                    }
+                }
+                names.add(name != null
+                            ? name
+                            : ViManager.getViFactory().getDisplayFilename(o));
+                nums.add(i);
+                icons.add(icon);
+            }
+            genResults(resultSet, "QUERY");
+            
+            /*names.add("one");
+            names.add("two");
+            names.add("three");
+            names.add("four");
+            names.add("five");
+            names.add("six");
+            names.add("seven");
+            names.add("eight");
+            names.add("nine");
+            names.add("ten");
+            names.add("eleven");
+            names.add("twelve");
+            names.add("thirteen");
+            names.add("fourteen");
+            names.add("fifteen");
+            names.add("sixteen");
+            names.add("seventeen");
+            names.add("eighteen");
+            names.add("nineteen");
+            names.add("thirty");
+
+            nums.add(1);
+            nums.add(2);
+            nums.add(3);
+            nums.add(4);
+            nums.add(5);
+            nums.add(6);
+            nums.add(7);
+            nums.add(8);
+            nums.add(9);
+            nums.add(10);
+            nums.add(11);
+            nums.add(12);
+            nums.add(13);
+            nums.add(14);
+            nums.add(15);
+            nums.add(16);
+            nums.add(17);
+            nums.add(18);
+            nums.add(19);
+            nums.add(30);
+            genResults(resultSet, "QUERY");*/
+        }
+
+        public void refresh(CompletionResultSet resultSet) {
+            genResults(resultSet, "REFRESH");
+        }
+
+        public void genResults(CompletionResultSet resultSet, String tag) {
+            String dbsString = "";
+            try {
+                Document doc = jtc.getDocument();
+                String text = doc.getText(0, doc.getLength());
+                dbsString = tag + ": '" + text + "'";
+                if(text.startsWith("e#")) {
+                    int startOffset = 2; // char after 'e#'
+                    // NEEDSWORK: can't count on the caret position since
+                    // this is sometimes called from the event dispatch thread
+                    // so just use the entire string. Set the caret to
+                    // the end of the string.
+                    //int caretOffset = jtc.getCaretPosition();
+                    int caretOffset = text.length();
+                    // skip white space
+                    for(; startOffset < caretOffset; startOffset++)
+                        if(!Character.isWhitespace(text.charAt(startOffset)))
+                            break;
+                    String filter = text.substring(startOffset, caretOffset);
+                    dbsString += ", filter '" + filter + "'";
+                    resultSet.setAnchorOffset(startOffset);
+                    boolean filterDigit = filterDigit(filter);
+
+                    for (int i = 0; i < names.size(); i++) {
+                        String name = names.get(i);
+                        String num = String.format("%02d", nums.get(i));
+                        String check = filterDigit ? num : name;
+                        if(filter.regionMatches(true, 0,
+                                                check, 0, filter.length()))
+                            resultSet.addItem(
+                                new ViCommandCompletionItem(
+                                        name, num, icons.get(i),
+                                        filterDigit,
+                                        startOffset, caretOffset));
+                    }
+                }
+            } catch (BadLocationException ex) {
+            }
+            dbsString += ", result: " + resultSet;
+            if(dbgCompl.getBoolean())
+                System.err.println(dbsString);
+            resultSet.finish();
+        }
+
+        public void cancel() {
+            if(dbgCompl.getBoolean())
+                System.err.println("CANCEL:");
+        }
+    }
+
+    /*public static class ViCommandAsyncCompletionQuery
+    extends AsyncCompletionQuery {
+        JTextComponent jtc;
+        ViCommandCompletionTask ct;
+
+        public ViCommandAsyncCompletionQuery(JTextComponent jtc) {
+            super();
+            this.jtc = jtc;
+            System.err.println("ASYNC SETUP");
+        }
+
+        protected void query(CompletionResultSet resultSet,
+                             Document doc,
+                             int caretOffset) {
+            assert jtc.getDocument() == doc;
+            if(ct == null)
+                ct = new ViCommandCompletionTask(jtc);
+            ct.query(resultSet);
+        }
+
+        @Override
+        protected boolean canFilter(JTextComponent component) {
+            //return super.canFilter(component);
+            return true;
+        }
+
+        @Override
+        protected void filter(CompletionResultSet resultSet) {
+            //super.filter(resultSet);
+            ct.refresh(resultSet);
+        }
+    }*/
+
+    private static class ViCommandCompletionItem implements CompletionItem {
+        private static Color fieldColor = Color.decode("0x0000B2");
+        private static ImageIcon fieldIcon = null;
+        private ImageIcon icon;
+        private String name;
+        private String nameLabel; // with padding for wide icon
+        private String num;
+        private boolean filterDigit;
+        int startOffset;
+        int carretOffset;
+
+        ViCommandCompletionItem(String name, String num, ImageIcon icon,
+                                boolean filterDigit,
+                                int dotOffset, int carretOffset) {
+            this.name = name;
+            this.num = num;
+            this.startOffset = dotOffset;
+            this.carretOffset = carretOffset;
+            this.icon = icon != null ? icon : fieldIcon;
+            this.filterDigit = filterDigit;
+
+            nameLabel = " " + name;
+            
+            //if(fieldIcon == null){
+            //    fieldIcon = new ImageIcon(Utilities.loadImage(
+            //            "org/netbeans/modules/textfiledictionary/icon.png"));
+            //}
+        }
+        public void defaultAction(JTextComponent jtc) {
+            if(dbgCompl.getBoolean())
+                System.err.println("DEFAULT ACTION: '" + name + "'");
+            try {
+                ceInSubstitute = true;
+                doSubstitute(jtc);
+            } finally {
+                ceInSubstitute = false;
+            }
+            Completion.get().hideAll();
+        }
+
+        private void doSubstitute(JTextComponent jtc) {
+            
+            Document doc = jtc.getDocument();
+            
+            //String value = name;
+            String value = num;
+            
+            try {
+                doc.remove(startOffset, carretOffset-startOffset);
+                doc.insertString(startOffset, value, null);
+                jtc.setCaretPosition(startOffset + value.length());
+            } catch (BadLocationException e) {
+                ErrorManager.getDefault().notify(
+                        ErrorManager.INFORMATIONAL, e);
+            }
+        }
+
+        int hack = 0;
+        public void processKeyEvent(KeyEvent evt) {
+            if(dbgCompl.getBoolean()
+               /*&& (evt.getKeyChar() != KeyEvent.CHAR_UNDEFINED
+                        && evt.getID() == KeyEvent.KEY_TYPED
+                    || evt.getKeyChar() == KeyEvent.CHAR_UNDEFINED)*/)
+                System.err.println("ViCompletionItem: '" + name + "' "
+                        + evt.paramString());
+            if(evt.getID() == KeyEvent.KEY_PRESSED
+                    && evt.getKeyChar() == KeyEvent.VK_TAB) {
+                // The logic in CompletionImpl that does getInsertPrefix
+                // sets caretOffset from selection start. So if "e#n" is
+                // selected and tab is entered, then caretOffset gets set to 0
+                // and anchorOffset is 2 (as always) this ends up with a "-2"
+                // -2 used in a String.subsequence....
+                // If TAB, get rid of selection and position at end of text
+                JTextComponent jtc = (JTextComponent) evt.getSource();
+                jtc.setCaretPosition(jtc.getDocument().getLength());
+            }
+            int i = 0;
+            if(evt.getKeyCode() == KeyEvent.VK_DOWN
+                    || evt.getKeyCode() == KeyEvent.VK_UP)
+                hack++;
+            if(evt.getID() == KeyEvent.KEY_TYPED
+                    && evt.getKeyChar() == KeyEvent.VK_TAB) {
+                evt.consume();
+            }
+        }
+
+        public int getPreferredWidth(Graphics g, Font font) {
+            return CompletionUtilities.getPreferredWidth(nameLabel, num,
+                                                         g, font);
+        }
+
+        public void render(Graphics g, Font defaultFont,
+                           Color defaultColor, Color backgroundColor,
+                           int width, int height, boolean selected) {
+            if(dbgCompl.getBoolean())
+                System.err.println("RENDER: '" + name
+                                   + "', selected " + selected);
+            CompletionUtilities.renderHtml(icon, nameLabel, num,
+                                           g, defaultFont,
+                                           selected ? Color.white : fieldColor,
+                                            width, height, selected);
+        }
+
+        public CompletionTask createDocumentationTask() {
+            return null;
+        }
+
+        public CompletionTask createToolTipTask() {
+            return null;
+        }
+
+        public boolean instantSubstitution(JTextComponent component) {
+            return false;
+        }
+
+        public int getSortPriority() {
+            return 0;
+        }
+
+        public CharSequence getSortText() {
+            return filterDigit ? num : name;
+        }
+
+        public CharSequence getInsertPrefix() {
+            return filterDigit ? "" : name.toLowerCase();
+        }
+
     }
 }

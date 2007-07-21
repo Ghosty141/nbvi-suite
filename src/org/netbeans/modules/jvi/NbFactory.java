@@ -5,6 +5,7 @@ import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
@@ -32,6 +33,10 @@ import org.openide.filesystems.FileObject;
 import org.openide.text.Line;
 import org.openide.windows.TopComponent;
 import com.raelity.jvi.ViTextView.TAGOP;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import javax.swing.text.JTextComponent;
+import org.openide.util.Lookup;
 
 final public class NbFactory extends DefaultViFactory {
     
@@ -163,6 +168,7 @@ final public class NbFactory extends DefaultViFactory {
         return a;
     }
 
+    @Override
     public Action createKeyAction(String name, int key) {
         Action a;
         
@@ -170,6 +176,42 @@ final public class NbFactory extends DefaultViFactory {
         // Don't want jVi keys treated as options
         a.putValue(BaseAction.NO_KEYBINDING, Boolean.TRUE);
         return a;
+    }
+
+    @Override
+    public ViCmdEntry createCmdEntry(int type) {
+        ViCmdEntry ce = super.createCmdEntry(type);
+        if(type == ViCmdEntry.COLON_ENTRY) {
+            // Turn the combo box editor into a JEP so code completion works.
+            // It shoudl work with a JTextField but....
+            //ce.setTextComponent(null);
+            JTextComponent jtc = ce.getTextComponent();
+
+            // Set mime type to connect with code completion provider
+            jtc.getDocument().putProperty("mimeType", "text/x-vicommand");
+
+            // register combo's editor with infrastructure, see Issue 110237
+            boolean done = false;
+            try {
+                Class c = ((ClassLoader)(Lookup.getDefault()
+                            .lookup(ClassLoader.class))).loadClass(
+                                "org.netbeans.modules.editor.lib2"
+                                + ".EditorApiPackageAccessor");
+                Method get = c.getMethod("get");
+                Object o = get.invoke(null);
+                Method register = c.getMethod("register", JTextComponent.class);
+                register.invoke(o, jtc);
+                done = true;
+            } catch(ClassNotFoundException ex) {
+            } catch(InvocationTargetException ex) {
+            } catch(NoSuchMethodException ex) {
+            } catch(IllegalAccessException ex) {
+            }
+            if(!done)
+                System.err.println("CommandEntry not registered.");
+        }
+
+        return ce;
     }
     
     //
@@ -380,5 +422,9 @@ final public class NbFactory extends DefaultViFactory {
             act.actionPerformed(ce);
         } else
             Util.vim_beep();
+    }
+
+    public void commandEntryAssist(ViCmdEntry cmdEntry) {
+        Module.commandEntryAssist(cmdEntry);
     }
 }

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
+    <folder name="Editors">
+        <folder name="text">
+            <folder name="x-vicommand">
+                <folder name="CompletionProviders">
+                    <file name="org-netbeans-modules-jvi-Module$ViCommandCompletionProvider.instance"/>
+                </folder>
+            </folder>
+        </folder>
+    </folder>
     <folder name="Menu">
         <folder name="Tools">
             <attr name="org-netbeans-modules-autoupdate-UpdateAction.instance/Separator3_1.instance" boolvalue="true"/>

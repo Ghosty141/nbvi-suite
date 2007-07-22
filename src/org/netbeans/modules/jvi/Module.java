@@ -19,7 +19,6 @@ import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -986,6 +985,7 @@ public class Module extends ModuleInstall {
 
         private static class MyBox extends JCheckBoxMenuItem {
             MyBox() { super(NAME); }
+            @Override
             public void addNotify() {
                 super.addNotify();
                 setSelected(jViEnabled);
@@ -1007,10 +1007,12 @@ public class Module extends ModuleInstall {
             /*cb.setSelected(true);*/
         }
         
+        @Override
         public boolean isEnabled() {
             return true;
         }
         
+        @Override
         public JMenuItem getMenuPresenter() {
             return cb;
         }
@@ -1031,6 +1033,7 @@ public class Module extends ModuleInstall {
         }
 
         /** the system action toggles the current state */
+        @Override
         public void actionPerformed(ActionEvent e) {
             boolean enable = !isSelected();
             setSelected(enable);
@@ -1079,6 +1082,10 @@ public class Module extends ModuleInstall {
             ceDocListen = null;
             return;
         }
+
+        if(!Options.getOption(Options.autoPopupFN).getBoolean())
+            return;
+
         ceInSubstitute = false;
 
         Document ceDoc = ceText.getDocument();
@@ -1302,6 +1309,7 @@ public class Module extends ModuleInstall {
         public void cancel() {
             if(dbgCompl.getBoolean())
                 System.err.println("CANCEL:");
+            Completion.get().hideAll();
         }
     }
 
@@ -1376,6 +1384,13 @@ public class Module extends ModuleInstall {
                 ceInSubstitute = false;
             }
             Completion.get().hideAll();
+
+            // Go for it
+            Action act = jtc.getKeymap().getAction(
+                    KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
+            if(act != null)
+                act.actionPerformed(
+                    new ActionEvent(jtc, ActionEvent.ACTION_PERFORMED, "\n"));
         }
 
         private void doSubstitute(JTextComponent jtc) {

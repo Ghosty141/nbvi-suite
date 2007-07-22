@@ -133,7 +133,7 @@ public class Module extends ModuleInstall {
         } catch (ClassNotFoundException ex) { }
     }
 
-    public boolean isNb6() {
+    public static boolean isNb6() {
         return nb6;
     }
 
@@ -1064,23 +1064,23 @@ public class Module extends ModuleInstall {
         
     }
 
-    private static JTextComponent ceText;
     private static DocumentListener ceDocListen;
     private static boolean ceInSubstitute;
     private static BooleanOption dbgCompl;
-    static void commandEntryAssist(ViCmdEntry cmdEntry) {
+
+    static void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable) {
         if(dbgCompl == null)
             dbgCompl = (BooleanOption)Options.getOption(Options.dbgCompletion);
-        if(cmdEntry == null) {
+        JTextComponent ceText = cmdEntry.getTextComponent();
+        if(!enable) {
+            // Finished, make sure everything's shutdown
             Completion.get().hideAll();
             ceText.getDocument().removeDocumentListener(ceDocListen);
-            ceText = null;
             ceDocListen = null;
             return;
         }
-        assert ceText == null;
+        ceInSubstitute = false;
 
-        ceText = cmdEntry.getTextComponent();
         Document ceDoc = ceText.getDocument();
         ceDocListen = new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {

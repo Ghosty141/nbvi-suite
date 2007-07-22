@@ -181,10 +181,7 @@ final public class NbFactory extends DefaultViFactory {
     @Override
     public ViCmdEntry createCmdEntry(int type) {
         ViCmdEntry ce = super.createCmdEntry(type);
-        if(type == ViCmdEntry.COLON_ENTRY) {
-            // Turn the combo box editor into a JEP so code completion works.
-            // It shoudl work with a JTextField but....
-            //ce.setTextComponent(null);
+        if(type == ViCmdEntry.COLON_ENTRY && Module.isNb6()) {
             JTextComponent jtc = ce.getTextComponent();
 
             // Set mime type to connect with code completion provider
@@ -207,8 +204,6 @@ final public class NbFactory extends DefaultViFactory {
             } catch(NoSuchMethodException ex) {
             } catch(IllegalAccessException ex) {
             }
-            if(!done)
-                System.err.println("CommandEntry not registered.");
         }
 
         return ce;
@@ -424,7 +419,9 @@ final public class NbFactory extends DefaultViFactory {
             Util.vim_beep();
     }
 
-    public void commandEntryAssist(ViCmdEntry cmdEntry) {
-        Module.commandEntryAssist(cmdEntry);
+    @Override
+    public void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable) {
+        if(Module.isNb6())
+            Module.commandEntryAssist(cmdEntry, enable);
     }
 }

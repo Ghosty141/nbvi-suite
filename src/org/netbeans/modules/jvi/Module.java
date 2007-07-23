@@ -1172,26 +1172,20 @@ public class Module extends ModuleInstall {
     public static class ViCommandCompletionTask implements CompletionTask {
 
         JTextComponent jtc;
-        List<String> names;
-        List<Integer> nums;
-        List<ImageIcon> icons;
+        List<ViCommandCompletionItem> query;
 
         public ViCommandCompletionTask(JTextComponent jtc) {
             this.jtc = jtc;
         }
         
         public void query(CompletionResultSet resultSet) {
-            assert names == null;
-            names = new ArrayList<String>();
-            nums = new ArrayList<Integer>();
-            icons = new ArrayList<ImageIcon>();
+            query = new ArrayList<Module.ViCommandCompletionItem>();
 
             int i = 0;
             Object o;
             while((o = ViManager.getTextBuffer(++i)) != null) {
                 TopComponent tc = (TopComponent)o;
 
-                String foo = tc.getHtmlDisplayName();
                 ImageIcon icon = tc.getIcon() != null
                         ? new ImageIcon(tc.getIcon())
                         : null;
@@ -1206,11 +1200,11 @@ public class Module extends ModuleInstall {
                         name = NbEditorUtilities.getFileObject(doc).getNameExt();
                     }
                 }
-                names.add(name != null
-                            ? name
-                            : ViManager.getViFactory().getDisplayFilename(o));
-                nums.add(i);
-                icons.add(icon);
+                if(name == null)
+                    name = ViManager.getViFactory().getDisplayFilename(o);
+                query.add(new ViCommandCompletionItem(
+                                name, String.format("%02d", i), icon,
+                                false, 2)); // offset 2 is after "e#"
             }
             genResults(resultSet, "QUERY");
         }
@@ -1224,7 +1218,8 @@ public class Module extends ModuleInstall {
             try {
                 Document doc = jtc.getDocument();
                 String text = doc.getText(0, doc.getLength());
-                dbsString = tag + ": '" + text + "'";
+                if(dbgCompl.getBoolean())
+                    dbsString = tag + ": '" + text + "'";
                 if(text.startsWith("e#")) {
                     int startOffset = 2; // char after 'e#'
                     // NEEDSWORK: can't count on the caret position since
@@ -1238,28 +1233,25 @@ public class Module extends ModuleInstall {
                         if(!Character.isWhitespace(text.charAt(startOffset)))
                             break;
                     String filter = text.substring(startOffset, caretOffset);
-                    dbsString += ", filter '" + filter + "'";
+                    if(dbgCompl.getBoolean())
+                        dbsString += ", filter '" + filter + "'";
                     resultSet.setAnchorOffset(startOffset);
                     boolean fFilterDigit = filterDigit(filter);
-
-                    for (int i = 0; i < names.size(); i++) {
-                        String name = names.get(i);
-                        String num = String.format("%02d", nums.get(i));
-                        String check = fFilterDigit ? num : name;
-                        if(filter.regionMatches(true, 0,
-                                                check, 0, filter.length()))
-                            resultSet.addItem(
-                                new ViCommandCompletionItem(
-                                        name, num, icons.get(i),
-                                        fFilterDigit,
-                                        startOffset, caretOffset));
+                    for (ViCommandCompletionItem item : query) {
+                        String checkItem = fFilterDigit ? item.num : item.name;
+                        if(filter.regionMatches(true, 0, checkItem, 0,
+                                                filter.length())) {
+                            item.fFilterDigit = fFilterDigit;
+                            resultSet.addItem(item);
+                        }
                     }
                 }
             } catch (BadLocationException ex) {
             }
-            dbsString += ", result: " + resultSet;
-            if(dbgCompl.getBoolean())
+            if(dbgCompl.getBoolean()) {
+                dbsString += ", result: " + resultSet;
                 System.err.println(dbsString);
+            }
             resultSet.finish();
         }
 
@@ -1279,15 +1271,13 @@ public class Module extends ModuleInstall {
         private String num;
         private boolean fFilterDigit;
         int startOffset;
-        int carretOffset;
 
         ViCommandCompletionItem(String name, String num, ImageIcon icon,
                                 boolean fFilterDigit,
-                                int dotOffset, int carretOffset) {
+                                int dotOffset) {
             this.name = name;
             this.num = num;
             this.startOffset = dotOffset;
-            this.carretOffset = carretOffset;
             this.icon = icon != null ? icon : fieldIcon;
             this.fFilterDigit = fFilterDigit;
 
@@ -1320,12 +1310,13 @@ public class Module extends ModuleInstall {
         private void doSubstitute(JTextComponent jtc) {
             
             Document doc = jtc.getDocument();
+            int caretOffset = doc.getLength(); // clear to end of line
             
             //String value = name;
             String value = num;
             
             try {
-                doc.remove(startOffset, carretOffset-startOffset);
+                doc.remove(startOffset, caretOffset - startOffset);
                 doc.insertString(startOffset, value, null);
                 jtc.setCaretPosition(startOffset + value.length());
             } catch (BadLocationException e) {

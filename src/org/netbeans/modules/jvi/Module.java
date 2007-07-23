@@ -1213,49 +1213,6 @@ public class Module extends ModuleInstall {
                 icons.add(icon);
             }
             genResults(resultSet, "QUERY");
-            
-            /*names.add("one");
-            names.add("two");
-            names.add("three");
-            names.add("four");
-            names.add("five");
-            names.add("six");
-            names.add("seven");
-            names.add("eight");
-            names.add("nine");
-            names.add("ten");
-            names.add("eleven");
-            names.add("twelve");
-            names.add("thirteen");
-            names.add("fourteen");
-            names.add("fifteen");
-            names.add("sixteen");
-            names.add("seventeen");
-            names.add("eighteen");
-            names.add("nineteen");
-            names.add("thirty");
-
-            nums.add(1);
-            nums.add(2);
-            nums.add(3);
-            nums.add(4);
-            nums.add(5);
-            nums.add(6);
-            nums.add(7);
-            nums.add(8);
-            nums.add(9);
-            nums.add(10);
-            nums.add(11);
-            nums.add(12);
-            nums.add(13);
-            nums.add(14);
-            nums.add(15);
-            nums.add(16);
-            nums.add(17);
-            nums.add(18);
-            nums.add(19);
-            nums.add(30);
-            genResults(resultSet, "QUERY");*/
         }
 
         public void refresh(CompletionResultSet resultSet) {
@@ -1283,18 +1240,18 @@ public class Module extends ModuleInstall {
                     String filter = text.substring(startOffset, caretOffset);
                     dbsString += ", filter '" + filter + "'";
                     resultSet.setAnchorOffset(startOffset);
-                    boolean filterDigit = filterDigit(filter);
+                    boolean fFilterDigit = filterDigit(filter);
 
                     for (int i = 0; i < names.size(); i++) {
                         String name = names.get(i);
                         String num = String.format("%02d", nums.get(i));
-                        String check = filterDigit ? num : name;
+                        String check = fFilterDigit ? num : name;
                         if(filter.regionMatches(true, 0,
                                                 check, 0, filter.length()))
                             resultSet.addItem(
                                 new ViCommandCompletionItem(
                                         name, num, icons.get(i),
-                                        filterDigit,
+                                        fFilterDigit,
                                         startOffset, caretOffset));
                     }
                 }
@@ -1313,39 +1270,6 @@ public class Module extends ModuleInstall {
         }
     }
 
-    /*public static class ViCommandAsyncCompletionQuery
-    extends AsyncCompletionQuery {
-        JTextComponent jtc;
-        ViCommandCompletionTask ct;
-
-        public ViCommandAsyncCompletionQuery(JTextComponent jtc) {
-            super();
-            this.jtc = jtc;
-            System.err.println("ASYNC SETUP");
-        }
-
-        protected void query(CompletionResultSet resultSet,
-                             Document doc,
-                             int caretOffset) {
-            assert jtc.getDocument() == doc;
-            if(ct == null)
-                ct = new ViCommandCompletionTask(jtc);
-            ct.query(resultSet);
-        }
-
-        @Override
-        protected boolean canFilter(JTextComponent component) {
-            //return super.canFilter(component);
-            return true;
-        }
-
-        @Override
-        protected void filter(CompletionResultSet resultSet) {
-            //super.filter(resultSet);
-            ct.refresh(resultSet);
-        }
-    }*/
-
     private static class ViCommandCompletionItem implements CompletionItem {
         private static Color fieldColor = Color.decode("0x0000B2");
         private static ImageIcon fieldIcon = null;
@@ -1353,19 +1277,19 @@ public class Module extends ModuleInstall {
         private String name;
         private String nameLabel; // with padding for wide icon
         private String num;
-        private boolean filterDigit;
+        private boolean fFilterDigit;
         int startOffset;
         int carretOffset;
 
         ViCommandCompletionItem(String name, String num, ImageIcon icon,
-                                boolean filterDigit,
+                                boolean fFilterDigit,
                                 int dotOffset, int carretOffset) {
             this.name = name;
             this.num = num;
             this.startOffset = dotOffset;
             this.carretOffset = carretOffset;
             this.icon = icon != null ? icon : fieldIcon;
-            this.filterDigit = filterDigit;
+            this.fFilterDigit = fFilterDigit;
 
             nameLabel = " " + name;
             
@@ -1473,12 +1397,88 @@ public class Module extends ModuleInstall {
         }
 
         public CharSequence getSortText() {
-            return filterDigit ? num : name;
+            return fFilterDigit ? num : name;
         }
 
         public CharSequence getInsertPrefix() {
-            return filterDigit ? "" : name.toLowerCase();
+            return fFilterDigit ? "" : name.toLowerCase();
         }
 
     }
+
+    /*public static class ViCommandAsyncCompletionQuery
+    extends AsyncCompletionQuery {
+        JTextComponent jtc;
+        ViCommandCompletionTask ct;
+
+        public ViCommandAsyncCompletionQuery(JTextComponent jtc) {
+            super();
+            this.jtc = jtc;
+            System.err.println("ASYNC SETUP");
+        }
+
+        protected void query(CompletionResultSet resultSet,
+                             Document doc,
+                             int caretOffset) {
+            assert jtc.getDocument() == doc;
+            if(ct == null)
+                ct = new ViCommandCompletionTask(jtc);
+            ct.query(resultSet);
+        }
+
+        @Override
+        protected boolean canFilter(JTextComponent component) {
+            //return super.canFilter(component);
+            return true;
+        }
+
+        @Override
+        protected void filter(CompletionResultSet resultSet) {
+            //super.filter(resultSet);
+            ct.refresh(resultSet);
+        }
+    }*/
+            
+            /*names.add("one");
+            names.add("two");
+            names.add("three");
+            names.add("four");
+            names.add("five");
+            names.add("six");
+            names.add("seven");
+            names.add("eight");
+            names.add("nine");
+            names.add("ten");
+            names.add("eleven");
+            names.add("twelve");
+            names.add("thirteen");
+            names.add("fourteen");
+            names.add("fifteen");
+            names.add("sixteen");
+            names.add("seventeen");
+            names.add("eighteen");
+            names.add("nineteen");
+            names.add("thirty");
+
+            nums.add(1);
+            nums.add(2);
+            nums.add(3);
+            nums.add(4);
+            nums.add(5);
+            nums.add(6);
+            nums.add(7);
+            nums.add(8);
+            nums.add(9);
+            nums.add(10);
+            nums.add(11);
+            nums.add(12);
+            nums.add(13);
+            nums.add(14);
+            nums.add(15);
+            nums.add(16);
+            nums.add(17);
+            nums.add(18);
+            nums.add(19);
+            nums.add(30);
+            genResults(resultSet, "QUERY");*/
 }

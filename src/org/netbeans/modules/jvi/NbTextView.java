@@ -137,10 +137,10 @@ public class NbTextView extends TextView
         sb.append("\"" + getDisplayFileName() + "\"");
         if(ViManager.getViFactory().getFS().isModified(this))
             sb.append(" [Modified]");
-        int l = getLineCount();
+        int l = getBuffer().getLineCount();
         sb.append(" " + l + " line" + Misc.plural(l));
         sb.append(" --" + (int)((cache.getCursor().getLine() * 100)
-                                                    / getLineCount()) + "%--");
+                                                    / l) + "%--");
         getStatusDisplay().displayStatusMessage(sb.toString());
     }
     
@@ -324,8 +324,8 @@ public class NbTextView extends TextView
         if(getBuffer().getDocument() instanceof BaseDocument) {
             try {
                 Utilities.reformat((BaseDocument)getBuffer().getDocument(),
-                                   getLineStartOffset(line),
-                                   getLineEndOffset(line + count - 1));
+                                   getBuffer().getLineStartOffset(line),
+                                   getBuffer().getLineEndOffset(line + count - 1));
                 return;
             } catch (BadLocationException ex) { }
         }

@@ -1,8 +1,6 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.BooleanOption;
 import com.raelity.jvi.Buffer;
-import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
@@ -14,11 +12,8 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
 import java.io.File;
-import javax.swing.Action;
 import javax.swing.JEditorPane;
-import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
@@ -28,7 +23,6 @@ import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
 import org.netbeans.editor.DrawLayer;
 import org.netbeans.editor.EditorUI;
-import org.netbeans.editor.GuardedException;
 import org.netbeans.editor.MarkFactory;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
@@ -69,7 +63,7 @@ public class NbTextView extends TextView
     
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
-        cache = createTextViewCache();
+        //cache = createTextViewCache();
         statusDisplay = new NbStatusDisplay(this);
         
         // since NB insists that this is a shared variable
@@ -151,7 +145,7 @@ public class NbTextView extends TextView
     }
     
     public String getDisplayFileName() {
-        Document doc = getDoc();
+        Document doc = (Document)getBuffer().getDocument();
         if(doc != null) {
             FileObject fo = NbEditorUtilities.getFileObject(doc);
             /*System.err.println("getPath = " + fo.getPath());
@@ -178,7 +172,7 @@ public class NbTextView extends TextView
      * The code that deals with extensions, :r, :e should just "do it".
      */
     public String getFileName(char option) {
-        Document doc = getDoc();
+        Document doc = (Document)getBuffer().getDocument();
         if(doc != null) {
             FileObject fo = NbEditorUtilities.getFileObject(doc);
             if(fo != null){
@@ -255,106 +249,7 @@ public class NbTextView extends TextView
         }
     }
  */
-
-    public void redo() {
-        undoOrRedo("Redo", NbEditorKit.redoAction);
-    }
     
-    public void undo() {
-        undoOrRedo("Undo", NbEditorKit.undoAction);
-    }
-    
-    private void undoOrRedo(String tag, String action) {
-        if( ! isEditable()) {
-            Util.vim_beep();
-            return;
-        }
-        if(isInUndo()||isInInsertUndo()) {
-            ViManager.dumpStack(tag + " while in begin/endUndo");
-            return;
-        }
-        // NEEDSWORK: check can undo for beep
-        
-        cache.isUndoChange(); // clears the flag
-        int n = getLineCount();
-        ops.xact(action);
-        if(cache.isUndoChange()) {
-            // NEEDSWORK: check if need newline adjust
-            setCaretPosition(cache.getUndoOffset());
-            try {
-                if(n != getLineCount())
-                    Edit.beginline(BL_WHITE);
-                else if ("\n".equals(getText(getCaretPosition(), 1))) {
-                    Misc.check_cursor_col();
-                }
-            } catch (BadLocationException ex) { }
-        } else
-            Util.vim_beep();
-        // ops.xact(SystemAction.get(UndoAction.class)); // in openide
-    }
-    
-    //
-    // Undo handling.
-    //
-    // With NB, the atomic lock on the document groups undo
-    // so we can always do that for progromatic undo/redo, eg. "3dd".
-    // But for insert mode locking the file has problems, so we
-    // continue to use the classic undow flag
-    //
-    
-    private boolean fGuardedException;
-    private boolean fException;
-    
-    protected void processTextException(BadLocationException ex) {
-        if(ex instanceof GuardedException) {
-            fGuardedException = true;
-        } else {
-            fException = true;
-        }
-        Util.vim_beep();
-    }
-    
-    public void beginUndo() {
-        super.beginUndo();
-        fGuardedException = false;
-        fException = false;
-        Document doc = getDoc();
-        if(doc instanceof BaseDocument) {
-            ((BaseDocument)doc).atomicLock();
-        }
-    }
-    
-    public void endUndo() {
-        Document doc = getDoc();
-        if(doc instanceof BaseDocument) {
-            if(fGuardedException || fException) {
-                // get rid of the changes
-                ((BaseDocument)doc).breakAtomicLock();
-            }
-            
-            ((BaseDocument)doc).atomicUnlock();
-            
-            if(fGuardedException || fException) {
-                // This must come *after* atomicUnlock, otherwise it gets
-                // overwritten by a clear message due to scrolling.
-                
-                // Don't want this message lost, so defer until things
-                // settle down. The change/unlock-undo cause a lot of
-                // action
-                
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        getStatusDisplay().displayErrorMessage(
-                                "No changes made."
-                                + (fGuardedException
-                                ? " Attempt to change guarded text."
-                                : " Document location error."));
-                    }
-                });
-            }
-        }
-        super.endUndo();
-    }
     
     /**
      * Find matching brace for char at the cursor
@@ -402,27 +297,6 @@ public class NbTextView extends TextView
         }
     }
     
-    public void anonymousMark(MARKOP op, int count) {
-        String actName = null;
-        switch(op) {
-            case TOGGLE:
-                actName = "/Actions/Edit/bookmark-toggle.instance";
-                break;
-            case NEXT:
-                actName = "/Actions/Edit/bookmark-next.instance";
-                break;
-            case PREV:
-                actName = "/Actions/Edit/bookmark-previous.instance";
-                break;
-        }
-        Action act = Module.fetchFileSystemAction(actName);
-        if(act != null && act.isEnabled()) {
-            ActionEvent e = new ActionEvent(getEditorComponent(), 0, "");
-            act.actionPerformed(e);
-        } else
-            Util.vim_beep();
-    }
-    
     public void foldOperation(int op) {
         String action = null;
         switch(op) {
@@ -447,9 +321,9 @@ public class NbTextView extends TextView
     }
 
     public void reindent(int line, int count) {
-        if(getDoc() instanceof BaseDocument) {
+        if(getBuffer().getDocument() instanceof BaseDocument) {
             try {
-                Utilities.reformat((BaseDocument)getDoc(),
+                Utilities.reformat((BaseDocument)getBuffer().getDocument(),
                                    getLineStartOffset(line),
                                    getLineEndOffset(line + count - 1));
                 return;
@@ -798,14 +672,14 @@ public class NbTextView extends TextView
             return;
         }
         
-        int nLine = tv.getLineCount();
+        int nLine = tv.getBuffer().getLineCount();
         for(int iLine = 1; iLine < nLine; iLine++) {
             if(iLine % modulo != 0)
                 continue;
             int endLine = Math.min(iLine + contig -1, nLine);
             for(; iLine <= endLine; iLine++) {
-                int lineOffset = tv.getLineStartOffset(iLine);
-                Segment seg = tv.getLineSegment(iLine);
+                int lineOffset = tv.getBuffer().getLineStartOffset(iLine);
+                Segment seg = tv.getBuffer().getLineSegment(iLine);
                 if(seg.count > col1) {
                     tBlocks[idx++] = col1 + lineOffset;
                     tBlocks[idx++] = Math.min(col2, seg.count) + lineOffset;

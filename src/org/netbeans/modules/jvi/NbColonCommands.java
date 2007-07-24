@@ -94,7 +94,7 @@ public class NbColonCommands {
             Object o = ViManager.getViFactory()
                         .getExistingViTextView(e.getSource());
             NbTextView tv = (NbTextView)o;
-            tv.getOp().xact("fix-imports");
+            tv.getOps().xact("fix-imports");
         }
     }
 

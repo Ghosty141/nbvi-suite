@@ -85,7 +85,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
     public void println(int line, int offset, int length) {
         if(type.equals(ViOutputStream.OUTPUT))
             return;
-        Segment seg = tv.getLineSegment(line);
+        Segment seg = tv.getBuffer().getLineSegment(line);
         sb.setLength(0);
         sb.append(fnTag).append(line).append(":")
             .append(seg.array, seg.offset, seg.count - 1);
@@ -93,7 +93,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             if(fHyperlink) {
                 Line nbLine = NbEditorUtilities.getLine(
                         tv.getEditorComponent().getDocument(),
-                        tv.getLineStartOffset(line),
+                        tv.getBuffer().getLineStartOffset(line),
                         false);
                 ow.println(sb.toString(), new OutList(nbLine, offset));
             } else {

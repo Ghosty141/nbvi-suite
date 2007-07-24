@@ -76,6 +76,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
 import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.Mode;
@@ -100,7 +101,7 @@ import org.openide.windows.WindowManager;
 public class Module extends ModuleInstall {
     
     private static boolean jViEnabled;
-    static boolean nb6;
+    private static boolean nb6;
 
     private static final String MOD = "Module-" +
             System.identityHashCode(Module.class.getClassLoader()) + ": ";
@@ -111,8 +112,8 @@ public class Module extends ModuleInstall {
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
-    static BooleanOption dbgNb;
-    static BooleanOption dbgAct;
+    private static BooleanOption dbgNb;
+    private static BooleanOption dbgAct;
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static EditorRegistryListener editorRegistryListener;
@@ -127,7 +128,9 @@ public class Module extends ModuleInstall {
 
     static {
         try {
-            Class.forName("org.openide.util.NbPreferences");
+            ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
+                .loadClass("org.openide.util.NbPreferences");
+            //Class.forName("org.openide.util.NbPreferences");
             nb6 = true;
         } catch (ClassNotFoundException ex) { }
     }

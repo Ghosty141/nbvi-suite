@@ -14,6 +14,8 @@ import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Container;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Set;
 import java.util.Stack;
@@ -54,32 +56,60 @@ final public class NbFactory extends DefaultViFactory {
         return Collections.unmodifiableSet(((NbFactory)INSTANCE).docSet.keySet());
     }
 
+    @Override
     public boolean isStandalone() {
         return false;
     }
     
+    @Override
     public ViFS getFS() {
         return fs;
     }
     
+    @Override
     public void updateKeymap() {
         Module.updateKeymap();
     }
     
+    @Override
     public ViOutputStream createOutputStream(ViTextView tv,
                                              Object type, Object info) {
         return new NbOutputStream(tv, type.toString(),
                                   info == null ? null : info.toString());
     }
     
+    private Preferences prefs;
+    @Override
     public Preferences getPreferences() {
-        // NB6 return NbPreferences.forModule(ViManager.class); Not in 5.5
-        Preferences retValue;
+        Preferences retValue = null;
         
-        retValue = super.getPreferences();
-        return retValue;
+        if(prefs == null) {
+            if(Module.isNb6()) {
+                try {
+                    Class c = ((ClassLoader)(Lookup.getDefault()
+                                .lookup(ClassLoader.class)))
+                                .loadClass("org.openide.util.NbPreferences");
+                    Method m = c.getMethod("root");
+                    Preferences p = (Preferences)m.invoke(null);
+                    prefs = p.userRoot().node(ViManager.PREFS_ROOT);
+                } catch(ClassNotFoundException ex) {
+                } catch(NoSuchMethodException ex) {
+                } catch(IllegalAccessException ex) {
+                } catch(InvocationTargetException ex) { }
+                //retValue = NbPreferences.forModule(ViManager.class);
+                //retValue = NbPreferences.root()
+                //                  .userRoot().node(ViManager.PREFS_ROOT);
+                //return Preferences.userRoot().node(ViManager.PREFS_ROOT);
+            }
+            // If for whatever reason, there aren't preferences at this
+            // point, try the superclass
+            if(prefs == null)
+                prefs = super.getPreferences();
+        }
+        return prefs;
     }
     
+    @Override
     protected ViTextView createViTextView(JEditorPane editorPane) {
         // Set up some linkage so we can clean up the editorpane
         // when the TopComponent closes.
@@ -98,10 +128,12 @@ final public class NbFactory extends DefaultViFactory {
         return new NbTextView(editorPane);
     }
     
+    @Override
     protected Buffer createBuffer(ViTextView tv) {
         return new NbBuffer(tv);
     }
     
+    @Override
     public void registerEditorPane(JEditorPane ep) {
         // Cursor is currently installed by editor kit
         // install cursor if neeeded
@@ -128,12 +160,14 @@ final public class NbFactory extends DefaultViFactory {
         newCaret.setBlinkRate(blinkRate);
     }
   
+    @Override
     public boolean isVisible(ViTextView tv) {
         TopComponent tc = getEditorTopComponent(tv.getEditorComponent());
         // wonder if this really works
         return tc != null ? tc.isVisible() : false;
     }
     
+    @Override
     public String getDisplayFilename(Object o) {
         if(o instanceof TopComponent)
             return ((TopComponent)o).getDisplayName();
@@ -159,6 +193,7 @@ final public class NbFactory extends DefaultViFactory {
         return tc;
     }
 
+    @Override
     public Action createCharAction(String name) {
         Action a;
         
@@ -169,7 +204,7 @@ final public class NbFactory extends DefaultViFactory {
     }
 
     @Override
-    public Action createKeyAction(String name, int key) {
+    public Action createKeyAction(String name, char key) {
         Action a;
         
         a = super.createKeyAction(name, key);
@@ -267,7 +302,7 @@ final public class NbFactory extends DefaultViFactory {
            // If the from tag is the current file, show the document's line
             ViTextView tv = G.curwin;
             if(tv.getEditorComponent().getDocument().equals(tag.fromDoc)) {
-                String s = tv.getLineSegment(
+                String s = tv.getBuffer().getLineSegment(
                                     tag.fromLine.getLineNumber() +1).toString();
                 fromData = s.trim();
             }
@@ -285,6 +320,7 @@ final public class NbFactory extends DefaultViFactory {
        vios.close();
     }
     
+    @Override
     public void tagStack(TAGOP op, int count) {
         switch(op) {
         case OLDER: // ^T
@@ -397,6 +433,7 @@ final public class NbFactory extends DefaultViFactory {
         pushingTag = null;
     }
     
+    @Override
     public void tagDialog(ColonCommands.ColonEvent ce) {
         Action act = Module.fetchFileSystemAction(
             "Actions/Edit/org-netbeans-modules-jumpto-type-GoToType.instance");

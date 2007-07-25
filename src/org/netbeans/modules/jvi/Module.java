@@ -64,6 +64,7 @@ import org.openide.modules.ModuleInstall;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
@@ -1172,6 +1173,10 @@ public class Module extends ModuleInstall {
         return filter.length() > 0 && Character.isDigit(filter.charAt(0));
     }
 
+    // Some state info about the items.
+    private final static int ITEM_SELECTED = 0x01;
+    private final static int ITEM_MODIFIED = 0x02;
+
     public static class ViCommandCompletionTask implements CompletionTask {
 
         JTextComponent jtc;
@@ -1186,8 +1191,12 @@ public class Module extends ModuleInstall {
 
             int i = 0;
             Object o;
+            Font font = getTxtFont();
             while((o = ViManager.getTextBuffer(++i)) != null) {
                 TopComponent tc = (TopComponent)o;
+                int flags = 0;
+                if(TopComponent.getRegistry().getActivated() == tc)
+                    flags |= ITEM_SELECTED;
 
                 ImageIcon icon = tc.getIcon() != null
                         ? new ImageIcon(tc.getIcon())
@@ -1198,8 +1207,8 @@ public class Module extends ModuleInstall {
                 if(jepSet.size() == 1) {
                     for (JEditorPane jep : jepSet) {
                         Document doc = jep.getDocument();
-                        //TopComponent.getRegistry().getActivated();
-                        //NbEditorUtilities.getDataObject(doc).isModified();
+                        if(NbEditorUtilities.getDataObject(doc).isModified())
+                            flags |= ITEM_MODIFIED;
                         name = NbEditorUtilities.getFileObject(doc).getNameExt();
                     }
                 }
@@ -1207,13 +1216,31 @@ public class Module extends ModuleInstall {
                     name = ViManager.getViFactory().getDisplayFilename(o);
                 query.add(new ViCommandCompletionItem(
                                 name, String.format("%02d", i), icon,
-                                false, 2)); // offset 2 is after "e#"
+                                false, flags, font,
+                                2)); // offset 2 is after "e#"
             }
             genResults(resultSet, "QUERY");
         }
 
         public void refresh(CompletionResultSet resultSet) {
             genResults(resultSet, "REFRESH");
+        }
+        
+        // getTxtFont taken from core/swing/tabcontrol/src/
+        // org/netbeans/swing/tabcontrol/plaf/AbstractViewTabDisplayerUI.java
+        private Font getTxtFont() {
+            //font = UIManager.getFont("TextField.font");
+            //Font font = UIManager.getFont("Tree.font");
+            Font txtFont;
+            txtFont = (Font) UIManager.get("windowTitleFont");
+            if (txtFont == null) {
+                txtFont = new Font("Dialog", Font.PLAIN, 11);
+            } else if (txtFont.isBold()) {
+                // don't use deriveFont() - see #49973 for details
+                txtFont = new Font(txtFont.getName(),
+                                   Font.PLAIN, txtFont.getSize());
+            }
+            return txtFont;
         }
 
         public void genResults(CompletionResultSet resultSet, String tag) {
@@ -1266,25 +1293,39 @@ public class Module extends ModuleInstall {
     }
 
     private static class ViCommandCompletionItem implements CompletionItem {
-        private static Color fieldColor = Color.decode("0x0000B2");
+        private static String fieldColorCode = "0000B2";
+        private static Color fieldColor = Color.decode("0x" + fieldColorCode);
+        //private static Color fieldColor = Color.decode("0xC0C0B2");
+        private Font font;
         private static ImageIcon fieldIcon = null;
         private ImageIcon icon;
         private String name;
         private String nameLabel; // with padding for wide icon
         private String num;
         private boolean fFilterDigit;
-        int startOffset;
+        private int startOffset;
 
         ViCommandCompletionItem(String name, String num, ImageIcon icon,
-                                boolean fFilterDigit,
+                                boolean fFilterDigit, int flags, Font font,
                                 int dotOffset) {
             this.name = name;
             this.num = num;
             this.startOffset = dotOffset;
             this.icon = icon != null ? icon : fieldIcon;
             this.fFilterDigit = fFilterDigit;
+            this.font = font;
 
-            nameLabel = " " + name;
+                            // + "<font color=\"#000000\">"
+            nameLabel = "<html>&nbsp;&nbsp;"
+                            + ((flags & ITEM_SELECTED) != 0 ? "<b>" : "")
+                            + ((flags & ITEM_MODIFIED) != 0
+                                ? "<font color=\"#" + fieldColorCode + "\">"
+                                : "<font color=\"#000000\">")
+                            + name
+                            + ((flags & ITEM_MODIFIED) != 0 ? " *" : "")
+                            + ((flags & ITEM_SELECTED) != 0 ? "</b>" : "")
+                            + "</font>"
+                            + "</html>";
             
             //if(fieldIcon == null){
             //    fieldIcon = new ImageIcon(Utilities.loadImage(
@@ -1368,10 +1409,11 @@ public class Module extends ModuleInstall {
             if(dbgCompl.getBoolean())
                 System.err.println("RENDER: '" + name
                                    + "', selected " + selected);
+            Font f = font == null ? defaultFont : font;
             CompletionUtilities.renderHtml(icon, nameLabel, num,
-                                           g, defaultFont,
+                                           g, f,
                                            selected ? Color.white : fieldColor,
-                                            width, height, selected);
+                                           width, height, selected);
         }
 
         public CompletionTask createDocumentationTask() {

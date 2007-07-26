@@ -399,6 +399,9 @@ public class NbTextView extends TextView
         
         protected int[] getBlocks(DrawContext ctx) {
             NbTextView tv = getTextView(ctx);
+            if(tv == null) {
+                return new int[] {-1,-1};
+            }
             return tv.getVisualSelectBlocks(ctx.getStartOffset(),
                                                ctx.getEndOffset());
         }
@@ -435,7 +438,7 @@ public class NbTextView extends TextView
     //
     
     public void updateHighlightSearchState() {
-        updateHighlightSearchCommonState();
+        getBuffer().updateHighlightSearchCommonState();
         EditorUI eui = Utilities.getEditorUI(getEditorComponent());
         if(eui != null) {
             // Enable/disable the hightlight search layer
@@ -480,8 +483,11 @@ public class NbTextView extends TextView
         
         protected int[] getBlocks(DrawContext ctx) {
             NbTextView tv = getTextView(ctx);
-            return tv.getHighlightSearchBlocks(ctx.getStartOffset(),
-                                               ctx.getEndOffset());
+            if(tv == null) {
+                return new int[] {-1,-1};
+            }
+            return tv.getBuffer().getHighlightSearchBlocks(ctx.getStartOffset(),
+                                                           ctx.getEndOffset());
             // int[] xBlocks = tv.getHighlightSearchBlocks(startOffset, endOffset);
             // return getInterestingBlocks(xBlocks, startOffset, endOffset);
         }
@@ -535,8 +541,9 @@ public class NbTextView extends TextView
         abstract protected int[] getBlocks(DrawContext ctx);
         
         protected NbTextView getTextView(DrawContext ctx) {
-            NbTextView tv = (NbTextView) ViManager.getViTextView(
-                                (JEditorPane) ctx.getEditorUI().getComponent());
+            NbTextView tv = (NbTextView) ViManager.getViFactory()
+                             .getExistingViTextView(
+                              (JEditorPane) ctx.getEditorUI().getComponent());
             return tv;
         }
         

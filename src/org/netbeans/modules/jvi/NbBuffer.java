@@ -37,6 +37,7 @@ import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
+import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.options.BaseOptions;
@@ -145,7 +146,49 @@ public class NbBuffer extends DefaultBuffer {
         return fie;
     }
 
+
     //////////////////////////////////////////////////////////////////////
+    //
+    // Document commands
+    //
+
+    @Override
+    public void reindent(int line, int count) {
+        if(getDoc() instanceof BaseDocument) {
+            try {
+                Utilities.reformat((BaseDocument)getDoc(),
+                                   getLineStartOffset(line),
+                                   getLineEndOffset(line + count - 1));
+                return;
+            } catch (BadLocationException ex) { }
+        }
+        Util.vim_beep();
+    }
+    
+    public void anonymousMark(MARKOP op, int count) {
+        String actName = null;
+        switch(op) {
+            case TOGGLE:
+                actName = "/Actions/Edit/bookmark-toggle.instance";
+                break;
+            case NEXT:
+                actName = "/Actions/Edit/bookmark-next.instance";
+                break;
+            case PREV:
+                actName = "/Actions/Edit/bookmark-previous.instance";
+                break;
+        }
+        Action act = Module.fetchFileSystemAction(actName);
+        if(act != null && act.isEnabled()) {
+            ActionEvent e = new ActionEvent(getDoc(), 0, "");
+            act.actionPerformed(e);
+        } else
+            Util.vim_beep();
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Things that go bump in the document
     //
 
     protected String getRemovedText(DocumentEvent e) {
@@ -267,8 +310,8 @@ public class NbBuffer extends DefaultBuffer {
                         tv.getStatusDisplay().displayErrorMessage(
                                 "No changes made."
                                 + (isGuardedException()
-                                ? " Attempt to change guarded text."
-                                : " Document location error."));
+                                   ? " Attempt to change guarded text."
+                                   : " Document location error."));
                     }
                 });
             }
@@ -297,32 +340,6 @@ public class NbBuffer extends DefaultBuffer {
                 } catch (IllegalAccessException ex) { }
             }
         }
-    }
-
-
-    //////////////////////////////////////////////////////////////////////
-    //
-    //
-    
-    public void anonymousMark(MARKOP op, int count) {
-        String actName = null;
-        switch(op) {
-            case TOGGLE:
-                actName = "/Actions/Edit/bookmark-toggle.instance";
-                break;
-            case NEXT:
-                actName = "/Actions/Edit/bookmark-next.instance";
-                break;
-            case PREV:
-                actName = "/Actions/Edit/bookmark-previous.instance";
-                break;
-        }
-        Action act = Module.fetchFileSystemAction(actName);
-        if(act != null && act.isEnabled()) {
-            ActionEvent e = new ActionEvent(getDoc(), 0, "");
-            act.actionPerformed(e);
-        } else
-            Util.vim_beep();
     }
     
     //////////////////////////////////////////////////////////////////////

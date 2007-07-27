@@ -320,6 +320,9 @@ public class NbTextView extends TextView
         }
     }
 
+    //
+    // NEEDSWORK: move to buffer
+    //
     public void reindent(int line, int count) {
         if(getBuffer().getDocument() instanceof BaseDocument) {
             try {

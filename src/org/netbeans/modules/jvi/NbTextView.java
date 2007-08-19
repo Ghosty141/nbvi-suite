@@ -17,7 +17,6 @@ import javax.swing.JEditorPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
-import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
@@ -63,7 +62,6 @@ public class NbTextView extends TextView
     
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
-        //cache = createTextViewCache();
         statusDisplay = new NbStatusDisplay(this);
         
         // since NB insists that this is a shared variable

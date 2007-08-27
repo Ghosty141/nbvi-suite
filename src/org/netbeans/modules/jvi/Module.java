@@ -19,8 +19,13 @@ import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -1082,6 +1087,7 @@ public class Module extends ModuleInstall {
         if(!enable) {
             // Finished, make sure everything's shutdown
             Completion.get().hideAll();
+            ceText.removeFocusListener(initShowCompletion);
             ceText.getDocument().removeDocumentListener(ceDocListen);
             ceDocListen = null;
             return;
@@ -1114,20 +1120,21 @@ public class Module extends ModuleInstall {
         // see if initial conditions warrent bringing up completion
         if(text.startsWith("e#")) {
             // Wait till combo's ready to go.
-            // It takes two trips.
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    EventQueue.invokeLater(new Runnable() {
-                        public void run() {
-                            if(dbgCompl.getBoolean())
-                                System.err.println("INIT SHOW:");
-                            Completion.get().showCompletion();
-                        }
-                    });
-                }
-            });
+            if(ceText.hasFocus())
+                initShowCompletion.focusGained(null);
+            else
+                ceText.addFocusListener(initShowCompletion);
         }
     }
+
+    private static FocusListener initShowCompletion = new FocusAdapter() {
+        @Override
+        public void focusGained(FocusEvent e) {
+            if(dbgCompl.getBoolean())
+                System.err.println("INIT SHOW:");
+            Completion.get().showCompletion();
+        }
+    };
 
     private static void ceDocCheck(Document doc) {
         try {
@@ -1410,10 +1417,52 @@ public class Module extends ModuleInstall {
                 System.err.println("RENDER: '" + name
                                    + "', selected " + selected);
             Font f = font == null ? defaultFont : font;
+            Graphics2D g2 = (Graphics2D)g;
+            renderingHints = pushCharHint(g2, renderingHints);
             CompletionUtilities.renderHtml(icon, nameLabel, num,
                                            g, f,
                                            selected ? Color.white : fieldColor,
                                            width, height, selected);
+            popCharHint(g2, renderingHints);
+        }
+
+        private RenderingHints renderingHints;
+        private boolean charHintsEnabled = true;
+        private RenderingHints pushCharHint(Graphics2D g2,
+                                              RenderingHints rh) {
+            if(!charHintsEnabled)
+                return null;
+            
+            if(rh != null)
+                rh.clear();
+            else
+                rh = new RenderingHints(null);
+            // hints from: "How can you improve Java Fonts?"
+            // http://www.javalobby.org/java/forums/m92159650.html#92159650
+            // read entire discussion, KEY_TEXT_ANTIALIASING shouldn't need change
+            // NOTE: problem is that KEY_AA should not be on while doing text.
+            rh.put(RenderingHints.KEY_ANTIALIASING,
+                   g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING));
+            rh.put(RenderingHints.KEY_TEXT_ANTIALIASING,
+                   g2.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING));
+            rh.put(RenderingHints.KEY_RENDERING,
+                   g2.getRenderingHint(RenderingHints.KEY_RENDERING));
+
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_OFF);
+            // g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+            //                     RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING,
+                                RenderingHints.VALUE_RENDER_QUALITY);
+            return rh;
+        }
+
+        private void popCharHint(Graphics2D g2, RenderingHints rh) {
+            if(!charHintsEnabled || rh == null)
+                return;
+            g2.addRenderingHints(rh);
         }
 
         public CompletionTask createDocumentationTask() {

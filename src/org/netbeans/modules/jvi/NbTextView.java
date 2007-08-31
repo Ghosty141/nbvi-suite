@@ -13,10 +13,19 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
 import java.io.File;
+import java.util.ArrayList;
 import javax.swing.JEditorPane;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.AttributesUtilities;
+import org.netbeans.api.editor.settings.FontColorNames;
+import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.DrawContext;
@@ -28,6 +37,13 @@ import org.netbeans.editor.SettingsNames;
 import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.spi.editor.highlighting.HighlightsLayer;
+import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory;
+import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory.Context;
+import org.netbeans.spi.editor.highlighting.HighlightsSequence;
+import org.netbeans.spi.editor.highlighting.ZOrder;
+import org.netbeans.spi.editor.highlighting.support.AbstractHighlightsContainer;
+import org.netbeans.spi.editor.highlighting.support.PositionsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.windows.TopComponent;
@@ -72,24 +88,27 @@ public class NbTextView extends TextView
     public void startup(Buffer buf) {
         super.startup(buf);
         
-        // NEEDSWORK: the layer stuff should be in Buffer????
-        
-        // add jVi's DrawLayers
-        EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-        if(eui != null) {
-            // NEEDSWORK: layers not shared, used to be single layer for all tv
-            eui.addLayer(new VisualSelectLayer(),
-                         VI_VISUAL_SELECT_LAYER_VISIBILITY);
-            eui.addLayer(new HighlightSearchLayer(),
-                         VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
+        if(useOldLayers) {
+            // NEEDSWORK: the layer stuff should be in Buffer????
+            // add jVi's DrawLayers
+            EditorUI eui = Utilities.getEditorUI(getEditorComponent());
+            if(eui != null) {
+                // NEEDSWORK: layers not shared, used to be single layer for all tv
+                eui.addLayer(new VisualSelectLayer(),
+                            VI_VISUAL_SELECT_LAYER_VISIBILITY);
+                eui.addLayer(new HighlightSearchLayer(),
+                            VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
+            }
         }
     }
     
     public void shutdown() {
-        EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-        if(eui != null) {
-            eui.removeLayer(VISUAL_SELECT_LAYER);
-            eui.removeLayer(HIGHLIGHT_SEARCH_LAYER);
+        if(useOldLayers) {
+            EditorUI eui = Utilities.getEditorUI(getEditorComponent());
+            if(eui != null) {
+                eui.removeLayer(VISUAL_SELECT_LAYER);
+                eui.removeLayer(HIGHLIGHT_SEARCH_LAYER);
+            }
         }
         super.shutdown();
     }
@@ -388,12 +407,12 @@ public class NbTextView extends TextView
             if(tv == null) {
                 return new int[] {-1,-1};
             }
-            return tv.getVisualSelectBlocks(ctx.getStartOffset(),
+            return tv.getTrimmedVisualSelectBlocks(ctx.getStartOffset(),
                                                ctx.getEndOffset());
         }
     }
     
-    public void updateVisualState() {
+    public void oldUpdateVisualState() {
         updateVisualSelectDisplay();
         EditorUI eui = Utilities.getEditorUI(getEditorComponent());
         if(eui != null) {
@@ -412,8 +431,8 @@ public class NbTextView extends TextView
         }
     }
     
-    public int[] getVisualSelectBlocks(int startOffset, int endOffset) {
-        int[] xBlocks = super.getVisualSelectBlocks(startOffset, endOffset);
+    public int[] getTrimmedVisualSelectBlocks(int startOffset, int endOffset) {
+        int[] xBlocks = getVisualSelectBlocks(startOffset, endOffset);
         //return xBlocks;
         return getInterestingBlocks(xBlocks, startOffset, endOffset);
     }
@@ -423,7 +442,7 @@ public class NbTextView extends TextView
     // HighlightSearchLayer
     //
     
-    public void updateHighlightSearchState() {
+    public void oldUpdateHighlightSearchState() {
         getBuffer().updateHighlightSearchCommonState();
         EditorUI eui = Utilities.getEditorUI(getEditorComponent());
         if(eui != null) {
@@ -681,5 +700,206 @@ public class NbTextView extends TextView
         }
         tBlocks[idx++] = -1;
         tBlocks[idx++] = -1;
+    }
+
+
+
+
+    
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Highlighte for visual mode and incremental search
+    //
+
+    private static final boolean useOldLayers = true;
+    private static final boolean dbgHL = false;
+
+    public void updateVisualState() {
+        if(useOldLayers) {
+            oldUpdateVisualState();
+            return;
+        }
+        updateVisualSelectDisplay();
+        if(visualSelectHighlighter != null)
+            visualSelectHighlighter.update();
+    }
+
+    public void updateHighlightSearchState() {
+        if(useOldLayers) {
+            oldUpdateHighlightSearchState();
+            return;
+        }
+        getBuffer().updateHighlightSearchCommonState();
+        if(incrSearchHighlighter != null)
+            incrSearchHighlighter.update();
+    }
+
+    public static final String VISUAL_MODE_LAYER
+            = "org.netbeans.modules.jvi/VISUAL_SELECT";
+    public static final String  INCR_SEARCH_LAYER 
+            = "org.netbeans.modules.jvi/INC_SEARCH";
+
+    // The most recently created highlighters for this text view
+    private VisualSelectHighlighter visualSelectHighlighter;
+    private IncrSearchHighlighter incrSearchHighlighter;
+
+    public static class HighlightsFactory implements HighlightsLayerFactory {
+
+        public HighlightsLayer[] createLayers(Context context) {
+            ArrayList<HighlightsLayer> layers
+                    = new ArrayList<HighlightsLayer>();
+
+            FileObject fo = NbEditorUtilities.getFileObject(
+                    context.getDocument());
+            if(dbgHL)
+                System.err.println("Highlight Factory: "
+                        + (fo != null ? fo.getNameExt() : ""));
+
+            // NEEDSWORK: check that EP has a top component?
+            // if context has jvi (PROP_JEP) create layers
+
+            if(context.getComponent() instanceof JEditorPane) {
+                JEditorPane ep = (JEditorPane)context.getComponent();
+                layers.add(HighlightsLayer.create(
+                    INCR_SEARCH_LAYER, 
+                    ZOrder.SHOW_OFF_RACK.forPosition(300),
+                    true,
+                    new IncrSearchHighlighter(INCR_SEARCH_LAYER, ep)
+                ));
+
+                layers.add(HighlightsLayer.create(
+                    VISUAL_MODE_LAYER, 
+                    ZOrder.SHOW_OFF_RACK.forPosition(800),
+                    true,
+                    new VisualSelectHighlighter(VISUAL_MODE_LAYER, ep)
+                ));
+            }
+
+            if(useOldLayers)
+                return new HighlightsLayer [0];
+            return layers.toArray(new HighlightsLayer [layers.size()]);
+        }
+    }
+
+    private AttributeSet getAttribs(String coloringName) {
+        FontColorSettings fcs = MimeLookup.getLookup(
+            MimePath.parse(getMimeType())).lookup(FontColorSettings.class);
+        AttributeSet attribs = fcs.getFontColors(coloringName);
+        return attribs == null ? SimpleAttributeSet.EMPTY : attribs;
+    }
+    private String getMimeType() {
+        return editorPane.getUI().getEditorKit(editorPane).getContentType();
+    }
+
+    private static class IncrSearchHighlighter extends BlocksHighlighter {
+
+        public IncrSearchHighlighter(String name, JEditorPane ep) {
+            super(name, ep);
+            tv.incrSearchHighlighter = this;
+        }
+
+        int[] getBlocks(int startOffset, int endOffset) {
+            return tv.getBuffer().getHighlightSearchBlocks(startOffset,
+                                                           endOffset);
+        }
+
+        AttributeSet getAttribs() {
+            return tv.getAttribs(FontColorNames.INC_SEARCH_COLORING);
+        }
+
+    }
+
+    private static class VisualSelectHighlighter extends BlocksHighlighter {
+        private ColorOption selectColorOption;
+        private Color selectColor;
+        private AttributeSet selectAttribs;
+
+        VisualSelectHighlighter(String name, JEditorPane ep) {
+            super(name, ep);
+            tv.visualSelectHighlighter = this;
+
+            selectColorOption
+                    = (ColorOption)Options.getOption(Options.selectColor);
+            getAttribs();
+        }
+
+        int[] getBlocks(int startOffset, int endOffset) {
+            return  tv.getVisualSelectBlocks(startOffset, endOffset);
+        }
+
+        AttributeSet getAttribs() {
+            if(!selectColorOption.getColor().equals(selectColor)) {
+                selectColor = selectColorOption.getColor();
+                selectAttribs = AttributesUtilities.createImmutable(
+                        StyleConstants.Background, selectColor);
+            }
+            return selectAttribs;
+        }
+    }
+
+    private abstract static class BlocksHighlighter
+            extends AbstractHighlightsContainer {
+            //implements HighlightsChangeListener {
+
+        //
+        // NEEDSWORK: don't keep pointer to tv,
+        // do getExistingViTextView() when needed
+        // set tv.whichHighlighter as needed, or Map<ep,Highlighter>
+        //
+        // Is there a way to get active highlight container
+        //
+        NbTextView tv;
+        PositionsBag bag;
+
+        BlocksHighlighter(String name, JEditorPane ep) {
+            tv = (NbTextView)ViManager.getViFactory()
+                                        .getViTextView((ep));
+            this.bag = new PositionsBag(ep.getDocument());
+            //this.bag.addHighlightsChangeListener(this);
+        }
+
+        abstract int[] getBlocks(int startOffset, int endOffset);
+
+        abstract AttributeSet getAttribs();
+
+        void update() {
+            if(dbgHL)
+                System.err.println("BlocksHighlighter update:");
+            bag.clear();
+            //fireHighlightsChange(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            fireHighlightsChange(0, Integer.MAX_VALUE);
+        }
+
+        // Note: assuming that doc is under read lock
+        private void bagBlocks(int[] blocks) {
+            if(dbgHL)
+                Buffer.dumpBlocks("BlocksHighlighter", blocks);
+            Document doc = tv.getBuffer().getDocument();
+            AttributeSet attribs = getAttribs();
+            for(int i = 0; ; i += 2) {
+                if(blocks[i] < 0)
+                    break;
+                try {
+                    bag.addHighlight(doc.createPosition(blocks[i]),
+                                     doc.createPosition(blocks[i+1]),
+                                     attribs);
+                } catch(BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        public HighlightsSequence getHighlights(int startOffset, int endOffset)
+        {
+            if(dbgHL)
+                System.err.println("getHighlights: " + startOffset + "," + endOffset);
+            bagBlocks(getBlocks(startOffset, endOffset));
+            return bag.getHighlights(startOffset, endOffset);
+        }
+
+        //public void highlightChanged(HighlightsChangeEvent event) {
+        //    fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
+        //}
+
     }
 }

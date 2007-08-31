@@ -134,7 +134,7 @@ public class Module extends ModuleInstall {
 
     static {
         try {
-            ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
+            Lookup.getDefault().lookup(ClassLoader.class)
                 .loadClass("org.openide.util.NbPreferences");
             //Class.forName("org.openide.util.NbPreferences");
             nb6 = true;
@@ -143,6 +143,10 @@ public class Module extends ModuleInstall {
 
     public static boolean isNb6() {
         return nb6;
+    }
+
+    static boolean jViEnabled() {
+        return jViEnabled;
     }
 
     /** @return the module specific preferences.
@@ -405,28 +409,6 @@ public class Module extends ModuleInstall {
         //
         // Some debug commands
         //
-        ColonCommands.register("vhlDebug", "vhlDebug",
-                               new ColonCommands.ColonAction() {
-            public void actionPerformed(ActionEvent ev) {
-                ColonEvent cev = (ColonEvent) ev;
-                int col1 = 0, col2 = 0;
-                int modulo = -1, contig = 1;
-                if(cev.getNArg() < 2)
-                    return;
-                try {
-                    
-                    col1 = Integer.parseInt(cev.getArg(1));
-                    col2 = Integer.parseInt(cev.getArg(2));
-                    if(cev.getNArg() >= 3)
-                        modulo = Integer.parseInt(cev.getArg(3));
-                    
-                    if(cev.getNArg() >= 4)
-                        contig = Integer.parseInt(cev.getArg(4));
-                } catch (NumberFormatException ex) { }
-                
-                NbTextView.testVisualHighlight(col1, col2, modulo, contig);
-            }
-        });
         ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -983,6 +965,11 @@ public class Module extends ModuleInstall {
                 }
         }
     }
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Tools > jVi menu enable checkbox
+    //
     
     /** The action used for the NB system.
      * NEEDSWORK: want to plug the action into the checkbox
@@ -1075,6 +1062,11 @@ public class Module extends ModuleInstall {
         }
         
     }
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // :e# file name completion based on NB code completion
+    //
 
     private static DocumentListener ceDocListen;
     private static boolean ceInSubstitute;

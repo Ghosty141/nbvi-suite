@@ -85,6 +85,7 @@ public class NbTextView extends TextView
         w_p_nu = showLineNumbers;
     }
     
+    @Override
     public void startup(Buffer buf) {
         super.startup(buf);
         
@@ -102,6 +103,7 @@ public class NbTextView extends TextView
         }
     }
     
+    @Override
     public void shutdown() {
         if(useOldLayers) {
             EditorUI eui = Utilities.getEditorUI(getEditorComponent());
@@ -144,15 +146,18 @@ public class NbTextView extends TextView
     // The viTextView interface
     //
     
+    @Override
     public ViStatusDisplay getStatusDisplay() {
         return statusDisplay;
     }
     
+    @Override
     protected void createOps(JEditorPane editorPane) {
         ops = new NbOps(this);
         ops.init(editorPane);
     }
     
+    @Override
     public void displayFileInfo() {
         StringBuffer sb = new StringBuffer();
         sb.append("\"" + getDisplayFileName() + "\"");
@@ -165,6 +170,7 @@ public class NbTextView extends TextView
         getStatusDisplay().displayStatusMessage(sb.toString());
     }
     
+    @Override
     public String getDisplayFileName() {
         Document doc = (Document)getBuffer().getDocument();
         if(doc != null) {
@@ -192,6 +198,7 @@ public class NbTextView extends TextView
      *
      * The code that deals with extensions, :r, :e should just "do it".
      */
+    @Override
     public String getFileName(char option) {
         Document doc = (Document)getBuffer().getDocument();
         if(doc != null) {
@@ -275,6 +282,7 @@ public class NbTextView extends TextView
     /**
      * Find matching brace for char at the cursor
      */
+    @Override
     public void findMatch() {
         if(NbCaret.goodGotoMatchBehavior()) {
             ops.xact(NbEditorKit.matchBraceAction);
@@ -296,11 +304,13 @@ public class NbTextView extends TextView
     /**
      * Jump to the definition of the identifier unde the cursor.
      */
+    @Override
     public void jumpDefinition(String ident) {
         ops.xact(NbEditorKit.gotoDeclarationAction);
         ViManager.getViFactory().startTagPush(this, ident);
     }
     
+    @Override
     public void jumpList(JLOP op, int count) {
         switch(op) {
             case NEXT_CHANGE:
@@ -318,6 +328,7 @@ public class NbTextView extends TextView
         }
     }
     
+    @Override
     public void foldOperation(int op) {
         String action = null;
         switch(op) {
@@ -345,27 +356,33 @@ public class NbTextView extends TextView
     // Widow manipulation operations
     //
     
+    @Override
     public void win_quit() {
         // if split, close this half; otherwise close view
         win_close(false);
     }
     
+    @Override
     public void win_split(int n) {
         super.win_split(n);
     }
     
+    @Override
     public void win_goto(int n) {
         super.win_goto(n);
     }
     
+    @Override
     public void win_cycle(int n) {
         super.win_cycle(n);
     }
     
+    @Override
     public void win_close_others(boolean forceit) {
         super.win_close_others(forceit);
     }
     
+    @Override
     public void win_close(boolean freeBuf) {
         JEditorPane ep = getEditorComponent();
         TopComponent closeTC = NbFactory.getEditorTopComponent(ep);
@@ -399,6 +416,7 @@ public class NbTextView extends TextView
                                           selectColorOption.getColor());
         }
         
+        @Override
         protected Coloring getColoring(DrawContext ctx) {
             Color c = selectColorOption.getColor();
             if(!c.equals(selectColoring.getBackColor()))
@@ -406,6 +424,7 @@ public class NbTextView extends TextView
             return selectColoring;
         }
         
+        @Override
         protected int[] getBlocks(DrawContext ctx) {
             NbTextView tv = getTextView(ctx);
             if(tv == null) {
@@ -479,6 +498,7 @@ public class NbTextView extends TextView
              */
         }
         
+        @Override
         protected Coloring getColoring(DrawContext ctx) {
             return ctx.getEditorUI().getColoring(
                     SettingsNames.HIGHLIGHT_SEARCH_COLORING);
@@ -490,6 +510,7 @@ public class NbTextView extends TextView
              */
         }
         
+        @Override
         protected int[] getBlocks(DrawContext ctx) {
             NbTextView tv = getTextView(ctx);
             if(tv == null) {
@@ -574,6 +595,7 @@ public class NbTextView extends TextView
             this.enabled = enabled;
         }
         
+        @Override
         public void init(DrawContext ctx) {
             if (isEnabled()) {
                 try { // Just in case..., see jvi-Bugs-1703078
@@ -724,6 +746,7 @@ public class NbTextView extends TextView
     private static final boolean useOldLayers = true;
     private static final boolean dbgHL = false;
 
+    @Override
     public void updateVisualState() {
         if(useOldLayers) {
             oldUpdateVisualState();
@@ -734,6 +757,7 @@ public class NbTextView extends TextView
             visualSelectHighlighter.reset();
     }
 
+    @Override
     public void updateHighlightSearchState() {
         if(useOldLayers) {
             oldUpdateHighlightSearchState();
@@ -793,6 +817,7 @@ public class NbTextView extends TextView
             super(name, ep);
         }
 
+        @Override
         NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
                                         .getExistingViTextView((ep));
@@ -806,11 +831,13 @@ public class NbTextView extends TextView
             return tv;
         }
 
+        @Override
         int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
             return tv.getBuffer().getHighlightSearchBlocks(startOffset,
                                                            endOffset);
         }
 
+        @Override
         AttributeSet getAttribs() {
             //return getAttribs(FontColorNames.INC_SEARCH_COLORING);
             String mimeType = ep.getUI().getEditorKit(ep).getContentType();
@@ -835,6 +862,7 @@ public class NbTextView extends TextView
                     = (ColorOption)Options.getOption(Options.selectColor);
         }
 
+        @Override
         NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
                                         .getExistingViTextView((ep));
@@ -848,10 +876,12 @@ public class NbTextView extends TextView
             return tv;
         }
 
+        @Override
         int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
             return  tv.getVisualSelectBlocks(startOffset, endOffset);
         }
 
+        @Override
         AttributeSet getAttribs() {
             if(!selectColorOption.getColor().equals(selectColor)) {
                 selectColor = selectColorOption.getColor();
@@ -913,6 +943,7 @@ public class NbTextView extends TextView
             }
         }
 
+        @Override
         public HighlightsSequence getHighlights(int startOffset, int endOffset)
         {
             if(dbgHL)

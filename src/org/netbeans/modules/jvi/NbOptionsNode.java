@@ -35,6 +35,7 @@ public class NbOptionsNode extends BeanNode {
     
     public NbOptionsNode() throws IntrospectionException {
 	super(new OptionsBean.General() {
+            @Override
                   protected void put(String name, int val) {
                       try {
                           super.put(name, val);
@@ -42,6 +43,7 @@ public class NbOptionsNode extends BeanNode {
                           putEx(pve);
                       }
                   }
+            @Override
                   protected void put(String name, String val) {
                       try {
                           super.put(name, val);
@@ -54,6 +56,7 @@ public class NbOptionsNode extends BeanNode {
     }    
     
     private static class OptionsSubnodes extends Children.Keys {
+        @Override
         protected Node[] createNodes(Object object) {
             Node[] nodes = new Node[1];
             try {
@@ -78,6 +81,7 @@ public class NbOptionsNode extends BeanNode {
             return nodes;
         }
 
+        @Override
         protected void addNotify() {
            Collection c = new ArrayList();
            c.add(NODE_MODIFY);
@@ -90,6 +94,7 @@ public class NbOptionsNode extends BeanNode {
            setKeys(c);
         }
 
+        @Override
         protected void removeNotify() {
             setKeys(Collections.EMPTY_SET);
         }
@@ -110,6 +115,7 @@ public class NbOptionsNode extends BeanNode {
     private static class SearchNode extends BeanNode {
 	public SearchNode() throws IntrospectionException {
 	    super(new OptionsBean.Search() {
+                @Override
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -117,6 +123,7 @@ public class NbOptionsNode extends BeanNode {
                         putEx(pve);
                     }
                 }
+                @Override
                 protected void put(String name, String val) {
                     try {
                         super.put(name, val);
@@ -131,6 +138,7 @@ public class NbOptionsNode extends BeanNode {
     private static class ModifyNode extends BeanNode {
 	public ModifyNode() throws IntrospectionException {
 	    super(new OptionsBean.Modify() {
+                @Override
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -138,6 +146,7 @@ public class NbOptionsNode extends BeanNode {
                         putEx(pve);
                     }
                 }
+                @Override
                 protected void put(String name, String val) {
                     try {
                         super.put(name, val);
@@ -152,6 +161,7 @@ public class NbOptionsNode extends BeanNode {
     private static class CursorWrapNode extends BeanNode {
 	public CursorWrapNode() throws IntrospectionException {
 	    super(new OptionsBean.CursorWrap() {
+                @Override
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -159,6 +169,7 @@ public class NbOptionsNode extends BeanNode {
                         putEx(pve);
                     }
                 }
+                @Override
                 protected void put(String name, String val) {
                     try {
                         super.put(name, val);
@@ -173,6 +184,7 @@ public class NbOptionsNode extends BeanNode {
     private static class ExternalProcessNode extends BeanNode {
 	public ExternalProcessNode() throws IntrospectionException {
 	    super(new OptionsBean.ExternalProcess() {
+                @Override
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -180,6 +192,7 @@ public class NbOptionsNode extends BeanNode {
                         putEx(pve);
                     }
                 }
+                @Override
                 protected void put(String name, String val) {
                     try {
                         super.put(name, val);
@@ -194,6 +207,7 @@ public class NbOptionsNode extends BeanNode {
     private static class DebugNode extends BeanNode {
 	public DebugNode() throws IntrospectionException {
 	    super(new NbDebugOptions() {
+                @Override
                 protected void put(String name, int val) {
                     try {
                         super.put(name, val);
@@ -201,6 +215,7 @@ public class NbOptionsNode extends BeanNode {
                         putEx(pve);
                     }
                 }
+                @Override
                 protected void put(String name, String val) {
                     try {
                         super.put(name, val);
@@ -217,6 +232,7 @@ public class NbOptionsNode extends BeanNode {
     private static final String GETSET_DBG_TC = "DebugTC";
     
     public static class NbDebugOptions extends OptionsBean.Debug {
+        @Override
         public PropertyDescriptor[] getPropertyDescriptors() {
             PropertyDescriptor[]  descriptors = super.getPropertyDescriptors();
             PropertyDescriptor d01 = null;

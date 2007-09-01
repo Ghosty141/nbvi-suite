@@ -82,6 +82,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
         return io.getOut();
     }
 
+    @Override
     public void println(int line, int offset, int length) {
         if(type.equals(ViOutputStream.OUTPUT))
             return;
@@ -105,10 +106,12 @@ public class NbOutputStream extends OutputStreamAdaptor {
         }
     }
 
+    @Override
     public void println(String s) {
         ow.println(s);
     }
 
+    @Override
     public void close() {
         ow.close();
         ow = null;

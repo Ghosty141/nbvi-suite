@@ -157,6 +157,7 @@ public class Module extends ModuleInstall {
     }
     
     /** called when the module is loaded (at netbeans startup time) */
+    @Override
     public void restored() {
         if(dbgNb != null && dbgNb.getBoolean())
             System.err.println(MOD + "***** restored *****");
@@ -174,6 +175,7 @@ public class Module extends ModuleInstall {
         }
     }
 
+    @Override
     public void uninstalled() {
         super.uninstalled();
         
@@ -1024,6 +1026,7 @@ public class Module extends ModuleInstall {
             cb.setSelected(b);
         }
 
+        @Override
         public void performAction() {
             actionPerformed(null);
         }
@@ -1048,10 +1051,12 @@ public class Module extends ModuleInstall {
             getModulePreferences().putBoolean(PREF_ENABLED, enabled);
         }
         
+        @Override
         public HelpCtx getHelpCtx() {
             return HelpCtx.DEFAULT_HELP;
         }
 
+        @Override
         public String getName() {
             return NAME;
         }

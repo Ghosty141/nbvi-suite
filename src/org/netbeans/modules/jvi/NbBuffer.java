@@ -95,12 +95,14 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
 
+    @Override
     public void removeShare() {
         if(getShare() == 1)
             stopDocumentEvents();
         super.removeShare();
     }
 
+    @Override
     public void viOptionSet(ViTextView tv, String name) {
         String mimeType = tv.getEditorComponent().getContentType();
         BaseOptions baseOptions = MimeLookup.getLookup(
@@ -123,6 +125,7 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
     
+    @Override
     public void activateOptions(ViTextView tv) {
         String mimeType = tv.getEditorComponent().getContentType();
         BaseOptions baseOptions = MimeLookup.getLookup(
@@ -172,6 +175,7 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
     
+    @Override
     public void anonymousMark(MARKOP op, int count) {
         String actName = null;
         switch(op) {
@@ -198,6 +202,7 @@ public class NbBuffer extends DefaultBuffer {
     // Things that go bump in the document
     //
 
+    @Override
     protected String getRemovedText(DocumentEvent e) {
         String s = null;
         if(e instanceof BaseDocumentEvent) {
@@ -226,6 +231,7 @@ public class NbBuffer extends DefaultBuffer {
         fException = false;
     }
     
+    @Override
     protected void processTextException(BadLocationException ex) {
         if(ex instanceof GuardedException) {
             fGuardedException = true;
@@ -240,10 +246,12 @@ public class NbBuffer extends DefaultBuffer {
     // Undo handling.
     //
 
+    @Override
     protected void redoOperation() {
         undoOrRedo("Redo", NbEditorKit.redoAction);
     }
     
+    @Override
     protected void undoOperation() {
         undoOrRedo("Undo", NbEditorKit.undoAction);
     }
@@ -285,6 +293,7 @@ public class NbBuffer extends DefaultBuffer {
     // continue to use the classic undow flag
     //
     
+    @Override
     protected void beginUndoOperation() {
         clearExceptions();
         Document doc = getDoc();
@@ -293,6 +302,7 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
     
+    @Override
     protected void endUndoOperation() {
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
@@ -325,6 +335,7 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
 
+    @Override
     protected void beginInsertUndoOperation() {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
@@ -338,6 +349,7 @@ public class NbBuffer extends DefaultBuffer {
         }
     }
 
+    @Override
     protected void endInsertUndoOperation() {
         if(G.isClassicUndo.getBoolean()) {
             if(endUndo != null && undoRedo != null) {

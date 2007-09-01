@@ -111,6 +111,10 @@ public class NbTextView extends TextView
             }
         }
         super.shutdown();
+        if(visualSelectHighlighter != null)
+            visualSelectHighlighter.reset();
+        if(incrSearchHighlighter != null)
+            incrSearchHighlighter.reset();
     }
     
     //
@@ -711,6 +715,12 @@ public class NbTextView extends TextView
     // Highlighte for visual mode and incremental search
     //
 
+    // Use the Doc lock throughout?
+
+    // The most recently created highlighters for this text view
+    private BlocksHighlighter visualSelectHighlighter;
+    private BlocksHighlighter incrSearchHighlighter;
+
     private static final boolean useOldLayers = true;
     private static final boolean dbgHL = false;
 
@@ -721,7 +731,7 @@ public class NbTextView extends TextView
         }
         updateVisualSelectDisplay();
         if(visualSelectHighlighter != null)
-            visualSelectHighlighter.update();
+            visualSelectHighlighter.reset();
     }
 
     public void updateHighlightSearchState() {
@@ -731,17 +741,13 @@ public class NbTextView extends TextView
         }
         getBuffer().updateHighlightSearchCommonState();
         if(incrSearchHighlighter != null)
-            incrSearchHighlighter.update();
+            incrSearchHighlighter.reset();
     }
 
     public static final String VISUAL_MODE_LAYER
             = "org.netbeans.modules.jvi/VISUAL_SELECT";
     public static final String  INCR_SEARCH_LAYER 
             = "org.netbeans.modules.jvi/INC_SEARCH";
-
-    // The most recently created highlighters for this text view
-    private VisualSelectHighlighter visualSelectHighlighter;
-    private IncrSearchHighlighter incrSearchHighlighter;
 
     public static class HighlightsFactory implements HighlightsLayerFactory {
 
@@ -781,30 +787,38 @@ public class NbTextView extends TextView
         }
     }
 
-    private AttributeSet getAttribs(String coloringName) {
-        FontColorSettings fcs = MimeLookup.getLookup(
-            MimePath.parse(getMimeType())).lookup(FontColorSettings.class);
-        AttributeSet attribs = fcs.getFontColors(coloringName);
-        return attribs == null ? SimpleAttributeSet.EMPTY : attribs;
-    }
-    private String getMimeType() {
-        return editorPane.getUI().getEditorKit(editorPane).getContentType();
-    }
-
     private static class IncrSearchHighlighter extends BlocksHighlighter {
 
         public IncrSearchHighlighter(String name, JEditorPane ep) {
             super(name, ep);
-            tv.incrSearchHighlighter = this;
         }
 
-        int[] getBlocks(int startOffset, int endOffset) {
+        NbTextView getTv() {
+            NbTextView tv = (NbTextView)ViManager.getViFactory()
+                                        .getExistingViTextView((ep));
+            if(tv != null && tv.isShutdown())
+                return null;
+            if(tv != null && this != tv.incrSearchHighlighter) {
+                if(tv.incrSearchHighlighter != null)
+                    tv.incrSearchHighlighter.discard();
+                tv.incrSearchHighlighter = this;
+            }
+            return tv;
+        }
+
+        int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
             return tv.getBuffer().getHighlightSearchBlocks(startOffset,
                                                            endOffset);
         }
 
         AttributeSet getAttribs() {
-            return tv.getAttribs(FontColorNames.INC_SEARCH_COLORING);
+            //return getAttribs(FontColorNames.INC_SEARCH_COLORING);
+            String mimeType = ep.getUI().getEditorKit(ep).getContentType();
+            FontColorSettings fcs = MimeLookup.getLookup(
+                MimePath.parse(mimeType)).lookup(FontColorSettings.class);
+            AttributeSet attribs = fcs.getFontColors(
+                                    FontColorNames.INC_SEARCH_COLORING);
+            return attribs == null ? SimpleAttributeSet.EMPTY : attribs;
         }
 
     }
@@ -816,14 +830,25 @@ public class NbTextView extends TextView
 
         VisualSelectHighlighter(String name, JEditorPane ep) {
             super(name, ep);
-            tv.visualSelectHighlighter = this;
 
             selectColorOption
                     = (ColorOption)Options.getOption(Options.selectColor);
-            getAttribs();
         }
 
-        int[] getBlocks(int startOffset, int endOffset) {
+        NbTextView getTv() {
+            NbTextView tv = (NbTextView)ViManager.getViFactory()
+                                        .getExistingViTextView((ep));
+            if(tv != null && tv.isShutdown())
+                return null;
+            if(tv != null && this != tv.visualSelectHighlighter) {
+                if(tv.visualSelectHighlighter != null)
+                    tv.visualSelectHighlighter.discard();
+                tv.visualSelectHighlighter = this;
+            }
+            return tv;
+        }
+
+        int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
             return  tv.getVisualSelectBlocks(startOffset, endOffset);
         }
 
@@ -842,27 +867,26 @@ public class NbTextView extends TextView
             //implements HighlightsChangeListener {
 
         //
-        // NEEDSWORK: don't keep pointer to tv,
-        // do getExistingViTextView() when needed
-        // set tv.whichHighlighter as needed, or Map<ep,Highlighter>
-        //
         // Is there a way to get active highlight container
         //
-        NbTextView tv;
         PositionsBag bag;
+        JEditorPane ep;
 
         BlocksHighlighter(String name, JEditorPane ep) {
-            tv = (NbTextView)ViManager.getViFactory()
-                                        .getViTextView((ep));
+            this.ep = ep;
             this.bag = new PositionsBag(ep.getDocument());
             //this.bag.addHighlightsChangeListener(this);
         }
 
-        abstract int[] getBlocks(int startOffset, int endOffset);
+        abstract NbTextView getTv();
+
+        void discard() { }
+
+        abstract int[] getBlocks(NbTextView tv, int startOffset, int endOffset);
 
         abstract AttributeSet getAttribs();
 
-        void update() {
+        void reset() {
             if(dbgHL)
                 System.err.println("BlocksHighlighter update:");
             bag.clear();
@@ -874,12 +898,12 @@ public class NbTextView extends TextView
         private void bagBlocks(int[] blocks) {
             if(dbgHL)
                 Buffer.dumpBlocks("BlocksHighlighter", blocks);
-            Document doc = tv.getBuffer().getDocument();
             AttributeSet attribs = getAttribs();
             for(int i = 0; ; i += 2) {
                 if(blocks[i] < 0)
                     break;
                 try {
+                    Document doc = ep.getDocument();
                     bag.addHighlight(doc.createPosition(blocks[i]),
                                      doc.createPosition(blocks[i+1]),
                                      attribs);
@@ -893,7 +917,12 @@ public class NbTextView extends TextView
         {
             if(dbgHL)
                 System.err.println("getHighlights: " + startOffset + "," + endOffset);
-            bagBlocks(getBlocks(startOffset, endOffset));
+
+            NbTextView tv = getTv();
+            if(tv != null)
+                bagBlocks(getBlocks(tv, startOffset, endOffset));
+
+            // return if there is no existing "tv"
             return bag.getHighlights(startOffset, endOffset);
         }
 

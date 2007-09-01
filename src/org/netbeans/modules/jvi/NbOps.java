@@ -32,6 +32,7 @@ public class NbOps extends OpsBase {
         super(textView);
     }
     
+    @Override
     public void xop(int op) {
         String actionName;
         switch(op) {
@@ -61,6 +62,7 @@ public class NbOps extends OpsBase {
         xact(actionName);
     }
 
+    @Override
     protected Action findAction(String actionName) {
         EditorKit editorKit = textView.getEditorComponent().getEditorKit();
         if(!(editorKit instanceof BaseKit)) {

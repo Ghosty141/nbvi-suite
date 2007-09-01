@@ -139,6 +139,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
    * Note: might want to check editor manager, and if not vi then
    * call super(paint), same for super(damage)
    */
+    @Override
   protected void paintCustomCaret(Graphics g) {
     viDelegate.paint(g, getTextComponent());
   }
@@ -162,6 +163,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
    */
 
 
+    @Override
     public void setDot(int i) {
         if(isMouseAction || mouseButtonDown) {
             i = ViManager.mouseSetDot(i, mouseComponent, mouseEvent);
@@ -169,6 +171,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
         super.setDot(i);
     }
     
+    @Override
     public void moveDot(int i) {
         if(mouseButtonDown)
             i = ViManager.mouseMoveDot(i, mouseComponent, mouseEvent);
@@ -177,6 +180,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
   
     boolean mouseButtonDown;
 
+    @Override
     public void mousePressed(MouseEvent mouseEvent) {
         mouseButtonDown = true;
         beginClickHack(mouseEvent);
@@ -184,6 +188,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
         endClickHack();
     }
     
+    @Override
     public void mouseReleased(MouseEvent mouseEvent) {
         beginClickHack(mouseEvent);
         super.mouseReleased(mouseEvent);
@@ -192,11 +197,13 @@ public class NbCaret extends ExtCaret implements ViCaret {
         mouseButtonDown = false;
     }
 
+    @Override
     public void mouseClicked(MouseEvent mouseEvent) {
         beginClickHack(mouseEvent);
         super.mouseClicked(mouseEvent);
         endClickHack();
     }
+    @Override
     public void mouseDragged(MouseEvent mouseEvent) {
         beginClickHack(mouseEvent);
         super.mouseDragged(mouseEvent);

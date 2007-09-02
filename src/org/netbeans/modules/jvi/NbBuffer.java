@@ -18,6 +18,7 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.DefaultBuffer;
 import com.raelity.text.TextUtil;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.swing.Action;
@@ -38,9 +39,12 @@ import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.NbEditorKit;
+import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.options.BaseOptions;
 import org.openide.text.IndentEngine;
 import org.openide.awt.UndoRedo;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 
 import static com.raelity.jvi.Constants.*;
 
@@ -140,6 +144,23 @@ public class NbBuffer extends DefaultBuffer {
             fie.setExpandTabs(b_p_et);
             fie.setSpacesPerTab(b_p_sw);
         }
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //
+    //
+
+    @Override
+    public File getJavaFile() {
+        File fi = null;
+        Document doc = getDocument();
+        if(doc != null) {
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
+            if(fo != null){
+                fi = FileUtil.toFile(fo);
+            }
+        }
+        return fi;
     }
     
     //////////////////////////////////////////////////////////////////////

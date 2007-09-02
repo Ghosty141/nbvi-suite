@@ -157,128 +157,6 @@ public class NbTextView extends TextView
         ops.init(editorPane);
     }
     
-    @Override
-    public void displayFileInfo() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("\"" + getDisplayFileName() + "\"");
-        if(ViManager.getViFactory().getFS().isModified(this))
-            sb.append(" [Modified]");
-        int l = getBuffer().getLineCount();
-        sb.append(" " + l + " line" + Misc.plural(l));
-        sb.append(" --" + (int)((cache.getCursor().getLine() * 100)
-                                                    / l) + "%--");
-        getStatusDisplay().displayStatusMessage(sb.toString());
-    }
-    
-    @Override
-    public String getDisplayFileName() {
-        Document doc = (Document)getBuffer().getDocument();
-        if(doc != null) {
-            FileObject fo = NbEditorUtilities.getFileObject(doc);
-            /*System.err.println("getPath = " + fo.getPath());
-            System.err.println("getFileDisplayName = "
-                               + FileUtil.getFileDisplayName(fo));
-            System.err.println("toFileAbs = " + FileUtil.toFile(fo).getAbsolutePath());
-            System.err.println("toFileRel = " + FileUtil.toFile(fo).getPath());
-            System.err.println("toFileParent = " + FileUtil.toFile(fo).getParent());*/
-            if(fo != null)
-                return fo.getNameExt();
-        }
-        return "UNKNOWN";
-    }
-    
-    /**
-     * NEEDSWORK: getFileName (getModifiedFileName)
-     * In the future, to support multiple file modifiers, could take a File
-     * as an argument, and return a File.
-     *
-     * At some point the guts can go into jVi Core, and only the translation
-     * from FileObject to Object needs to be in here.
-     * Probably have something like tv.getFile().
-     *
-     * The code that deals with extensions, :r, :e should just "do it".
-     */
-    @Override
-    public String getFileName(char option) {
-        Document doc = (Document)getBuffer().getDocument();
-        if(doc != null) {
-            FileObject fo = NbEditorUtilities.getFileObject(doc);
-            if(fo != null){
-                String filename;
-                File fi = FileUtil.toFile(fo);
-                switch (option){
-                    case 'p':
-                        filename = fi.getAbsolutePath();
-                        break;
-                    case 'e':
-                        filename = fo.getExt(); // not in Java
-                        break;
-                    case 'r':
-                        // NEEDSWORK: this ":r" code may not work in corner
-                        // cases or with relative paths, but should cover all
-                        // use cases in NetBeans
-                        filename = fi.getParent() + fi.separator
-                                    + fo.getName(); // not in Java
-                        break;
-                    case 't':
-                        filename = fi.getName();
-                        break;
-                    case 'h':
-                        if(fi.isAbsolute()) {
-                            filename = fi.getParent();
-                            break;
-                        }
-                        // FALLTHROUGH
-                    case ' ':
-                        filename = fi.getPath();
-                        break;
-                    default:
-                        filename = fi.getPath()
-                                   + ":" + new String(new char[] {option});
-                        break;
-                }
-                
-                if(G.p_ssl.getBoolean()){
-                    // Shellslash is on, replace \ with /
-                    filename = filename.replace('\\','/');
-                } 
-                return filename;
-            }
-        }
-        return "";
-    }
-
-   /* FROM ActionFactory
-    public static class UndoAction extends LocalBaseAction {
- 
-        static final long serialVersionUID =8628586205035497612L;
- 
-        public UndoAction() {
-            super(BaseKit.undoAction, ABBREV_RESET
-                  | MAGIC_POSITION_RESET | UNDO_MERGE_RESET | WORD_MATCH_RESET);
-        }
- 
-        public void actionPerformed(ActionEvent evt, JTextComponent target) {
-            if (!target.isEditable() || !target.isEnabled()) {
-                target.getToolkit().beep();
-                return;
-            }
- 
-            Document doc = target.getDocument();
-            UndoableEdit undoMgr = (UndoableEdit)doc.getProperty(
-                                       BaseDocument.UNDO_MANAGER_PROP);
-            if (target != null && undoMgr != null) {
-                try {
-                    undoMgr.undo();
-                } catch (CannotUndoException e) {
-                    target.getToolkit().beep();
-                }
-            }
-        }
-    }
- */
-    
-    
     /**
      * Find matching brace for char at the cursor
      */
@@ -396,7 +274,7 @@ public class NbTextView extends TextView
         
         // and close the one requested
         if(!closeTC.close())
-            Msg.emsg(getDisplayFileName() + " not closed");
+            Msg.emsg(getBuffer().getDisplayFileName() + " not closed");
     }
     
     //////////////////////////////////////////////////////////////////////

@@ -62,7 +62,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
             String tabTag = "jVi " + sep +  (info != null ? info : "") + sep;
             ow = getIO(tabTag, true); // make a new tab
-            fnTag = tv.getDisplayFileName() + ":";
+            fnTag = tv.getBuffer().getDisplayFileName() + ":";
         }
         checkOpen();
     }

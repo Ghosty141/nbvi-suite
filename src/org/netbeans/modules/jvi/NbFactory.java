@@ -277,7 +277,7 @@ final public class NbFactory extends DefaultViFactory {
     
     private static void fillTagFrom(Tag tag, ViTextView tv) {
         tag.fromDoc = tv.getEditorComponent().getDocument();
-        tag.fromFile = tv.getDisplayFileName();
+        tag.fromFile = tv.getBuffer().getDisplayFileName();
         try {
             tag.fromPosition
                 = tag.fromDoc.createPosition(
@@ -423,7 +423,7 @@ final public class NbFactory extends DefaultViFactory {
                             doc, pushingTag.toPosition.getOffset(), false);
         if(pushingTag.toIdent.length() == 0) {
             // put the target file name there
-            pushingTag.toIdent = "in " + tv.getDisplayFileName();
+            pushingTag.toIdent = "in " + tv.getBuffer().getDisplayFileName();
         }
         
         tagStack.setSize(iActiveTag);

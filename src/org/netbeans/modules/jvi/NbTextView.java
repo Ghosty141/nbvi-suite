@@ -2,22 +2,24 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.G;
-import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViBuffer;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
-import java.io.File;
 import java.util.ArrayList;
 import javax.swing.JEditorPane;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
 import javax.swing.text.Segment;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -37,15 +39,18 @@ import org.netbeans.editor.SettingsNames;
 import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
+import org.netbeans.spi.editor.highlighting.HighlightsChangeListener;
 import org.netbeans.spi.editor.highlighting.HighlightsLayer;
 import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory;
 import org.netbeans.spi.editor.highlighting.HighlightsLayerFactory.Context;
 import org.netbeans.spi.editor.highlighting.HighlightsSequence;
 import org.netbeans.spi.editor.highlighting.ZOrder;
 import org.netbeans.spi.editor.highlighting.support.AbstractHighlightsContainer;
+import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.netbeans.spi.editor.highlighting.support.PositionsBag;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
+import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
 import static com.raelity.jvi.Constants.*;
 
@@ -115,8 +120,8 @@ public class NbTextView extends TextView
         super.shutdown();
         if(visualSelectHighlighter != null)
             visualSelectHighlighter.reset();
-        if(incrSearchHighlighter != null)
-            incrSearchHighlighter.reset();
+        if(searchResultsHighlighter != null)
+            searchResultsHighlighter.reset();
     }
     
     //
@@ -612,17 +617,22 @@ public class NbTextView extends TextView
     
     //////////////////////////////////////////////////////////////////////
     //
-    // Highlighte for visual mode and incremental search
+    // Highlighte for visual select mode and search results
     //
 
     // Use the Doc lock throughout?
 
     // The most recently created highlighters for this text view
     private BlocksHighlighter visualSelectHighlighter;
-    private BlocksHighlighter incrSearchHighlighter;
+    private BlocksHighlighter searchResultsHighlighter;
 
-    private static final boolean useOldLayers = true;
+    private static final boolean useOldLayers = false;
     private static final boolean dbgHL = false;
+
+    public static final String VISUAL_MODE_LAYER
+            = "VISUAL_SELECT_JVI";
+    public static final String  SEARCH_RESULTS_LAYER 
+            = "SEARCH_RESULTS_JVI";
 
     @Override
     public void updateVisualState() {
@@ -642,15 +652,30 @@ public class NbTextView extends TextView
             return;
         }
         getBuffer().updateHighlightSearchCommonState();
-        if(incrSearchHighlighter != null)
-            incrSearchHighlighter.reset();
+        if(searchResultsHighlighter != null)
+            searchResultsHighlighter.reset();
     }
 
-    public static final String VISUAL_MODE_LAYER
-            = "org.netbeans.modules.jvi/VISUAL_SELECT";
-    public static final String  INCR_SEARCH_LAYER 
-            = "org.netbeans.modules.jvi/INC_SEARCH";
-
+    // NEEDSWORK: there is no guarenteed way implemented to hook up a
+    // highlighter to the text view. Need to set up a map of ep-->highli
+    private void hookupHighlighter(String name, BlocksHighlighter h) {
+        if(isShutdown())
+            return;
+        if(VISUAL_MODE_LAYER.equals(name)) {
+            if(h != visualSelectHighlighter) {
+                if(visualSelectHighlighter != null)
+                    visualSelectHighlighter.discard();
+                visualSelectHighlighter = h;
+            }
+        } else if(SEARCH_RESULTS_LAYER.equals(name)) {
+            if(h != searchResultsHighlighter) {
+                if(searchResultsHighlighter != null)
+                    searchResultsHighlighter.discard();
+                searchResultsHighlighter = h;
+            }
+        }
+    }
+    
     public static class HighlightsFactory implements HighlightsLayerFactory {
 
         public HighlightsLayer[] createLayers(Context context) {
@@ -668,11 +693,17 @@ public class NbTextView extends TextView
 
             if(context.getComponent() instanceof JEditorPane) {
                 JEditorPane ep = (JEditorPane)context.getComponent();
+
+
+                // Take a look at TextSearchHighlighting.java in
+                // lib2/src/org/netbeans/modules/editor/lib2/highlighting/
                 layers.add(HighlightsLayer.create(
-                    INCR_SEARCH_LAYER, 
-                    ZOrder.SHOW_OFF_RACK.forPosition(300),
+                    SEARCH_RESULTS_LAYER, 
+                    ZOrder.SHOW_OFF_RACK.forPosition(200),
                     true,
-                    new IncrSearchHighlighter(INCR_SEARCH_LAYER, ep)
+                    //new SearchResultsHighlighter(SEARCH_RESULTS_LAYER, ep)
+                    new SearchResultsHighlighter(SEARCH_RESULTS_LAYER, ep)
+                
                 ));
 
                 layers.add(HighlightsLayer.create(
@@ -689,45 +720,6 @@ public class NbTextView extends TextView
         }
     }
 
-    private static class IncrSearchHighlighter extends BlocksHighlighter {
-
-        public IncrSearchHighlighter(String name, JEditorPane ep) {
-            super(name, ep);
-        }
-
-        @Override
-        NbTextView getTv() {
-            NbTextView tv = (NbTextView)ViManager.getViFactory()
-                                        .getExistingViTextView((ep));
-            if(tv != null && tv.isShutdown())
-                return null;
-            if(tv != null && this != tv.incrSearchHighlighter) {
-                if(tv.incrSearchHighlighter != null)
-                    tv.incrSearchHighlighter.discard();
-                tv.incrSearchHighlighter = this;
-            }
-            return tv;
-        }
-
-        @Override
-        int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
-            return tv.getBuffer().getHighlightSearchBlocks(startOffset,
-                                                           endOffset);
-        }
-
-        @Override
-        AttributeSet getAttribs() {
-            //return getAttribs(FontColorNames.INC_SEARCH_COLORING);
-            String mimeType = ep.getUI().getEditorKit(ep).getContentType();
-            FontColorSettings fcs = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(FontColorSettings.class);
-            AttributeSet attribs = fcs.getFontColors(
-                                    FontColorNames.INC_SEARCH_COLORING);
-            return attribs == null ? SimpleAttributeSet.EMPTY : attribs;
-        }
-
-    }
-
     private static class VisualSelectHighlighter extends BlocksHighlighter {
         private ColorOption selectColorOption;
         private Color selectColor;
@@ -741,26 +733,12 @@ public class NbTextView extends TextView
         }
 
         @Override
-        NbTextView getTv() {
-            NbTextView tv = (NbTextView)ViManager.getViFactory()
-                                        .getExistingViTextView((ep));
-            if(tv != null && tv.isShutdown())
-                return null;
-            if(tv != null && this != tv.visualSelectHighlighter) {
-                if(tv.visualSelectHighlighter != null)
-                    tv.visualSelectHighlighter.discard();
-                tv.visualSelectHighlighter = this;
-            }
-            return tv;
-        }
-
-        @Override
-        int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
+        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
             return  tv.getVisualSelectBlocks(startOffset, endOffset);
         }
 
         @Override
-        AttributeSet getAttribs() {
+        protected AttributeSet getAttribs() {
             if(!selectColorOption.getColor().equals(selectColor)) {
                 selectColor = selectColorOption.getColor();
                 selectAttribs = AttributesUtilities.createImmutable(
@@ -768,76 +746,205 @@ public class NbTextView extends TextView
             }
             return selectAttribs;
         }
+
+        protected boolean isEnabled() {
+            return true;
+        }
+    }
+
+    // Take a look at TextSearchHighlighting.java in
+    // lib2/src/org/netbeans/modules/editor/lib2/highlighting/
+    private static class SearchResultsHighlighter
+            //extends AbstractHighlightsContainer
+            extends BlocksHighlighter
+            implements HighlightsChangeListener,
+                       DocumentListener {
+        
+        private final AttributeSet attribs;
+
+        @Override
+        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
+            return tv.getBuffer().getHighlightSearchBlocks(startOffset,
+                                                           endOffset);
+        }
+
+        protected AttributeSet getAttribs() {
+            return attribs;
+        }
+        
+        /** Creates a new instance of TextSearchHighlighter */
+        public SearchResultsHighlighter(String name, JEditorPane ep) {
+            super(name, ep);
+
+            // Determine the color
+            MimePath mimePath;
+            EditorKit kit = ep.getUI().getEditorKit(ep);
+            String mimeType = kit == null ? null : kit.getContentType();
+            mimePath = mimeType == null ? MimePath.EMPTY : MimePath.parse(mimeType);
+            FontColorSettings fcs = MimeLookup.getLookup(mimePath)
+                                        .lookup(FontColorSettings.class);
+            AttributeSet t;
+            t = fcs.getFontColors(FontColorNames.HIGHLIGHT_SEARCH_COLORING);
+            attribs = t == null ? SimpleAttributeSet.EMPTY : t;
+
+            fillInTheBag();
+        }
+        
+        protected boolean isEnabled() {
+            return Options.doHighlightSearch();
+        }
     }
 
     private abstract static class BlocksHighlighter
-            extends AbstractHighlightsContainer {
-            //implements HighlightsChangeListener {
+            extends AbstractHighlightsContainer
+            implements HighlightsChangeListener,
+                       DocumentListener {
 
         //
         // Is there a way to get active highlight container
         //
-        PositionsBag bag;
-        JEditorPane ep;
+        protected final OffsetsBag bag;
+        protected final JEditorPane ep;
+        protected final Document document;
+        protected final String name;
 
         BlocksHighlighter(String name, JEditorPane ep) {
+            this.name = name;
             this.ep = ep;
-            this.bag = new PositionsBag(ep.getDocument());
-            //this.bag.addHighlightsChangeListener(this);
+            this.document = ep.getDocument();
+            
+            // Let the bag update first...
+            this.bag = new OffsetsBag(document);
+            this.bag.addHighlightsChangeListener(this);
+            
+            // ...and the internal listener second
+            this.document.addDocumentListener(
+                    WeakListeners.document(this, this.document));
         }
 
-        abstract NbTextView getTv();
+        // NEEDSWORK: THERE IS NO GUARENTEED WAY FOR THE tv TO
+        // FIND this. The current scheme depends on the infrastructure
+        // calling getHighlights, which will call getTv()
 
-        void discard() { }
+        protected NbTextView getTv() {
+            NbTextView tv = (NbTextView)ViManager.getViFactory()
+                                        .getExistingViTextView((ep));
+            if(tv != null)
+                tv.hookupHighlighter(name, this);
+            return tv;
+        }
 
-        abstract int[] getBlocks(NbTextView tv, int startOffset, int endOffset);
+        protected void discard() {
+            bag.discard();
+        }
 
-        abstract AttributeSet getAttribs();
+        protected abstract int[] getBlocks(
+                NbTextView tv, int startOffset, int endOffset);
+
+        protected abstract AttributeSet getAttribs();
+
+        protected abstract boolean isEnabled();
 
         void reset() {
             if(dbgHL)
-                System.err.println("BlocksHighlighter update:");
-            bag.clear();
-            //fireHighlightsChange(Integer.MIN_VALUE, Integer.MAX_VALUE);
-            fireHighlightsChange(0, Integer.MAX_VALUE);
+                System.err.println("BlocksHighlighter reset:");
+            fillInTheBag();
         }
-
-        // Note: assuming that doc is under read lock
-        private void bagBlocks(int[] blocks) {
+        
+        public void highlightChanged(HighlightsChangeEvent event) {
             if(dbgHL)
-                Buffer.dumpBlocks("BlocksHighlighter", blocks);
-            AttributeSet attribs = getAttribs();
-            for(int i = 0; ; i += 2) {
-                if(blocks[i] < 0)
-                    break;
-                try {
-                    Document doc = ep.getDocument();
-                    bag.addHighlight(doc.createPosition(blocks[i]),
-                                     doc.createPosition(blocks[i+1]),
-                                     attribs);
-                } catch(BadLocationException ex) {
-                    ex.printStackTrace();
-                }
-            }
+                System.err.println(name + " highlightChanged: "
+                    + event.getStartOffset() + "," + event.getEndOffset());
+            fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
         }
-
-        @Override
-        public HighlightsSequence getHighlights(int startOffset, int endOffset)
-        {
+        
+        public HighlightsSequence getHighlights(int startOffset, int endOffset) {
             if(dbgHL)
                 System.err.println("getHighlights: " + startOffset + "," + endOffset);
-
-            NbTextView tv = getTv();
-            if(tv != null)
-                bagBlocks(getBlocks(tv, startOffset, endOffset));
-
-            // return if there is no existing "tv"
+            getTv();
             return bag.getHighlights(startOffset, endOffset);
         }
+        
+        public void insertUpdate(DocumentEvent e) {
+            // redo the full lines of the inserted area
+            NbTextView tv = getTv();
+            if(tv != null) {
+                ViBuffer buf = tv.getBuffer();
+                // set start,end to line numbers around the change
+                int start = buf.getLineNumber(e.getOffset());
+                int end = buf.getLineNumber(e.getOffset() + e.getLength());
+                fillInTheBag(buf.getLineStartOffset(start),
+                             buf.getLineEndOffset(end),
+                             false);
+            }
+        }
+        
+        public void removeUpdate(DocumentEvent e) {
+            // pick a few lines around the change
+            NbTextView tv = getTv();
+            if(tv != null) {
+                ViBuffer buf = tv.getBuffer();
+                // set start,end to line numbers around the change
+                int start = buf.getLineNumber(e.getOffset());
+                int end = start;
+                if(start > 1)
+                    --start;
+                if(end < buf.getLineCount())
+                    ++end;
+                fillInTheBag(buf.getLineStartOffset(start),
+                             buf.getLineEndOffset(end),
+                             false);
+            }
+        }
+        
+        public void changedUpdate(DocumentEvent e) {
+            // not interested
+        }
 
-        //public void highlightChanged(HighlightsChangeEvent event) {
-        //    fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
-        //}
+        // NEEDSWORK: have a couple of different methods
+        // bagNewBlocks(start,end)
+        // bagReplaceBlocks(start,end)
+        // ???
+        
+        // This entry recomputes entire document
+        protected void fillInTheBag() {
+            fillInTheBag(0, Integer.MAX_VALUE, true);
+        }
+
+        protected void fillInTheBag(final int startOffset,
+                                  final int endOffset,
+                                  final boolean replaceAll) {
+            document.render(new Runnable() {
+                public void run() {
+                    OffsetsBag newBag = new OffsetsBag(document);
+                    
+                    NbTextView tv = getTv();
+                    if (isEnabled() && tv != null) {
+
+                        int [] blocks = getBlocks(tv, startOffset, endOffset);
+                        if(dbgHL)
+                            Buffer.dumpBlocks(name, blocks);
+                        
+                        AttributeSet as = getAttribs();
+                        for (int i = 0; blocks[i] >= 0; i += 2) {
+                            newBag.addHighlight(blocks[i],
+                                    blocks[i + 1],
+                                    as);
+                        }
+                    }
+                    
+                    if(replaceAll) {
+                        bag.setHighlights(newBag);
+                    } else {
+                        int bug = -1;
+                        bag.removeHighlights(startOffset, endOffset+bug, false);
+                        bag.addAllHighlights(newBag.getHighlights(startOffset,
+                                                                  endOffset));
+                    }
+                    newBag.discard();
+                }
+            });
+        }
 
     }
 }

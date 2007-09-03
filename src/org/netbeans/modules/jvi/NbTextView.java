@@ -17,10 +17,8 @@ import javax.swing.JEditorPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
-import javax.swing.text.Segment;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
@@ -29,14 +27,8 @@ import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.FontColorNames;
 import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.editor.BaseKit;
-import org.netbeans.editor.Coloring;
-import org.netbeans.editor.DrawContext;
-import org.netbeans.editor.DrawLayer;
-import org.netbeans.editor.EditorUI;
-import org.netbeans.editor.MarkFactory;
 import org.netbeans.editor.Settings;
 import org.netbeans.editor.SettingsNames;
-import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
@@ -48,7 +40,6 @@ import org.netbeans.spi.editor.highlighting.HighlightsSequence;
 import org.netbeans.spi.editor.highlighting.ZOrder;
 import org.netbeans.spi.editor.highlighting.support.AbstractHighlightsContainer;
 import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
-import org.netbeans.spi.editor.highlighting.support.PositionsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
@@ -59,28 +50,6 @@ import static com.raelity.jvi.Constants.*;
  */
 public class NbTextView extends TextView
 {
-    // Use the corresponding values from DrawlayerFactory
-    
-    /** Highlight search layer name */
-    public static final String HIGHLIGHT_SEARCH_LAYER
-                                    = "vi-highlight-search-layer"; // NOI18N
-    
-    /** Highlight search layer visibility */
-    public static final int VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY = 9000;
-    
-    /** Incremental search layer name */
-    public static final String INC_SEARCH_LAYER
-                                            = "vi-inc-search-layer"; // NOI18N
-    
-    /** Incremental search layer visibility */
-    public static final int VI_INC_SEARCH_LAYER_VISIBILITY = 9500;
-    
-    /** Incremental search layer name */
-    public static final String VISUAL_SELECT_LAYER
-                                        = "vi-visual-select-layer"; // NOI18N
-    
-    public static final int VI_VISUAL_SELECT_LAYER_VISIBILITY = 9600;
-    
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
@@ -94,29 +63,11 @@ public class NbTextView extends TextView
     public void startup(Buffer buf) {
         super.startup(buf);
         
-        if(useOldLayers) {
-            // NEEDSWORK: the layer stuff should be in Buffer????
-            // add jVi's DrawLayers
-            EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-            if(eui != null) {
-                // NEEDSWORK: layers not shared, used to be single layer for all tv
-                eui.addLayer(new VisualSelectLayer(),
-                            VI_VISUAL_SELECT_LAYER_VISIBILITY);
-                eui.addLayer(new HighlightSearchLayer(),
-                            VI_HIGHLIGHT_SEARCH_LAYER_VISIBILITY);
-            }
-        }
+        // do stuff
     }
     
     @Override
     public void shutdown() {
-        if(useOldLayers) {
-            EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-            if(eui != null) {
-                eui.removeLayer(VISUAL_SELECT_LAYER);
-                eui.removeLayer(HIGHLIGHT_SEARCH_LAYER);
-            }
-        }
         super.shutdown();
         if(visualSelectHighlighter != null)
             visualSelectHighlighter.reset();
@@ -284,339 +235,6 @@ public class NbTextView extends TextView
     
     //////////////////////////////////////////////////////////////////////
     //
-    // VisualSelectLayer
-    //
-    
-    public static class VisualSelectLayer extends HighlightBlocksLayer {
-        private ColorOption selectColorOption;
-        private Coloring selectColoring;
-        
-        VisualSelectLayer() {
-            super(VISUAL_SELECT_LAYER);
-            selectColorOption
-                    = (ColorOption)Options.getOption(Options.selectColor);
-            selectColoring = new Coloring(null, null,
-                                          selectColorOption.getColor());
-        }
-        
-        @Override
-        protected Coloring getColoring(DrawContext ctx) {
-            Color c = selectColorOption.getColor();
-            if(!c.equals(selectColoring.getBackColor()))
-                selectColoring = new Coloring(null, null, c);
-            return selectColoring;
-        }
-        
-        @Override
-        protected int[] getBlocks(DrawContext ctx) {
-            NbTextView tv = getTextView(ctx);
-            if(tv == null) {
-                return new int[] {-1,-1};
-            }
-            return tv.getTrimmedVisualSelectBlocks(ctx.getStartOffset(),
-                                               ctx.getEndOffset());
-        }
-    }
-    
-    public void oldUpdateVisualState() {
-        updateVisualSelectDisplay();
-        EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-        if(eui != null) {
-            // Enable/disable the visual select layer
-            HighlightBlocksLayer dl = (HighlightBlocksLayer)
-                                    eui.findLayer(VISUAL_SELECT_LAYER);
-            if(dl != null) {
-                dl.setEnabled(G.VIsual_active || G.drawSavedVisualBounds);
-            }
-            try {
-                // Poke the document indicating that things have changed.
-                eui.repaintBlock(0, eui.getDocument().getLength());
-            } catch (BadLocationException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-    
-    public int[] getTrimmedVisualSelectBlocks(int startOffset, int endOffset) {
-        int[] xBlocks = getVisualSelectBlocks(startOffset, endOffset);
-        //return xBlocks;
-        return getInterestingBlocks(xBlocks, startOffset, endOffset);
-    }
-    
-    //////////////////////////////////////////////////////////////////////
-    //
-    // HighlightSearchLayer
-    //
-    
-    public void oldUpdateHighlightSearchState() {
-        getBuffer().updateHighlightSearchCommonState();
-        EditorUI eui = Utilities.getEditorUI(getEditorComponent());
-        if(eui != null) {
-            // Enable/disable the hightlight search layer
-            HighlightBlocksLayer dl;
-            dl = (HighlightBlocksLayer) eui.findLayer(HIGHLIGHT_SEARCH_LAYER);
-            if(dl != null) {
-                dl.setEnabled(Options.doHighlightSearch());
-            }
-            try {
-                // Poke the document indicating that things have changed.
-                eui.repaintBlock(0, eui.getDocument().getLength());
-            } catch (BadLocationException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-    
-    public static class HighlightSearchLayer extends HighlightBlocksLayer {
-        // private ColorOption selectColorOption;
-        // private Coloring selectColoring;
-        
-        HighlightSearchLayer() {
-            super(HIGHLIGHT_SEARCH_LAYER);
-            /*
-            selectColorOption = (ColorOption)
-                                Options.getOption(Options.selectColor);
-            selectColoring = new Coloring(null, null,
-                                          selectColorOption.getColor());
-             */
-        }
-        
-        @Override
-        protected Coloring getColoring(DrawContext ctx) {
-            return ctx.getEditorUI().getColoring(
-                    SettingsNames.HIGHLIGHT_SEARCH_COLORING);
-            /*
-            Color c = selectColorOption.getColor();
-            if(!c.equals(selectColoring.getBackColor()))
-                selectColoring = new Coloring(null, null, c);
-            return selectColoring;
-             */
-        }
-        
-        @Override
-        protected int[] getBlocks(DrawContext ctx) {
-            NbTextView tv = getTextView(ctx);
-            if(tv == null) {
-                return new int[] {-1,-1};
-            }
-            return tv.getBuffer().getHighlightSearchBlocks(ctx.getStartOffset(),
-                                                           ctx.getEndOffset());
-            // int[] xBlocks = tv.getHighlightSearchBlocks(startOffset, endOffset);
-            // return getInterestingBlocks(xBlocks, startOffset, endOffset);
-        }
-    }
-    
-    //////////////////////////////////////////////////////////////////////
-    //
-    // Draw Layer based on integer array of blocks to highlight
-    //
-
-    static int[] getInterestingBlocks(int[] allBlocks,
-                                      int startOffset,
-                                      int endOffset) {
-        
-        // NEEDWORK: The array is not a cache anymore, so it can be modified,
-        //           that avoids the arraycopy. Eventually, should be able
-        //           to get rid of this method entirely by trimming the bounds
-        //           elsewhere.
-        
-        // return relevent blocks properly bounded
-        if(allBlocks[0] < 0) {
-            return allBlocks;
-        }
-
-        // If within block, then adjust the start of the block
-        if(allBlocks[0] <= startOffset && allBlocks[0] >= 0)
-            allBlocks[0] = startOffset;
-        //TextView.dumpBlocks("OUT", allBlocks);
-        return allBlocks;
-    }
-    
-    /** Highlight blocks layer highlights all occurences
-     * indicated by the blocks array.
-     */
-    abstract static class HighlightBlocksLayer extends DrawLayer.AbstractLayer {
-        
-        /** Pairs of start and end position */
-        //int blocks[] = new int[] { -1, -1 };
-        int blocks[];
-        
-        /** Coloring to use for highlighting */
-        Coloring coloring;
-        Coloring defaultColoring;
-        
-        protected Coloring getColoring(DrawContext ctx) {
-            if(defaultColoring == null)
-                defaultColoring = new Coloring(null, null, Color.orange);
-            return defaultColoring;
-        }
-        
-        abstract protected int[] getBlocks(DrawContext ctx);
-        
-        protected NbTextView getTextView(DrawContext ctx) {
-            NbTextView tv = (NbTextView) ViManager.getViFactory()
-                             .getExistingViTextView(
-                              (JEditorPane) ctx.getEditorUI().getComponent());
-            return tv;
-        }
-        
-        /** Current index for painting */
-        int curInd;
-        
-        /** Enabled flag */
-        private boolean enabled;
-        
-        protected HighlightBlocksLayer(String layerName) {
-            super(layerName);
-        }
-        
-        public boolean isEnabled() {
-            return enabled;
-        }
-        
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-        
-        @Override
-        public void init(DrawContext ctx) {
-            if (isEnabled()) {
-                try { // Just in case..., see jvi-Bugs-1703078
-                    blocks = getBlocks(ctx);
-                } catch(Exception ex) {
-                    ex.printStackTrace();
-                    setEnabled(false);
-                    blocks = new int[] { -1, -1};
-                }
-                coloring = null; // reset so it will be re-read
-                curInd = 0;
-            }
-        }
-        
-        public boolean isActive(DrawContext ctx, MarkFactory.DrawMark mark) {
-            boolean active;
-            if (isEnabled()) {
-                int pos = ctx.getFragmentOffset();
-                if (pos == blocks[curInd]) {
-                    active = true;
-                    setNextActivityChangeOffset(blocks[curInd + 1]);
-                    
-                } else if (pos == blocks[curInd + 1]) {
-                    active = false;
-                    curInd += 2;
-                    setNextActivityChangeOffset(blocks[curInd]);
-                    if (pos == blocks[curInd]) { // just follows
-                        setNextActivityChangeOffset(blocks[curInd + 1]);
-                        active = true;
-                    }
-                    
-                } else {
-                    setNextActivityChangeOffset(blocks[curInd]);
-                    active = false;
-                }
-            } else {
-                active = false;
-            }
-            
-            return active;
-        }
-        
-        public void updateContext(DrawContext ctx) {
-            int pos = ctx.getFragmentOffset();
-            if (pos >= blocks[curInd] && pos < blocks[curInd + 1]) {
-                if (coloring == null) {
-                    coloring = getColoring(ctx);
-                }
-                if (coloring != null) {
-                    coloring.apply(ctx);
-                }
-            }
-        }
-        
-    }
-    
-    //////////////////////////////////////////////////////////////////////
-    //
-    // DRAW LAYER TEST STUFF
-    //
-    
-    static int tBlocks[];
-    
-    /** Scan through the file building a blocks array; TEST ONLY.
-     * @param col1 start
-     * @param modulo start at every Nth line, if -1 then file offsets
-     * @param contig contiguous lines to apply highlight
-     */
-    static void testVisualHighlight(int col1, int col2,
-                                    int modulo, int contig) {
-        System.err.println("" + col1 + ", " + col2 + ", "
-                + modulo + ", " + contig);
-        
-        if(tBlocks == null) {
-            tBlocks = new int[300];
-            tBlocks[0] = -1;
-            tBlocks[1] = -1;
-        }
-        
-        ViTextView tv = G.curwin;
-        
-        // enable the layer
-        /* NEEDSWORK: test visual highlight
-        if(tv.getEditorComponent().getDocument() instanceof BaseDocument) {
-            // Poke ??? that things have changed.
-            BaseDocument doc = (BaseDocument) tv.getEditorComponent().getDocument();
-            //doc.repaintBlock(0, doc.getLength());
-            
-            // enable the visual select layer
-            HighlightBlocksLayer dl;
-            dl = (HighlightBlocksLayer) doc.findLayer(VISUAL_SELECT_LAYER);
-            if(dl != null) {
-                dl.setEnabled(true);
-            }
-        }*/
-        
-        if(modulo != -1 && contig >= modulo)
-            return;
-        
-        if(col1 > col2) {
-            int t = col1;
-            col1 = col2;
-            col2 = t;
-        }
-        
-        int idx = 0;
-        if(modulo < 0) {
-            tBlocks[idx++] = col1;
-            tBlocks[idx++] = col2;
-            tBlocks[idx++] = -1;
-            tBlocks[idx++] = -1;
-            return;
-        }
-        
-        int nLine = tv.getBuffer().getLineCount();
-        for(int iLine = 1; iLine < nLine; iLine++) {
-            if(iLine % modulo != 0)
-                continue;
-            int endLine = Math.min(iLine + contig -1, nLine);
-            for(; iLine <= endLine; iLine++) {
-                int lineOffset = tv.getBuffer().getLineStartOffset(iLine);
-                Segment seg = tv.getBuffer().getLineSegment(iLine);
-                if(seg.count > col1) {
-                    tBlocks[idx++] = col1 + lineOffset;
-                    tBlocks[idx++] = Math.min(col2, seg.count) + lineOffset;
-                }
-            }
-        }
-        tBlocks[idx++] = -1;
-        tBlocks[idx++] = -1;
-    }
-
-
-
-
-    
-    //////////////////////////////////////////////////////////////////////
-    //
     // Highlighte for visual select mode and search results
     //
 
@@ -626,7 +244,6 @@ public class NbTextView extends TextView
     private BlocksHighlighter visualSelectHighlighter;
     private BlocksHighlighter searchResultsHighlighter;
 
-    private static final boolean useOldLayers = false;
     private static final boolean dbgHL = false;
 
     public static final String VISUAL_MODE_LAYER
@@ -634,12 +251,10 @@ public class NbTextView extends TextView
     public static final String  SEARCH_RESULTS_LAYER 
             = "SEARCH_RESULTS_JVI";
 
+    // NEEDSWORK: should these hilit.reset() be proteted by readLock?
+
     @Override
     public void updateVisualState() {
-        if(useOldLayers) {
-            oldUpdateVisualState();
-            return;
-        }
         updateVisualSelectDisplay();
         if(visualSelectHighlighter != null)
             visualSelectHighlighter.reset();
@@ -647,10 +262,6 @@ public class NbTextView extends TextView
 
     @Override
     public void updateHighlightSearchState() {
-        if(useOldLayers) {
-            oldUpdateHighlightSearchState();
-            return;
-        }
         getBuffer().updateHighlightSearchCommonState();
         if(searchResultsHighlighter != null)
             searchResultsHighlighter.reset();
@@ -714,8 +325,6 @@ public class NbTextView extends TextView
                 ));
             }
 
-            if(useOldLayers)
-                return new HighlightsLayer [0];
             return layers.toArray(new HighlightsLayer [layers.size()]);
         }
     }
@@ -748,7 +357,7 @@ public class NbTextView extends TextView
         }
 
         protected boolean isEnabled() {
-            return true;
+            return G.VIsual_active || G.drawSavedVisualBounds;
         }
     }
 

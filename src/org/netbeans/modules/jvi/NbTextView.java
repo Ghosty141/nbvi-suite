@@ -3,6 +3,7 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
+import com.raelity.jvi.Normal;
 import com.raelity.jvi.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
@@ -255,7 +256,6 @@ public class NbTextView extends TextView
 
     @Override
     public void updateVisualState() {
-        updateVisualSelectDisplay();
         if(visualSelectHighlighter != null)
             visualSelectHighlighter.reset();
     }
@@ -343,7 +343,8 @@ public class NbTextView extends TextView
 
         @Override
         protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
-            return  tv.getVisualSelectBlocks(startOffset, endOffset);
+            return  tv.getBuffer().getVisualSelectBlocks(
+                                        tv, startOffset, endOffset);
         }
 
         @Override
@@ -412,7 +413,7 @@ public class NbTextView extends TextView
         //
         // Is there a way to get active highlight container
         //
-        protected final OffsetsBag bag;
+        private OffsetsBag bag; // not final, not created in contructor
         protected final JEditorPane ep;
         protected final Document document;
         protected final String name;
@@ -438,8 +439,12 @@ public class NbTextView extends TextView
         protected NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
                                         .getExistingViTextView((ep));
-            if(tv != null)
+            if(tv != null) {
                 tv.hookupHighlighter(name, this);
+                if(bag == null) {
+
+                }
+            }
             return tv;
         }
 

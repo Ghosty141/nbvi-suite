@@ -76,12 +76,6 @@ public class NbBuffer extends DefaultBuffer {
             }
         }
 
-//        if(undoRedoFireChangeMethod == null) {
-//            try {
-//                undoRedoFireChangeMethod = UndoRedo.Manager.class.getMethod(
-//                                            "fireChange", (Class<?>[])null);
-//            } catch (NoSuchMethodException ex) { }
-//        }
         if(beginUndo == null) {
             try {
                 beginUndo = UndoRedo.Manager.class.getMethod("beginUndoGroup",

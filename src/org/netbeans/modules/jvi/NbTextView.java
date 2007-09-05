@@ -3,7 +3,6 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
-import com.raelity.jvi.Normal;
 import com.raelity.jvi.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
@@ -245,7 +244,7 @@ public class NbTextView extends TextView
     private BlocksHighlighter visualSelectHighlighter;
     private BlocksHighlighter searchResultsHighlighter;
 
-    private static final boolean dbgHL = false;
+    private static boolean dbgHL = false;
 
     public static final String VISUAL_MODE_LAYER
             = "VISUAL_SELECT_JVI";
@@ -262,7 +261,6 @@ public class NbTextView extends TextView
 
     @Override
     public void updateHighlightSearchState() {
-        getBuffer().updateHighlightSearchCommonState();
         if(searchResultsHighlighter != null)
             searchResultsHighlighter.reset();
     }
@@ -349,6 +347,7 @@ public class NbTextView extends TextView
 
         @Override
         protected AttributeSet getAttribs() {
+            // NEEDSWORK: could listen to option change.
             if(!selectColorOption.getColor().equals(selectColor)) {
                 selectColor = selectColorOption.getColor();
                 selectAttribs = AttributesUtilities.createImmutable(
@@ -474,7 +473,8 @@ public class NbTextView extends TextView
         
         public HighlightsSequence getHighlights(int startOffset, int endOffset) {
             if(dbgHL)
-                System.err.println("getHighlights: " + startOffset + "," + endOffset);
+                System.err.println(name + " getHighlights: "
+                                   + startOffset + "," + endOffset);
             getTv();
             return bag.getHighlights(startOffset, endOffset);
         }

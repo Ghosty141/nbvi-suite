@@ -261,6 +261,8 @@ public class NbTextView extends TextView
 
     @Override
     public void updateHighlightSearchState() {
+        // NEEDSWORK: Should only reset if the search has changed since
+        // the bag was last filled. Maybe put a serial number on the search
         if(searchResultsHighlighter != null)
             searchResultsHighlighter.reset();
     }
@@ -416,6 +418,7 @@ public class NbTextView extends TextView
         protected final JEditorPane ep;
         protected final Document document;
         protected final String name;
+        protected boolean isHooked;
 
         BlocksHighlighter(String name, JEditorPane ep) {
             this.name = name;
@@ -438,11 +441,15 @@ public class NbTextView extends TextView
         protected NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
                                         .getExistingViTextView((ep));
-            if(tv != null) {
+            if(tv != null && !isHooked) {
+                if(dbgHL)
+                    System.err.println(name + " hookup:");
                 tv.hookupHighlighter(name, this);
+                isHooked = true;
                 if(bag == null) {
 
                 }
+                fillInTheBag();
             }
             return tv;
         }
@@ -460,7 +467,7 @@ public class NbTextView extends TextView
 
         void reset() {
             if(dbgHL)
-                System.err.println("BlocksHighlighter reset:");
+                System.err.println(name + "BlocksHighlighter reset:");
             fillInTheBag();
         }
         

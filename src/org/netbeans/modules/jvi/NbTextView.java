@@ -515,6 +515,7 @@ public class NbTextView extends TextView
         }
 
         protected void discard() {
+            bag.removeHighlightsChangeListener(this);
             bag.discard();
         }
 
@@ -546,6 +547,8 @@ public class NbTextView extends TextView
         }
         
         public void insertUpdate(DocumentEvent e) {
+            if(bag == null)
+                return;
             // redo the full lines of the inserted area
             NbTextView tv = getTv();
             if(tv != null) {
@@ -560,6 +563,8 @@ public class NbTextView extends TextView
         }
         
         public void removeUpdate(DocumentEvent e) {
+            if(bag == null)
+                return;
             // pick a few lines around the change
             NbTextView tv = getTv();
             if(tv != null) {
@@ -596,6 +601,8 @@ public class NbTextView extends TextView
                                   final boolean replaceAll) {
             document.render(new Runnable() {
                 public void run() {
+                    if(bag == null)
+                        return;
                     OffsetsBag newBag = new OffsetsBag(document);
                     
                     NbTextView tv = getTv();

@@ -12,7 +12,9 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.WeakHashMap;
 import javax.swing.JEditorPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -63,16 +65,25 @@ public class NbTextView extends TextView
     public void startup(Buffer buf) {
         super.startup(buf);
         
-        // do stuff
+        getBuffer().getDocument().render(new Runnable() {
+            public void run() {
+                hookupHighlighter(VISUAL_MODE_LAYER, MyHl.getVisual(editorPane));
+                hookupHighlighter(SEARCH_RESULTS_LAYER, MyHl.getSearch(editorPane));
+            }
+        });
     }
     
     @Override
     public void shutdown() {
         super.shutdown();
-        if(visualSelectHighlighter != null)
-            visualSelectHighlighter.reset();
-        if(searchResultsHighlighter != null)
-            searchResultsHighlighter.reset();
+        if(visualSelectHighlighter != null) {
+            visualSelectHighlighter.discard();
+            visualSelectHighlighter = null;
+        }
+        if(searchResultsHighlighter != null) {
+            searchResultsHighlighter.discard();
+            searchResultsHighlighter = null;
+        }
     }
     
     //
@@ -286,6 +297,58 @@ public class NbTextView extends TextView
             }
         }
     }
+
+    // Map so that text view can get hold of the highlighter
+    // shortly after textview creation.
+    private static WeakHashMap<JEditorPane, MyHl> hlMap
+            = new WeakHashMap<JEditorPane, MyHl>();
+
+    private static class MyHl {
+        WeakReference<VisualSelectHighlighter> visualRef;
+        WeakReference<SearchResultsHighlighter> searchRef;
+
+        static MyHl get(JEditorPane ep) {
+            MyHl myHl = hlMap.get(ep);
+            if(myHl == null) {
+                myHl = new MyHl();
+            }
+            hlMap.put(ep, myHl);
+            return myHl;
+        }
+
+        static void putVisual(JEditorPane ep, VisualSelectHighlighter visual) {
+            synchronized(hlMap) {
+                MyHl myHl = get(ep);
+                myHl.visualRef
+                        = new WeakReference<VisualSelectHighlighter>(visual);
+            }
+        }
+
+        static VisualSelectHighlighter getVisual(JEditorPane ep) {
+            synchronized(hlMap) {
+                WeakReference<VisualSelectHighlighter> ref;
+                ref = get(ep).visualRef;
+                return ref != null ? ref.get() : null;
+            }
+        }
+
+        static void putSearch(JEditorPane ep, SearchResultsHighlighter search) {
+            synchronized(hlMap) {
+                MyHl myHl = get(ep);
+                myHl.searchRef
+                        = new WeakReference<SearchResultsHighlighter>(search);
+            }
+        }
+
+        static SearchResultsHighlighter getSearch(JEditorPane ep) {
+            synchronized(hlMap) {
+                WeakReference<SearchResultsHighlighter> ref;
+                ref = get(ep).searchRef;
+                return ref != null ? ref.get() : null;
+            }
+        }
+    }
+
     
     public static class HighlightsFactory implements HighlightsLayerFactory {
 
@@ -312,7 +375,6 @@ public class NbTextView extends TextView
                     SEARCH_RESULTS_LAYER, 
                     ZOrder.SHOW_OFF_RACK.forPosition(200),
                     true,
-                    //new SearchResultsHighlighter(SEARCH_RESULTS_LAYER, ep)
                     new SearchResultsHighlighter(SEARCH_RESULTS_LAYER, ep)
                 
                 ));
@@ -339,6 +401,13 @@ public class NbTextView extends TextView
 
             selectColorOption
                     = (ColorOption)Options.getOption(Options.selectColor);
+
+            MyHl.putVisual(ep, this);
+
+            NbTextView tv = getTv();
+            if(tv != null) {
+                tv.hookupHighlighter(name, this);
+            }
         }
 
         @Override
@@ -398,7 +467,12 @@ public class NbTextView extends TextView
             t = fcs.getFontColors(FontColorNames.HIGHLIGHT_SEARCH_COLORING);
             attribs = t == null ? SimpleAttributeSet.EMPTY : t;
 
-            fillInTheBag();
+            MyHl.putSearch(ep, this);
+
+            NbTextView tv = getTv();
+            if(tv != null) {
+                tv.hookupHighlighter(name, this);
+            }
         }
         
         protected boolean isEnabled() {
@@ -434,23 +508,9 @@ public class NbTextView extends TextView
                     WeakListeners.document(this, this.document));
         }
 
-        // NEEDSWORK: THERE IS NO GUARENTEED WAY FOR THE tv TO
-        // FIND this. The current scheme depends on the infrastructure
-        // calling getHighlights, which will call getTv()
-
         protected NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
                                         .getExistingViTextView((ep));
-            if(tv != null && !isHooked) {
-                if(dbgHL)
-                    System.err.println(name + " hookup:");
-                tv.hookupHighlighter(name, this);
-                isHooked = true;
-                if(bag == null) {
-
-                }
-                fillInTheBag();
-            }
             return tv;
         }
 
@@ -482,7 +542,6 @@ public class NbTextView extends TextView
             if(dbgHL)
                 System.err.println(name + " getHighlights: "
                                    + startOffset + "," + endOffset);
-            getTv();
             return bag.getHighlights(startOffset, endOffset);
         }
         

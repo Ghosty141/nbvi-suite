@@ -492,7 +492,7 @@ public class NbTextView extends TextView
         protected final JEditorPane ep;
         protected final Document document;
         protected final String name;
-        protected boolean isHooked;
+        protected boolean isDiscarded;
 
         BlocksHighlighter(String name, JEditorPane ep) {
             this.name = name;
@@ -517,7 +517,7 @@ public class NbTextView extends TextView
         protected void discard() {
             bag.removeHighlightsChangeListener(this);
             bag.discard();
-            bag = null;
+            isDiscarded = true;
         }
 
         protected abstract int[] getBlocks(
@@ -548,7 +548,7 @@ public class NbTextView extends TextView
         }
         
         public void insertUpdate(DocumentEvent e) {
-            if(bag == null)
+            if(isDiscarded)
                 return;
             // redo the full lines of the inserted area
             NbTextView tv = getTv();
@@ -564,7 +564,7 @@ public class NbTextView extends TextView
         }
         
         public void removeUpdate(DocumentEvent e) {
-            if(bag == null)
+            if(isDiscarded)
                 return;
             // pick a few lines around the change
             NbTextView tv = getTv();
@@ -602,7 +602,7 @@ public class NbTextView extends TextView
                                   final boolean replaceAll) {
             document.render(new Runnable() {
                 public void run() {
-                    if(bag == null)
+                    if(isDiscarded)
                         return;
                     OffsetsBag newBag = new OffsetsBag(document);
                     

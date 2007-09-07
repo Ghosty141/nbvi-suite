@@ -517,6 +517,7 @@ public class NbTextView extends TextView
         protected void discard() {
             bag.removeHighlightsChangeListener(this);
             bag.discard();
+            bag = null;
         }
 
         protected abstract int[] getBlocks(

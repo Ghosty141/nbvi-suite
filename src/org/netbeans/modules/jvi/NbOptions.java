@@ -9,11 +9,11 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Options;
+/*import com.raelity.jvi.Options;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import org.netbeans.editor.FindSupport;
-import org.netbeans.editor.SettingsNames;
+import org.netbeans.editor.SettingsNames;*/
 
 /**
  *
@@ -25,13 +25,17 @@ import org.netbeans.editor.SettingsNames;
  *      The NB options are tracked on FindSupport.
  *      Changes to either one are sent to the other.</li>
  * </ul>
- * <p>NEEDSWORK: NB6 cleanup.
+ * <p>NEEDSWORK: NB6 cleanup. (NOW JUST REMOVE THIS CLASS).
+ * <br>STOP SYNCING, THIS MODULE DOES NOTHING,
  * 
  * @author erra
  */
 public class NbOptions {
+    static void enable() {
+    }
+    static void disable() {}
     
-    static boolean ignoreChangeEvent = false;
+    /*static boolean ignoreChangeEvent = false;
     private static boolean enabled = false;
     
     static void enable() {
@@ -104,7 +108,7 @@ public class NbOptions {
         }
     }
     
-    /** Listener to jVi properties to propagate changes to NB */
+    // Listener to jVi properties to propagate changes to NB
     
     private static class jViListener
     implements PropertyChangeListener {
@@ -151,5 +155,5 @@ public class NbOptions {
                 setJviOption(optName, evt.getNewValue().toString());
             }
         }
-    }
+    }*/
 }

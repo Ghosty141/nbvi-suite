@@ -46,8 +46,6 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Caret;
@@ -57,7 +55,6 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
-import org.netbeans.editor.Registry;
 import org.netbeans.editor.Settings;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
@@ -122,7 +119,6 @@ public class Module extends ModuleInstall {
     private static BooleanOption dbgAct;
     
     private static TopComponentRegistryListener topComponentRegistryListener;
-    private static EditorRegistryListener editorRegistryListener;
     private static KeyBindingsFilter keyBindingsFilter;
     
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
@@ -163,8 +159,7 @@ public class Module extends ModuleInstall {
             System.err.println(MOD + "***** restored *****");
         earlyInit();
             
-        JViEnableAction jvi
-                = (JViEnableAction)SystemAction.get(JViEnableAction.class);
+        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
 
         Preferences prefs = getModulePreferences();
         if(prefs.getBoolean(PREF_ENABLED, true)) {
@@ -182,8 +177,7 @@ public class Module extends ModuleInstall {
         if(dbgNb.getBoolean())
             System.err.println(MOD + "***** uninstalled *****");
         
-        JViEnableAction jvi
-                = (JViEnableAction)SystemAction.get(JViEnableAction.class);
+        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
         jvi.setSelected(false);
         runInDispatch(true, runJViDisable);
     }
@@ -207,16 +201,6 @@ public class Module extends ModuleInstall {
                 TopComponent.getRegistry().addPropertyChangeListener(
                         topComponentRegistryListener);
             }
-            
-            /*
-             * This is useless for investigating the jump list
-            // Monitor editor registry to pick off jump list stuff
-            if(editorRegistryListener == null) {
-                editorRegistryListener = new EditorRegistryListener();
-                Registry.addChangeListener(editorRegistryListener);
-            }
-            */
-            
             
             // See if there's anything to attach to, there are two cases to
             // consider:
@@ -264,8 +248,8 @@ public class Module extends ModuleInstall {
             
             jViEnabled = false;
             
-            NbOptions.disable();
-            didOptionsInit = false;
+            // XXX NbOptions.disable();
+            // XXX didOptionsInit = false;
             
             if(dbgNb.getBoolean())
                 System.err.println(MOD + "runJViDisable");
@@ -274,11 +258,6 @@ public class Module extends ModuleInstall {
                 TopComponent.getRegistry().removePropertyChangeListener(
                         topComponentRegistryListener);
                 topComponentRegistryListener = null;
-            }
-            
-            if(editorRegistryListener != null) {
-                Registry.removeChangeListener(editorRegistryListener);
-                editorRegistryListener = null;
             }
             
             if(keyBindingsFilter != null) {
@@ -338,18 +317,18 @@ public class Module extends ModuleInstall {
         }
     };
     
-    private static boolean didOptionsInit;
+    // XXX private static boolean didOptionsInit;
     /** Somehow NbOptions.init() causes java default keybinding to get lost,
      * if it is run too early. In this class we defer this initialization
      *  until after the first editor TC gets activated.
      * <p>This even happens if ieHACK is removed.
      */
-    private static final void doOptionsInitHack() {
-        if(didOptionsInit)
-            return;
-        didOptionsInit = true;
-        NbOptions.enable(); // HORROR STORY
-    }
+    //private static final void doOptionsInitHack() {
+    //    if(didOptionsInit)
+    //        return;
+    //    didOptionsInit = true;
+    //    NbOptions.enable(); // HORROR STORY
+    //}
     
     private static boolean didEarlyInit = false;
     private static synchronized void earlyInit() {
@@ -460,11 +439,6 @@ public class Module extends ModuleInstall {
                     Msg.emsg("optionDelete takes exactly one argument");
             }
         });
-        ColonCommands.register("registryDump", "registryDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                System.err.println(Registry.registryToString());
-            }
-        });
         ColonCommands.register("topcomponentDump", "topcomponentDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Set<TopComponent> s = TopComponent.getRegistry().getOpened();
@@ -526,13 +500,16 @@ public class Module extends ModuleInstall {
         InstanceCookie ck = null;
         Action act = null;
         try {
-            ck = (InstanceCookie) DataObject.find(fo)
-                                    .getCookie(InstanceCookie.class);
+            ck = DataObject.find(fo).getCookie(InstanceCookie.class);
         } catch (DataObjectNotFoundException ex) { }
         if(ck != null) {
             try {
-                if(SystemAction.class.isAssignableFrom(ck.instanceClass()))
-                    act = SystemAction.get((Class<SystemAction>)ck.instanceClass());
+                if(SystemAction.class.isAssignableFrom(ck.instanceClass())) {
+                    @SuppressWarnings("unchecked")
+                    Class<SystemAction> sa
+                            = (Class<SystemAction>)ck.instanceClass();
+                    act = SystemAction.get(sa);
+                }
             } catch (Exception ex) { }
             if(act == null) {
                 // if its not a SystemAction try creating one
@@ -588,7 +565,7 @@ public class Module extends ModuleInstall {
             
             if(settingName.equals(SettingsNames.KEY_BINDING_LIST)) {
                 List<JTextComponent.KeyBinding> l
-                        = (List)((ArrayList)KeyBinding.getBindingsList()).clone();
+                        = KeyBinding.getBindingsList();
                 
                 // Going through this path, in the end result, the only bindings
                 // for "caret-up/down" are VK_KP_UP/DOWN. Code completion uses
@@ -612,8 +589,7 @@ public class Module extends ModuleInstall {
             }
             else if(settingName.equals(SettingsNames.CUSTOM_ACTION_LIST)) {
                 // get the jVi keybindings
-                List<Action> l =
-                        (List)((ArrayList)KeyBinding.getActionsList()).clone();
+                List<Action> l = KeyBinding.getActionsList();
                 
                 // Add an action that gets invoked when editor kit install
                 l.add(new JViInstallAction());
@@ -755,6 +731,7 @@ public class Module extends ModuleInstall {
     static boolean addEpToTC(TopComponent tc, JEditorPane ep) {
         if(ep == null || tc == null)
             return false;
+        @SuppressWarnings("unchecked")
         Set<JEditorPane> s = (Set<JEditorPane>)tc.getClientProperty(PROP_JEP);
         if(s == null) {
             s = new HashSet<JEditorPane>();
@@ -772,9 +749,10 @@ public class Module extends ModuleInstall {
     }
     
     static Set<JEditorPane> fetchEpFromTC(TopComponent tc) {
-        Object o = tc.getClientProperty(PROP_JEP);
-        if(o != null)
-            return (Set<JEditorPane>)o;
+        @SuppressWarnings("unchecked")
+        Set<JEditorPane> s = (Set<JEditorPane>)tc.getClientProperty(PROP_JEP);
+        if(s != null)
+            return s;
         return Collections.emptySet();
     }
     
@@ -806,7 +784,7 @@ public class Module extends ModuleInstall {
                 JEditorPane ep = getTCEditor(evt.getNewValue());
                 if(ep != null) {
                     activateTC(ep, evt.getNewValue(), "P_ACTV");
-                    doOptionsInitHack(); // HORROR STORY
+                    // XXX doOptionsInitHack(); // HORROR STORY
                     // Do this for activate (but not for open)
                     ViManager.requestSwitch(ep);
                 }
@@ -814,11 +792,15 @@ public class Module extends ModuleInstall {
                 // For each top component we know about, see if it is still
                 // opened.
                 // NEEDSWORK: checking each buffer (until NB6 PROP_TC_OPENED)
+                @SuppressWarnings("unchecked")
                 Set<TopComponent> newSet = (Set<TopComponent>)evt.getNewValue();
+                @SuppressWarnings("unchecked")
                 Set<TopComponent> oldSet = (Set<TopComponent>)evt.getOldValue();
                 if(newSet.size() > oldSet.size()) {
                     // something OPENing
-                    Set<TopComponent> s = (Set<TopComponent>)((HashSet<TopComponent>)newSet).clone();
+                    @SuppressWarnings("unchecked")
+                    Set<TopComponent> s = (Set<TopComponent>)
+                            ((HashSet<TopComponent>)newSet).clone();
                     s.removeAll(oldSet);
                     if(s.size() != 1) {
                         System.err.println("TC OPEN: OPEN not size 1");
@@ -835,6 +817,7 @@ public class Module extends ModuleInstall {
                     }
                 } else if(oldSet.size() > newSet.size()) {
                     // something CLOSEing
+                    @SuppressWarnings("unchecked")
                     Set<TopComponent> s = (Set<TopComponent>)
                                 ((HashSet<TopComponent>)oldSet).clone();
                     s.removeAll(newSet);
@@ -854,13 +837,6 @@ public class Module extends ModuleInstall {
                 } else
                     System.err.println("TC OPEN: SAME SET SIZE");
             }
-        }
-    }
-    
-    private static class EditorRegistryListener
-            implements ChangeListener {
-        public void stateChanged(ChangeEvent e) {
-            System.err.println("e = " + e );
         }
     }
     
@@ -886,7 +862,7 @@ public class Module extends ModuleInstall {
         if(!(o instanceof TopComponent))
             return;
         TopComponent tc = (TopComponent) o;
-        EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
+        EditorCookie ec = tc.getLookup().lookup(EditorCookie.class);
         JEditorPane panes[] = null;
         if(ec != null)
             panes = ec.getOpenedPanes();
@@ -930,7 +906,7 @@ public class Module extends ModuleInstall {
             return null;
         }
         tc = (TopComponent) o;
-        EditorCookie ec = (EditorCookie)tc.getLookup().lookup(EditorCookie.class);
+        EditorCookie ec = tc.getLookup().lookup(EditorCookie.class);
         if(ec == null)
             return null;
         

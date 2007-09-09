@@ -17,13 +17,15 @@
 
     <folder name="Menu">
         <folder name="Tools">
-            <attr name="org-netbeans-modules-autoupdate-UpdateAction.instance/Separator3_1.instance" boolvalue="true"/>
-            <attr name="org-netbeans-modules-options-OptionsWindowAction.shadow/Separator3_1.instance" boolvalue="true"/>
-            <file name="Separator3_1.instance" url="Separator3_1.instance">
-                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+            <file name="JViSeparator.instance">
+		<attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+	        <attr name="position" intvalue="3078"/>
             </file>
-            <attr name="Separator3_1.instance/org-netbeans-modules-jvi-Module$JViEnableAction.instance" boolvalue="true"/>
-            <file name="org-netbeans-modules-jvi-Module$JViEnableAction.instance"/>
+            <file name="JViEnableAction.instance">
+                <attr name="instanceClass"
+                       stringvalue="org.netbeans.modules.jvi.Module$JViEnableAction"/>
+                <attr name="position" intvalue="3079"/>
+            </file>
         </folder>
     </folder>
     <folder name="OptionsDialog">

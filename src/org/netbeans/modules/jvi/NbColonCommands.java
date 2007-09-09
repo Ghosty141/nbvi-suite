@@ -62,18 +62,58 @@ public class NbColonCommands {
         ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
         ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
     
-        ColonCommands.register("cn","cnext",
-                               new Module.DelegateFileSystemAction(
-           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance"));
-        ColonCommands.register("cp","cprevious",
-                               new Module.DelegateFileSystemAction(
-           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance"));
+        delegate("cn","cnext",
+           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance");
+        delegate("cp","cprevious",
+           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance");
+
+        delegate("ln","lnext",
+           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance");
+        delegate("lp","lprevious",
+           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance");
         
         ColonCommands.register("gr","grep", ACTION_fu);
 
         ColonCommands.register("fixi","fiximports", ACTION_fiximports);
         
+        // Make
         ColonCommands.register("mak","make", new Make());
+
+        // Refactoring
+        delegate("rfr","rfrename",
+                "Menu/Refactoring/RenameAction.instance");
+        delegate("rfm","rfmove",
+                "Menu/Refactoring/MoveAction.instance");
+        delegate("rfc","rfcopy",
+                "Menu/Refactoring/CopyAction.instance");
+        delegate("rfsa", "rfsafelydelete",
+                "Menu/Refactoring/SafeDeleteAction.instance");
+        delegate("rfde", "rfdelete",
+                "Menu/Refactoring/SafeDeleteAction.instance");
+
+        delegate("rfch","rfchangemethodparameters",
+                "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance");
+        delegate("rfenc","rfencapsulatefields",
+                "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance");
+
+        delegate("rfpul","rfpullup",
+                "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance");
+        delegate("rfup","rfup",
+                "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance");
+        delegate("rfpus","rfpushdown",
+                "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance");
+        delegate("rfdo","rfdown",
+                "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance");
+
+        delegate("rfvar","rfvariable",
+                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceVariableAction.instance");
+        delegate("rfcon","rfconstant",
+                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceConstantAction.instance");
+        delegate("rffie","rffield",
+                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceFieldAction.instance");
+        delegate("rfmet","rfmethod",
+                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceMethodAction.instance");
+        
         /*
         ColonCommands.register("run", "run",
         ColonCommands.register("deb", "debug",
@@ -83,6 +123,11 @@ public class NbColonCommands {
         initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);
         */
+    }
+
+    static private void delegate(String abrev, String name, String actionPath) {
+        ColonCommands.register(abrev, name,
+                               new Module.DelegateFileSystemAction(actionPath));
     }
 
     public static ColonAction ACTION_fiximports = new FixImports();
@@ -225,7 +270,7 @@ public class NbColonCommands {
                 if(p != null) {
                     Lookup ctx = p.getLookup();
                     ActionProvider ap
-                            = (ActionProvider)ctx.lookup(ActionProvider.class);
+                            = ctx.lookup(ActionProvider.class);
                     if(ap != null)
                         ap.invokeAction(ap.COMMAND_CLEAN, ctx);
                 }

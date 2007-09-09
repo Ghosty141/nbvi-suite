@@ -14,6 +14,7 @@ import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.JEditorPane;
 import javax.swing.event.DocumentEvent;
@@ -300,7 +301,7 @@ public class NbTextView extends TextView
 
     // Map so that text view can get hold of the highlighter
     // shortly after textview creation.
-    private static WeakHashMap<JEditorPane, MyHl> hlMap
+    private static Map<JEditorPane, MyHl> hlMap
             = new WeakHashMap<JEditorPane, MyHl>();
 
     private static class MyHl {

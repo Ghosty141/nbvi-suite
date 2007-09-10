@@ -10,8 +10,10 @@ import com.raelity.jvi.ViBuffer;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Map;
@@ -178,16 +180,16 @@ public class NbTextView extends TextView
     public void foldOperation(int op) {
         String action = null;
         switch(op) {
-            case ViTextView.FOLDOP_CLOSE:
+            case FOLDOP_CLOSE:
                 action = NbEditorKit.collapseFoldAction;
                 break;
-            case ViTextView.FOLDOP_OPEN:
+            case FOLDOP_OPEN:
                 action = NbEditorKit.expandFoldAction;
                 break;
-            case ViTextView.FOLDOP_CLOSE_ALL:
+            case FOLDOP_CLOSE_ALL:
                 action = NbEditorKit.collapseAllFoldsAction;
                 break;
-            case ViTextView.FOLDOP_OPEN_ALL:
+            case FOLDOP_OPEN_ALL:
                 action = NbEditorKit.expandAllFoldsAction;
                 break;
         }
@@ -196,6 +198,27 @@ public class NbTextView extends TextView
         } else {
             Util.vim_beep();
         }
+    }
+
+    @Override
+    public void tabOperation(TABOP op, int count) {
+        String fsAct = null;
+        switch(op) {
+        case NEXT_TAB:
+            fsAct = Module.FSACT_TABNEXT;
+            break;
+        case PREV_TAB:
+            fsAct = Module.FSACT_TABPREV;
+            break;
+        }
+
+        if(fsAct != null) {
+            ActionEvent e = new ActionEvent(getEditorComponent(),
+                                            ActionEvent.ACTION_PERFORMED,
+                                            "");
+            Module.execFileSystemAction(fsAct, e);
+        } else
+            Util.vim_beep();
     }
     
     //

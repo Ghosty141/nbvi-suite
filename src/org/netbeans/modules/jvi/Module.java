@@ -128,6 +128,16 @@ public class Module extends ModuleInstall {
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
 
+    //
+    // File System Actions
+    //
+    public static final String FSACT_TABNEXT
+            = "Actions/Window/"
+              + "org-netbeans-core-windows-actions-NextTabAction.instance";
+    public static final String FSACT_TABPREV
+            = "Actions/Window/"
+              + "org-netbeans-core-windows-actions-PreviousTabAction.instance";
+
     static {
         try {
             Lookup.getDefault().lookup(ClassLoader.class)
@@ -478,6 +488,21 @@ public class Module extends ModuleInstall {
         });
          */
     }
+
+    /**
+     * This class delegates an action to an Action which is found
+     * in the file system.
+     */
+    public static class DelegateFileSystemAction implements ActionListener {
+        String actionPath;
+        DelegateFileSystemAction(String actionPath) {
+            this.actionPath = actionPath;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            execFileSystemAction(actionPath, e);
+        }
+    }
     
     public static void execFileSystemAction(String path, ActionEvent e) {
         Action act = fetchFileSystemAction(path);
@@ -653,21 +678,6 @@ public class Module extends ModuleInstall {
             
             // Make sure the nomadic editors have the right cursor.
             checkCaret(ep);
-        }
-    }
-
-    /**
-     * This class delegates an action to an Action which is found
-     * in the file system.
-     */
-    public static class DelegateFileSystemAction implements ActionListener {
-        String actionPath;
-        DelegateFileSystemAction(String actionPath) {
-            this.actionPath = actionPath;
-        }
-        
-        public void actionPerformed(ActionEvent e) {
-            execFileSystemAction(actionPath, e);
         }
     }
     

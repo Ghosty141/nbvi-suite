@@ -35,6 +35,7 @@ import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.Action;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
@@ -61,6 +62,10 @@ public class NbColonCommands {
         ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
         ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
         ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
+
+        ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
+        ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
+        ColonCommands.register("tabN", "tabNext", ACTION_tabprevious);
     
         delegate("cn","cnext",
            "Actions/System/org-netbeans-core-actions-JumpNextAction.instance");
@@ -148,10 +153,6 @@ public class NbColonCommands {
     private static void doWhereUsed() {
         Action act = Module.fetchFileSystemAction("Actions/Refactoring/"
           + "org-netbeans-modules-refactoring-api-ui-WhereUsedAction.instance");
-        if(act == null) {
-            act = Module.fetchFileSystemAction("Actions/Refactoring/"
-              + "org-netbeans-modules-refactoring-ui-WhereUsedAction.instance");
-        }
         if(act != null) {
             TopComponent tc = TopComponent.getRegistry().getActivated();
             act = ((ContextAwareAction) act)
@@ -204,6 +205,26 @@ public class NbColonCommands {
                 ViManager.ignoreActivation(tc); // don't want mru list to change
                 tc.requestActive();
             }
+        }
+    }
+
+    private static ActionListener ACTION_tabnext = new TabNext(true);
+    private static ActionListener ACTION_tabprevious = new TabNext(false);
+
+    private static class TabNext implements ActionListener {
+        boolean goForward;
+
+        TabNext(boolean goForward) {
+            this.goForward = goForward;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            String fsAct;
+            if(goForward)
+                fsAct = Module.FSACT_TABNEXT;
+            else
+                fsAct = Module.FSACT_TABPREV;
+            Module.execFileSystemAction(fsAct, e);
         }
     }
         

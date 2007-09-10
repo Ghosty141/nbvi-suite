@@ -83,7 +83,7 @@ public class NbOptionsNode extends BeanNode {
 
         @Override
         protected void addNotify() {
-           Collection c = new ArrayList();
+           Collection<String> c = new ArrayList<String>();
            c.add(NODE_MODIFY);
            c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);

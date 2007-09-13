@@ -56,6 +56,7 @@ import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Settings;
+import org.netbeans.editor.SettingsChangeEvent;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
@@ -70,6 +71,7 @@ import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
+import org.netbeans.editor.SettingsChangeListener;
 import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.ErrorManager;
@@ -138,6 +140,7 @@ public class Module extends ModuleInstall {
             = "Actions/Window/"
               + "org-netbeans-core-windows-actions-PreviousTabAction.instance";
 
+
     static {
         try {
             Lookup.getDefault().lookup(ClassLoader.class)
@@ -174,7 +177,7 @@ public class Module extends ModuleInstall {
         Preferences prefs = getModulePreferences();
         if(prefs.getBoolean(PREF_ENABLED, true)) {
             jvi.setSelected(true);
-            runInDispatch(true, runJViEnable);
+            runInDispatch(true, new RunJViEnable());
         } else {
             jvi.setSelected(false);
         }
@@ -189,10 +192,10 @@ public class Module extends ModuleInstall {
         
         JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
         jvi.setSelected(false);
-        runInDispatch(true, runJViDisable);
+        runInDispatch(true, new RunJViDisable());
     }
     
-    private static Runnable runJViEnable = new Runnable() {
+    private static class RunJViEnable implements Runnable {
         public void run() {
             if(jViEnabled)
                 return;
@@ -242,8 +245,10 @@ public class Module extends ModuleInstall {
             }
             
             Settings.reset();
+
+            TabWarning.setTabWarning(true);
         }
-    };
+    }
     
     /**
      * Unhook almost everything.
@@ -251,7 +256,7 @@ public class Module extends ModuleInstall {
      * In the future, may want to leave the TopComponent listener active so
      * that we can maintain the MRU list.
      */
-    private static Runnable runJViDisable = new Runnable() {
+    private static class RunJViDisable implements Runnable {
         public void run() {
             if(!jViEnabled)
                 return;
@@ -325,7 +330,7 @@ public class Module extends ModuleInstall {
             
             Settings.reset();
         }
-    };
+    }
     
     // XXX private static boolean didOptionsInit;
     /** Somehow NbOptions.init() causes java default keybinding to get lost,
@@ -1029,9 +1034,9 @@ public class Module extends ModuleInstall {
             runInDispatch(false, new Runnable() {
                 public void run() {
                     if(enabled)
-                        runJViEnable.run();
+                        new RunJViEnable().run();
                     else
-                        runJViDisable.run();
+                        new RunJViDisable().run();
                 }
             });
             getModulePreferences().putBoolean(PREF_ENABLED, enabled);

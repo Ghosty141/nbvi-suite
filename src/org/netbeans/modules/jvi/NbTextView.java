@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.JEditorPane;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
@@ -55,6 +56,8 @@ import static com.raelity.jvi.Constants.*;
  */
 public class NbTextView extends TextView
 {
+    private boolean isNomadic;
+
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
@@ -88,6 +91,10 @@ public class NbTextView extends TextView
             searchResultsHighlighter = null;
         }
     }
+
+    boolean isNomadic() {
+        return isNomadic;
+    }
     
     //
     // The viOptionBag interface
@@ -110,6 +117,13 @@ public class NbTextView extends TextView
     @Override
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
+
+        TopComponent ancestor = (TopComponent)SwingUtilities
+                .getAncestorOfClass(TopComponent.class, getEditorComponent());
+        isNomadic = ancestor == null;
+    
+        if(isNomadic && G.dbgEditorActivation.getBoolean())
+            System.err.println("ACTIVATING OPTIONS FOR NOMAD");
     }
     
     //

@@ -8,6 +8,8 @@ package org.netbeans.modules.jvi;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.EventQueue;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JButton;
@@ -24,14 +26,18 @@ import org.openide.windows.WindowManager;
  */
 public class TabWarning extends JDialog {
     
+    // NEEDSWORK: put text into a non-edit text area, or html area
+    // to allow copy of web site.
+
     private String getWarningMessage() {
-        return "For jVi, ShiftWidth, ExpandTabs and TabStop options"
-             + " are set through\n"
+        return "ShiftWidth, ExpandTabs and TabStop defaults"
+             + " for jVi are set through\n"
              + "Tools>Options>AdvancedOptions>\n"
-             + "jViOptionsAndConfiguration>FileModificationOptions.\n\n"
+             + "jViOptionsAndConfiguration>FileModificationOptions.\n"
+             + "Use \":set ...\" after file is opened.\n\n"
              + "See http://jvi.sourceforge.net/ReadmeNetBeans.html#options\n\n"
-             + "Since jVi reprograms the tab options per document,\n"
-             + "changes made in standard settings are lost and not used.\n"
+             + "jVi reprograms the indent/tab options per document,\n"
+             + "so changes made in standard settings are lost and not used.\n\n"
              + "See also \"modeline\" in the vim documentation.";
     }
     
@@ -88,18 +94,25 @@ public class TabWarning extends JDialog {
 
     private static class TabSetListener implements SettingsChangeListener {
         public void settingsChange(SettingsChangeEvent e) {
-            if(  (SettingsNames.SPACES_PER_TAB.equals(e.getSettingName())
-                    || SettingsNames.EXPAND_TABS.equals(e.getSettingName())
-                    || SettingsNames.TAB_SIZE.equals(e.getSettingName()))
-                  && e.getOldValue() != null) {
+            if(!NbBuffer.isTabSetting()
+               && (SettingsNames.SPACES_PER_TAB.equals(e.getSettingName())
+                   || SettingsNames.EXPAND_TABS.equals(e.getSettingName())
+                   || SettingsNames.TAB_SIZE.equals(e.getSettingName()))
+               && e.getOldValue() != null) {
 
                 // Note there may be lots of events, but only one dialog
                 if(tabWarning == null) {
-                    tabWarning = new TabWarning(
-                            WindowManager.getDefault().getMainWindow(), false);
-                    tabWarning.setLocationRelativeTo(
-                            WindowManager.getDefault().getMainWindow());
-                    tabWarning.setVisible(true);
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            if(tabWarning == null) {
+                                Frame f = WindowManager.getDefault()
+                                                       .getMainWindow();
+                                tabWarning = new TabWarning(f, false);
+                                tabWarning.setLocationRelativeTo(f);
+                                tabWarning.setVisible(true);
+                            }
+                        }
+                    });
                 }
             }
         }

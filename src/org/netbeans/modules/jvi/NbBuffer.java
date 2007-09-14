@@ -60,6 +60,9 @@ public class NbBuffer extends DefaultBuffer {
     private static Method endUndo;
     private static Method commitUndo;
 
+    // NOTE: write protected by event dispatch
+    private static boolean isTabSetting;
+
 //    private CompoundEdit compoundEdit;
 //    private static Method undoRedoFireChangeMethod;
     
@@ -100,6 +103,10 @@ public class NbBuffer extends DefaultBuffer {
         super.removeShare();
     }
 
+    static boolean isTabSetting() {
+        return isTabSetting;
+    }
+
     @Override
     public void viOptionSet(ViTextView tv, String name) {
         String mimeType = tv.getEditorComponent().getContentType();
@@ -110,16 +117,22 @@ public class NbBuffer extends DefaultBuffer {
         if(ie instanceof FormatterIndentEngine)
             fie = (FormatterIndentEngine) ie;
 
-        if("b_p_ts".equals(name)) {
-            baseOptions.setTabSize(b_p_ts);
-        } else if("b_p_sw".equals(name)) {
-            baseOptions.setSpacesPerTab(b_p_sw);
-            if(fie != null)
-                fie.setSpacesPerTab(b_p_sw); // space per tab ??????
-        } else if("b_p_et".equals(name)) {
-            baseOptions.setExpandTabs(b_p_et);
-            if(fie != null)
-                fie.setExpandTabs(b_p_et);
+        isTabSetting = true;
+        try {
+            
+            if("b_p_ts".equals(name)) {
+                baseOptions.setTabSize(b_p_ts);
+            } else if("b_p_sw".equals(name)) {
+                baseOptions.setSpacesPerTab(b_p_sw);
+                if(fie != null)
+                    fie.setSpacesPerTab(b_p_sw); // space per tab ??????
+            } else if("b_p_et".equals(name)) {
+                baseOptions.setExpandTabs(b_p_et);
+                if(fie != null)
+                    fie.setExpandTabs(b_p_et);
+            }
+        } finally {
+            isTabSetting = false;
         }
     }
     
@@ -128,18 +141,25 @@ public class NbBuffer extends DefaultBuffer {
         String mimeType = tv.getEditorComponent().getContentType();
         BaseOptions baseOptions = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(BaseOptions.class);
-        baseOptions.setExpandTabs(b_p_et);
-        baseOptions.setSpacesPerTab(b_p_sw);
-        baseOptions.setTabSize(b_p_ts);
 
-        IndentEngine ie = baseOptions.getIndentEngine();
-        if(ie instanceof FormatterIndentEngine) {
-            FormatterIndentEngine fie = (FormatterIndentEngine) ie;
-            fie.setExpandTabs(b_p_et);
-            fie.setSpacesPerTab(b_p_sw);
+        isTabSetting = true;
+        try {
+            baseOptions.setExpandTabs(b_p_et);
+            baseOptions.setSpacesPerTab(b_p_sw);
+            baseOptions.setTabSize(b_p_ts);
+            
+            IndentEngine ie = baseOptions.getIndentEngine();
+            if(ie instanceof FormatterIndentEngine) {
+                FormatterIndentEngine fie = (FormatterIndentEngine) ie;
+                fie.setExpandTabs(b_p_et);
+                fie.setSpacesPerTab(b_p_sw);
+            }
+        } finally {
+            isTabSetting = false;
         }
+
     }
-    
+
     //////////////////////////////////////////////////////////////////////
     //
     //

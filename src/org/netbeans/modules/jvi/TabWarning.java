@@ -6,12 +6,15 @@
 
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.MutableBoolean;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import org.netbeans.editor.Settings;
@@ -78,6 +81,8 @@ public class TabWarning extends JDialog {
     private static TabWarning tabWarning;
     private static SettingsChangeListener scl;
 
+    private static MutableBoolean isInternalSetting = new MutableBoolean();
+
     static void setTabWarning(boolean enableFlag) {
         if(enableFlag) {
             if(scl == null) {
@@ -94,7 +99,7 @@ public class TabWarning extends JDialog {
 
     private static class TabSetListener implements SettingsChangeListener {
         public void settingsChange(SettingsChangeEvent e) {
-            if(!NbBuffer.isTabSetting()
+            if(!isInternalSetting.getValue()
                && (SettingsNames.SPACES_PER_TAB.equals(e.getSettingName())
                    || SettingsNames.EXPAND_TABS.equals(e.getSettingName())
                    || SettingsNames.TAB_SIZE.equals(e.getSettingName()))
@@ -115,6 +120,67 @@ public class TabWarning extends JDialog {
                     });
                 }
             }
+        }
+    }
+
+    static Timer timer;
+    static TabSetTimerTask timerTask;
+    private static final int DELAY = 1000; // one second
+
+    /** This is used to signal that jVi is performing a setting and so
+     * the dialog should not be put up. Simplest idea is to set flag while
+     * jVi is calling the NB code, but this misses cases when there is delayed
+     * actions, so add some hysteresis with a timer.
+     * <br/>
+     * Not using swing timer to insure no event thread interactions.
+     */
+    static void setInternalAction(boolean enable) {
+        synchronized(isInternalSetting) {
+            if(enable) {
+                isInternalSetting.setValue(true);
+            } else {
+                //if(false) {
+                //    isInternalSetting.setValue(false);
+                //    return;
+                //}
+                if(timer == null)
+                    timer = new Timer();
+                if(timerTask != null) {
+                    timerTask.cancel();
+                }
+                timerTask = new TabSetTimerTask();
+                timer.schedule(timerTask, DELAY); // do it once
+            }
+        }
+    }
+
+    private static class TabSetTimerTask extends TimerTask {
+        private boolean cancelled;
+
+        @Override
+        public void run() {
+            synchronized(isInternalSetting) {
+                if(!isCancelled()) {
+                    isInternalSetting.setValue(false);
+                    timerTask = null;
+                    timer.cancel();
+                    timer = null;
+                    //System.err.println("FIRE");
+                }
+            }
+        }
+        
+        @Override
+        public boolean cancel() {
+            synchronized(isInternalSetting) {
+                cancelled = true;
+                return super.cancel();
+            }
+        }
+
+        // should be holding lock
+        boolean isCancelled() {
+            return cancelled;
         }
     }
     

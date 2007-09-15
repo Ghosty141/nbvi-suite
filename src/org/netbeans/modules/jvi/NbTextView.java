@@ -18,6 +18,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
+import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -213,16 +214,38 @@ public class NbTextView extends TextView
             Util.vim_beep();
         }
     }
+    
+    @Override
+    public void anonymousMark(MARKOP op, int count) {
+        String actName = null;
+        switch(op) {
+            case TOGGLE:
+                actName = FsAct.BM_TOGGLE;
+                break;
+            case NEXT:
+                actName = FsAct.BM_NEXT;
+                break;
+            case PREV:
+                actName = FsAct.BM_PREV;
+                break;
+        }
+        Action act = Module.fetchFileSystemAction(actName);
+        if(act != null && act.isEnabled()) {
+            ActionEvent e = new ActionEvent(getBuffer().getDocument(), 0, "");
+            act.actionPerformed(e);
+        } else
+            Util.vim_beep();
+    }
 
     @Override
     public void tabOperation(TABOP op, int count) {
         String fsAct = null;
         switch(op) {
         case NEXT_TAB:
-            fsAct = Module.FSACT_TABNEXT;
+            fsAct = FsAct.TABNEXT;
             break;
         case PREV_TAB:
-            fsAct = Module.FSACT_TABPREV;
+            fsAct = FsAct.TABPREV;
             break;
         }
 

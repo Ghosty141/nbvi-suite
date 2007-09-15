@@ -67,15 +67,12 @@ public class NbColonCommands {
         ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
         ColonCommands.register("tabN", "tabNext", ACTION_tabprevious);
     
-        delegate("cn","cnext",
-           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance");
-        delegate("cp","cprevious",
-           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance");
+        delegate("cn","cnext", FsAct.JUMP_NEXT);
+        delegate("cp","cprevious", FsAct.JUMP_PREV);
 
-        delegate("ln","lnext",
-           "Actions/System/org-netbeans-core-actions-JumpNextAction.instance");
-        delegate("lp","lprevious",
-           "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance");
+        // NEEDSWORK: when available, use this for local syntax errors
+        delegate("ln","lnext", FsAct.JUMP_NEXT);
+        delegate("lp","lprevious", FsAct.JUMP_PREV);
         
         ColonCommands.register("gr","grep", ACTION_fu);
 
@@ -85,39 +82,24 @@ public class NbColonCommands {
         ColonCommands.register("mak","make", new Make());
 
         // Refactoring
-        delegate("rfr","rfrename",
-                "Menu/Refactoring/RenameAction.instance");
-        delegate("rfm","rfmove",
-                "Menu/Refactoring/MoveAction.instance");
-        delegate("rfc","rfcopy",
-                "Menu/Refactoring/CopyAction.instance");
-        delegate("rfsa", "rfsafelydelete",
-                "Menu/Refactoring/SafeDeleteAction.instance");
-        delegate("rfde", "rfdelete",
-                "Menu/Refactoring/SafeDeleteAction.instance");
+        delegate("rfr","rfrename", FsAct.RF_RENAME);
+        delegate("rfm","rfmove", FsAct.RF_MOVE);
+        delegate("rfc","rfcopy", FsAct.RF_COPY);
+        delegate("rfsa", "rfsafelydelete", FsAct.RF_SAFE_DELETE);
+        delegate("rfde", "rfdelete", FsAct.RF_SAFE_DELETE);
 
-        delegate("rfch","rfchangemethodparameters",
-                "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance");
-        delegate("rfenc","rfencapsulatefields",
-                "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance");
+        delegate("rfch","rfchangemethodparameters", FsAct.RF_CHANGE_PARAMETERS);
+        delegate("rfenc","rfencapsulatefields", FsAct.RF_ENCAPSULATE_FIELD);
 
-        delegate("rfpul","rfpullup",
-                "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance");
-        delegate("rfup","rfup",
-                "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance");
-        delegate("rfpus","rfpushdown",
-                "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance");
-        delegate("rfdo","rfdown",
-                "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance");
+        delegate("rfpul","rfpullup", FsAct.RF_PULL_UP);
+        delegate("rfup","rfup", FsAct.RF_PULL_UP);
+        delegate("rfpus","rfpushdown", FsAct.RF_PUSH_DOWN);
+        delegate("rfdo","rfdown", FsAct.RF_PUSH_DOWN);
 
-        delegate("rfvar","rfvariable",
-                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceVariableAction.instance");
-        delegate("rfcon","rfconstant",
-                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceConstantAction.instance");
-        delegate("rffie","rffield",
-                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceFieldAction.instance");
-        delegate("rfmet","rfmethod",
-                "Actions/Refactoring/org-netbeans-modules-java-hints-introduce-IntroduceMethodAction.instance");
+        delegate("rfvar","rfvariable", FsAct.RF_INTRODUCE_VARIABLE);
+        delegate("rfcon","rfconstant", FsAct.RF_INTRODUCE_CONSTANT);
+        delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD);
+        delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD);
         
         /*
         ColonCommands.register("run", "run",
@@ -151,8 +133,7 @@ public class NbColonCommands {
     public static ColonAction ACTION_fu = new FindUsages();
 
     private static void doWhereUsed() {
-        Action act = Module.fetchFileSystemAction("Actions/Refactoring/"
-          + "org-netbeans-modules-refactoring-api-ui-WhereUsedAction.instance");
+        Action act = Module.fetchFileSystemAction(FsAct.WHERE_USED);
         if(act != null) {
             TopComponent tc = TopComponent.getRegistry().getActivated();
             act = ((ContextAwareAction) act)
@@ -221,9 +202,9 @@ public class NbColonCommands {
         public void actionPerformed(ActionEvent e) {
             String fsAct;
             if(goForward)
-                fsAct = Module.FSACT_TABNEXT;
+                fsAct = FsAct.TABNEXT;
             else
-                fsAct = Module.FSACT_TABPREV;
+                fsAct = FsAct.TABPREV;
             Module.execFileSystemAction(fsAct, e);
         }
     }
@@ -273,7 +254,7 @@ public class NbColonCommands {
                         fAll = true;
                     else {
                         ce.getViTextView().getStatusDisplay().displayErrorMessage(
-                                "syntax: mak[e] [a[ll]] [c[lean]]");
+                                "syntax: mak[e] [c[lean]] [a[ll]]");
                         return;
                     }
                 }

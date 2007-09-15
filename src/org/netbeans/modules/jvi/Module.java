@@ -130,17 +130,6 @@ public class Module extends ModuleInstall {
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
 
-    //
-    // File System Actions
-    //
-    public static final String FSACT_TABNEXT
-            = "Actions/Window/"
-              + "org-netbeans-core-windows-actions-NextTabAction.instance";
-    public static final String FSACT_TABPREV
-            = "Actions/Window/"
-              + "org-netbeans-core-windows-actions-PreviousTabAction.instance";
-
-
     static {
         try {
             Lookup.getDefault().lookup(ClassLoader.class)

@@ -60,9 +60,6 @@ public class NbBuffer extends DefaultBuffer {
     private static Method endUndo;
     private static Method commitUndo;
 
-    // NOTE: write protected by event dispatch
-    private static boolean isTabSetting;
-
 //    private CompoundEdit compoundEdit;
 //    private static Method undoRedoFireChangeMethod;
     
@@ -103,10 +100,6 @@ public class NbBuffer extends DefaultBuffer {
         super.removeShare();
     }
 
-    static boolean isTabSetting() {
-        return isTabSetting;
-    }
-
     @Override
     public void viOptionSet(ViTextView tv, String name) {
         String mimeType = tv.getEditorComponent().getContentType();
@@ -117,7 +110,7 @@ public class NbBuffer extends DefaultBuffer {
         if(ie instanceof FormatterIndentEngine)
             fie = (FormatterIndentEngine) ie;
 
-        isTabSetting = true;
+        TabWarning.setInternalAction(true);
         try {
             
             if("b_p_ts".equals(name)) {
@@ -132,7 +125,7 @@ public class NbBuffer extends DefaultBuffer {
                     fie.setExpandTabs(b_p_et);
             }
         } finally {
-            isTabSetting = false;
+            TabWarning.setInternalAction(false);
         }
     }
     
@@ -142,7 +135,7 @@ public class NbBuffer extends DefaultBuffer {
         BaseOptions baseOptions = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(BaseOptions.class);
 
-        isTabSetting = true;
+        TabWarning.setInternalAction(true);
         try {
             baseOptions.setExpandTabs(b_p_et);
             baseOptions.setSpacesPerTab(b_p_sw);
@@ -155,7 +148,7 @@ public class NbBuffer extends DefaultBuffer {
                 fie.setSpacesPerTab(b_p_sw);
             }
         } finally {
-            isTabSetting = false;
+            TabWarning.setInternalAction(false);
         }
 
     }
@@ -208,28 +201,6 @@ public class NbBuffer extends DefaultBuffer {
         } else {
             Util.vim_beep();
         }
-    }
-    
-    @Override
-    public void anonymousMark(MARKOP op, int count) {
-        String actName = null;
-        switch(op) {
-            case TOGGLE:
-                actName = "/Actions/Edit/bookmark-toggle.instance";
-                break;
-            case NEXT:
-                actName = "/Actions/Edit/bookmark-next.instance";
-                break;
-            case PREV:
-                actName = "/Actions/Edit/bookmark-previous.instance";
-                break;
-        }
-        Action act = Module.fetchFileSystemAction(actName);
-        if(act != null && act.isEnabled()) {
-            ActionEvent e = new ActionEvent(getDoc(), 0, "");
-            act.actionPerformed(e);
-        } else
-            Util.vim_beep();
     }
 
     //////////////////////////////////////////////////////////////////////

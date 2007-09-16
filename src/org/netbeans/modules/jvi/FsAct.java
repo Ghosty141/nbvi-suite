@@ -18,10 +18,13 @@ import java.util.List;
  * @author erra
  */
 public class FsAct {
-    public static final String TABNEXT
+    public static final String GO_TYPE
+        = "Actions/Edit/org-netbeans-modules-jumpto-type-GoToType.instance";
+
+    public static final String TAB_NEXT
         = "Actions/Window/"
         + "org-netbeans-core-windows-actions-NextTabAction.instance";
-    public static final String TABPREV
+    public static final String TAB_PREV
         = "Actions/Window/"
         + "org-netbeans-core-windows-actions-PreviousTabAction.instance";
 
@@ -77,17 +80,92 @@ public class FsAct {
         = "Actions/Refactoring/"
         + "org-netbeans-modules-java-hints-introduce-IntroduceMethodAction.instance";
 
+    // build/run and such operate on three types of things
+    //      MK_M_xx is main project
+    //      MK_P_xx current projet
+    //      MK_F_xx current file
+    // note the thing-type vs operation matrix is sparse
+
+    // Main project
+    public static final String MK_M_BUILD
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-BuildMainProject.instance";
+    public static final String MK_M_CLEAN
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-CleanMainProject.instance";
+    public static final String MK_M_REBUILD
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-RebuildMainProject.instance";
+    public static final String MK_M_RUN
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-RunMainProject.instance";
+    public static final String MK_M_DEBUG
+        = "Actions/Debug/"
+        + "org-netbeans-modules-debugger-ui-actions-DebugMainProjectAction.instance";
+    public static final String MK_M_TEST = null;
+    public static final String MK_M_DBGTEST = null;
+    public static final String MK_M_DOC = null;
+
+    // Current project
+    public static final String MK_P_BUILD
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-BuildProject.instance";
+    public static final String MK_P_CLEAN
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-CleanProject.instance";
+    public static final String MK_P_REBUILD
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-RebuildProject.instance";
+    public static final String MK_P_RUN
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-RunProject.instance";
+    public static final String MK_P_DEBUG = null;
+    public static final String MK_P_TEST
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-TestProject.instance";
+    public static final String MK_P_DBGTEST = null;
+    public static final String MK_P_DOC
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-JavadocProject.instance";
+                
+    // Current file actions
+    public static final String MK_F_BUILD
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-CompileSingle.instance";
+    public static final String MK_F_CLEAN = null;
+    public static final String MK_F_REBUILD = null;
+    public static final String MK_F_RUN
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-RunSingle.instance";
+    public static final String MK_F_DEBUG
+        = "Actions/Debug/"
+        + "org-netbeans-modules-debugger-ui-actions-DebugFileAction.instance";
+    public static final String MK_F_TEST
+        = "Actions/Project/"
+        + "org-netbeans-modules-project-ui-TestSingle.instance";
+    public static final String MK_F_DBGTEST
+        = "Actions/Debug/"
+        + "org-netbeans-modules-debugger-ui-actions-DebugTestFileAction.instance";
+    public static final String MK_F_DOC = null;
+
+    // This is used to check that all listed actions can be found only once.
     public static List<String> getFsActList() {
         List<String> l = new ArrayList<String>();
         
-        l.add(TABNEXT);
-        l.add(TABPREV);
+        l.add(GO_TYPE);
+
+        l.add(TAB_NEXT);
+        l.add(TAB_PREV);
+
         l.add(WHERE_USED);
+
         l.add(BM_TOGGLE);
         l.add(BM_NEXT);
         l.add(BM_PREV);
+
         l.add(JUMP_NEXT);
         l.add(JUMP_PREV);
+
         l.add(RF_RENAME);
         l.add(RF_MOVE);
         l.add(RF_COPY);
@@ -100,6 +178,34 @@ public class FsAct {
         l.add(RF_INTRODUCE_CONSTANT);
         l.add(RF_INTRODUCE_FIELD);
         l.add(RF_INTRODUCE_METHOD);
+
+        l.add(MK_M_BUILD);
+        l.add(MK_M_CLEAN);
+        l.add(MK_M_REBUILD);
+        l.add(MK_M_RUN);
+        l.add(MK_M_DEBUG);
+        l.add(MK_M_TEST);
+        l.add(MK_M_DBGTEST);
+        l.add(MK_M_DOC);
+        l.add(MK_P_BUILD);
+        l.add(MK_P_CLEAN);
+        l.add(MK_P_REBUILD);
+        l.add(MK_P_RUN);
+        l.add(MK_P_DEBUG);
+        l.add(MK_P_TEST);
+        l.add(MK_P_DBGTEST);
+        l.add(MK_P_DOC);
+        l.add(MK_F_BUILD);
+        l.add(MK_F_CLEAN);
+        l.add(MK_F_REBUILD);
+        l.add(MK_F_RUN);
+        l.add(MK_F_DEBUG);
+        l.add(MK_F_TEST);
+        l.add(MK_F_DBGTEST);
+        l.add(MK_F_DOC);
+
+        // some nulls may have been added.
+        while(l.remove(null));
         return l;
     }
 }

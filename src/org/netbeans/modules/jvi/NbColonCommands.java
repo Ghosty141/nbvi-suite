@@ -37,11 +37,7 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.Action;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ui.OpenProjects;
-import org.netbeans.spi.project.ActionProvider;
 import org.openide.util.ContextAwareAction;
-import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 
 public class NbColonCommands {
@@ -63,10 +59,12 @@ public class NbColonCommands {
         ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
         ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
 
+        // goto editor tab
         ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
         ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
         ColonCommands.register("tabN", "tabNext", ACTION_tabprevious);
     
+        // next previous in current list
         delegate("cn","cnext", FsAct.JUMP_NEXT);
         delegate("cp","cprevious", FsAct.JUMP_PREV);
 
@@ -202,85 +200,168 @@ public class NbColonCommands {
         public void actionPerformed(ActionEvent e) {
             String fsAct;
             if(goForward)
-                fsAct = FsAct.TABNEXT;
+                fsAct = FsAct.TAB_NEXT;
             else
-                fsAct = FsAct.TABPREV;
+                fsAct = FsAct.TAB_PREV;
             Module.execFileSystemAction(fsAct, e);
         }
     }
-        
-    /*
-     * For the make/build type of commands
-     * There's ActionProvider and Project, but thats not recommended level.
-     *
-     * Recommended or not, Project.getLookup for ActionProvider...
-     *
-     * There's also the following, but shouldn't need to get it from the file system
-    <!-- Main project -->
-    <file name="org-netbeans-modules-project-ui-BuildMainProject.instance">
-    <file name="org-netbeans-modules-project-ui-RebuildMainProject.instance">
-    <file name="org-netbeans-modules-project-ui-RunMainProject.instance">
-    <file name="org-netbeans-modules-project-ui-DebugMainProject.instance">
 
-    <!-- Current project -->            
-    <file name="org-netbeans-modules-project-ui-TestProject.instance">
-    <file name="org-netbeans-modules-project-ui-JavadocProject.instance">
-    <file name="org-netbeans-modules-project-ui-BuildProject.instance">
-    <file name="org-netbeans-modules-project-ui-RebuildProject.instance">
-    <file name="org-netbeans-modules-project-ui-RunProject.instance">
-                
-    <!-- 1 off actions -->            
-    <file name="org-netbeans-modules-project-ui-CompileSingle.instance">
-    <file name="org-netbeans-modules-project-ui-RunSingle.instance">
-    <file name="org-netbeans-modules-project-ui-DebugSingle.instance">
-    <file name="org-netbeans-modules-project-ui-TestSingle.instance">
-    <file name="org-netbeans-modules-project-ui-DebugTestSingle.instance">
-        */
+    ///////////////////////////////////////////////////////////////////////
+    //
+    // Make
+    //
+
+    private static final int MK_BUILD = 0;
+    private static final int MK_CLEAN = 1;
+    private static final int MK_REBUILD = 2;
+    private static final int MK_RUN = 3;
+    private static final int MK_DEBUG = 4;
+    private static final int MK_TEST = 5;
+    private static final int MK_DEBUG_TEST = 6;
+    private static final int MK_DOC = 7;
+
+    private static final int MK_MAIN = 0;
+    private static final int MK_PROJECT = 1;
+    private static final int MK_FILE = 2;
+
+    private static final int MK_NONE = -1;
+
+    static private String[][] mkActions() {
+        // NOTE: some entries are null
+        return new String[][] {
+            { FsAct.MK_M_BUILD,   FsAct.MK_P_BUILD,   FsAct.MK_F_BUILD,   },
+            { FsAct.MK_M_CLEAN,   FsAct.MK_P_CLEAN,   FsAct.MK_F_CLEAN,   },
+            { FsAct.MK_M_REBUILD, FsAct.MK_P_REBUILD, FsAct.MK_F_REBUILD, },
+            { FsAct.MK_M_RUN,     FsAct.MK_P_RUN,     FsAct.MK_F_RUN,     },
+            { FsAct.MK_M_DEBUG,   FsAct.MK_P_DEBUG,   FsAct.MK_F_DEBUG,   },
+            { FsAct.MK_M_TEST,    FsAct.MK_P_TEST,    FsAct.MK_F_TEST,    },
+            { FsAct.MK_M_DBGTEST, FsAct.MK_P_DBGTEST, FsAct.MK_F_DBGTEST, },
+            { FsAct.MK_M_DOC,     FsAct.MK_P_DOC,     FsAct.MK_F_DOC,     },
+        };
+    }
+    static private String[] mkOpDesc() {
+        return new String[] {
+            "build",
+            "clean",
+            "rebuild",
+            "run",
+            "debug",
+            "test",
+            "debug-test",
+            "doc-java",
+        };
+    }
+
+    static private String[] mkThingDesc() {
+        return new String[] {
+            "main",
+            "project",
+            "%"
+        };
+    }
+
+    static private int parseMkThing(String a) {
+        int thing = MK_NONE;
+        if("main".startsWith(a))
+            thing = MK_MAIN;
+        else if("project".startsWith(a))
+            thing = MK_PROJECT;
+        else if("%".startsWith(a))
+            thing = MK_FILE;
+        return thing;
+    }
     
-    /** Make */
+    /** Make
+     * :mak[e] [ b[uild] | c[lean] | r[ebuild]| d[oc] de[bug] | ru[n]] \
+     *         [ m[ain] | p[roject] | % ]
+     */
     static private class Make extends ColonAction {
         public void actionPerformed(ActionEvent e) {
             ColonEvent ce = (ColonEvent)e;
-            boolean fClean = false;
-            boolean fAll = true;
+            boolean fError = false;
             // make [c[lean]] [a[ll]]
+
+            int mkThing = MK_NONE;
+            int mkOp = MK_NONE;
+
             if(ce.getNArg() > 0) {
-                fAll = false;
+                int mkThing01 = MK_NONE;
+                int mkOp01 = MK_NONE;
                 for(int i = 1; i <= ce.getNArg(); i++) {
                     String a = ce.getArg(i);
-                    if("clean".startsWith(a))
-                        fClean = true;
-                    else if("all".startsWith(a))
-                        fAll = true;
+                    //
+                    // NOTE: debug and run are after doc and rebuild,
+                    //       so they require two character match
+                    //
+                    if("build".startsWith(a))
+                        mkOp01 = MK_BUILD;
+                    else if("clean".startsWith(a))
+                        mkOp01 = MK_CLEAN;
+                    else if("rebuild".startsWith(a))
+                        mkOp01 = MK_REBUILD;
+                    else if("doc".startsWith(a))
+                        mkOp01 = MK_DOC;
+                    else if("debug".startsWith(a))
+                        mkOp01 = MK_DEBUG;
+                    else if("run".startsWith(a))
+                        mkOp01 = MK_RUN;
+                    else if((mkThing01 = parseMkThing(a)) != MK_NONE)
+                        ;
                     else {
+                        fError = true;
                         ce.getViTextView().getStatusDisplay().displayErrorMessage(
-                                "syntax: mak[e] [c[lean]] [a[ll]]");
-                        return;
+                                "syntax: mak[e] [b[uild]|c[lean]|r[ebuild]|d[oc]"
+                                + "|de[bug]|ru[n]]"
+                                + " [m[ain]|p[project]|%]");
+                    }
+                    if(mkOp01 != MK_NONE) {
+                        if(mkOp == MK_NONE)
+                            mkOp = mkOp01;
+                        else {
+                            ce.getViTextView().getStatusDisplay()
+                                    .displayErrorMessage(
+                                    "only one of build, clean, rebuild, doc,"
+                                    + " debug, run");
+                            fError = true;
+                        }
+                    }
+                    if(mkThing01 != MK_NONE) {
+                        if(mkThing == MK_NONE)
+                            mkThing = mkThing01;
+                        else {
+                            ce.getViTextView().getStatusDisplay()
+                                    .displayErrorMessage(
+                                    "only one of main, project, %");
+                            fError = true;
+                        }
                     }
                 }
             }
-            String path = "Actions/Project/org-netbeans-modules-project-ui-";
-            if(fClean == true && fAll == true)
-                path += "RebuildMainProject.instance";
-            else if(fAll == true)
-                path += "BuildMainProject.instance";
-            else if(fClean == true) {
-                path += "CleanMainProject.instance";
-                // Unfortunately this layer path action not available until NB6
-                // so do it manually
-                Project p = OpenProjects.getDefault().getMainProject();
-                if(p != null) {
-                    Lookup ctx = p.getLookup();
-                    ActionProvider ap
-                            = ctx.lookup(ActionProvider.class);
-                    if(ap != null)
-                        ap.invokeAction(ap.COMMAND_CLEAN, ctx);
-                }
-                return;
+            if(mkOp == MK_NONE)
+                mkOp = MK_BUILD;
+            if(mkThing == MK_NONE)
+                mkThing = MK_MAIN;
+
+            String path = mkActions()[mkOp][mkThing];
+            if(path == null) {
+                ce.getViTextView().getStatusDisplay().displayErrorMessage(
+                        "no action for \"make " + mkOpDesc()[mkOp]
+                        + " " + mkThingDesc()[mkThing] + "\"");
+                fError = true;
             }
-            Module.execFileSystemAction(path, e);
+            if(true) {
+                System.err.println( "\"make " + mkOpDesc()[mkOp]
+                        + " " + mkThingDesc()[mkThing] + "\"");
+            }
+            
+            if(!fError)
+                Module.execFileSystemAction(path, e);
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////
+    //
 
   /*
   private static AbbrevLookup toggles = new AbbrevLookup();

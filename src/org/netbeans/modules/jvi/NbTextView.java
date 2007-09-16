@@ -242,10 +242,10 @@ public class NbTextView extends TextView
         String fsAct = null;
         switch(op) {
         case NEXT_TAB:
-            fsAct = FsAct.TABNEXT;
+            fsAct = FsAct.TAB_NEXT;
             break;
         case PREV_TAB:
-            fsAct = FsAct.TABPREV;
+            fsAct = FsAct.TAB_PREV;
             break;
         }
 

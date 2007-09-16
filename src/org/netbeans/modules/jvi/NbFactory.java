@@ -435,20 +435,7 @@ final public class NbFactory extends DefaultViFactory {
     
     @Override
     public void tagDialog(ColonCommands.ColonEvent ce) {
-        Action act = Module.fetchFileSystemAction(
-            "Actions/Edit/org-netbeans-modules-jumpto-type-GoToType.instance");
-        if(act == null) {
-            // Try other NB6 action
-            act = Module.fetchFileSystemAction(
-                "/Actions/Edit"
-                + "/org-netbeans-modules-java-actions-GoToType.instance");
-        }
-        if(act == null) {
-            // Not found, try the NB5.5 action
-            act = Module.fetchFileSystemAction(
-                "/Actions/Edit/org-netbeans"
-                + "-modules-editor-java-JavaFastOpenAction.instance");
-        }
+        Action act = Module.fetchFileSystemAction(FsAct.GO_TYPE);
         if(act != null && act.isEnabled()) {
             ViManager.getViFactory().startTagPush(ce.getViTextView(), "");
             act.actionPerformed(ce);

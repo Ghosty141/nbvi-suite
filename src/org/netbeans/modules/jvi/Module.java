@@ -469,6 +469,17 @@ public class Module extends ModuleInstall {
                 os.close();
             }
         });
+        ColonCommands.register("checkFsActList", "checkFsActList",
+                new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (String act : FsAct.getFsActList()) {
+                    if(fetchFileSystemAction(act) == null) {
+                        System.err.println("Not found: " + act);
+                    }
+                }
+
+            }
+        });
         
         /*
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {
@@ -511,6 +522,9 @@ public class Module extends ModuleInstall {
      * @return an Action, null if couldn't get or create one
      */
     public static Action fetchFileSystemAction(String path) {
+        if(!FsAct.getFsActList().contains(path)) {
+            ViManager.dumpStack("unlisted action");
+        }
         FileObject fo = Repository.getDefault().getDefaultFileSystem()
                                                 .getRoot().getFileObject(path);
         if(fo == null)

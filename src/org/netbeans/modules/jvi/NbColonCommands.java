@@ -550,9 +550,9 @@ public class NbColonCommands {
         public void actionPerformed(ActionEvent ev) {
             initToggleCommand();
             ColonEvent cev = (ColonEvent)ev;
-            if(cev.getNArg() == 1) {
-                AbbrevLookup.CommandElement ce
-                        = toggles.lookupCommand(cev.getArg(1));
+            if( cev.getNArg() == 0 || cev.getNArg() == 1) {
+                String arg = cev.getNArg() == 0 ? "bottom" : cev.getArg(1);
+                AbbrevLookup.CommandElement ce = toggles.lookupCommand(arg);
                 if(ce != null) {
                     // pass on the same event that we got
                     ((ActionListener)ce.getValue()).actionPerformed(ev);
@@ -560,7 +560,7 @@ public class NbColonCommands {
                     Msg.emsg("Unknown toggle option: " + cev.getArg(1));
                 }
             } else {
-                Msg.emsg("Only single argument allowed");
+                Msg.emsg("Only zero or one argument allowed");
             }
         }
     };

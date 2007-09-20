@@ -230,6 +230,7 @@ public class NbOptionsNode extends BeanNode {
     // the names for the getters/setters
     private static final String GETSET_DBG_MODULE = "DebugModule";
     private static final String GETSET_DBG_TC = "DebugTC";
+    private static final String GETSET_DBG_HL = "DebugHL";
     
     public static class NbDebugOptions extends OptionsBean.Debug {
         @Override
@@ -237,6 +238,7 @@ public class NbOptionsNode extends BeanNode {
             PropertyDescriptor[]  descriptors = super.getPropertyDescriptors();
             PropertyDescriptor d01 = null;
             PropertyDescriptor d02 = null;
+            PropertyDescriptor d03 = null;
             try {
                 d01 = createPropertyDescriptor(Module.DBG_MODULE,
                                                GETSET_DBG_MODULE,
@@ -244,14 +246,18 @@ public class NbOptionsNode extends BeanNode {
                 d02 = createPropertyDescriptor(Module.DBG_TC,
                                                GETSET_DBG_TC,
                                                NbDebugOptions.class);
+                d03 = createPropertyDescriptor(Module.DBG_HL,
+                                               GETSET_DBG_HL,
+                                               NbDebugOptions.class);
             } catch (IntrospectionException ex) {
                 return descriptors;
             }
             PropertyDescriptor[]  d00
-                    = new PropertyDescriptor[descriptors.length +2];
+                    = new PropertyDescriptor[descriptors.length +3];
             System.arraycopy(descriptors, 0, d00, 0, descriptors.length);
             d00[descriptors.length] = d01;
             d00[descriptors.length +1] = d02;
+            d00[descriptors.length +2] = d03;
             return d00;
         }
         
@@ -269,6 +275,14 @@ public class NbOptionsNode extends BeanNode {
 
         public boolean getDebugTC() {
             return getboolean(Module.DBG_TC);
+        }
+        
+        public void setDebugHL(boolean arg) {
+            put(Module.DBG_HL, arg);
+        }
+
+        public boolean getDebugHL() {
+            return getboolean(Module.DBG_HL);
         }
     }
 }

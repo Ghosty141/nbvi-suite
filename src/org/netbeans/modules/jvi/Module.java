@@ -56,7 +56,6 @@ import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.Settings;
-import org.netbeans.editor.SettingsChangeEvent;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
@@ -71,7 +70,6 @@ import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
-import org.netbeans.editor.SettingsChangeListener;
 import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.ErrorManager;
@@ -86,6 +84,7 @@ import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.TopComponentGroup;
 import org.openide.windows.WindowManager;
 
 /**
@@ -117,8 +116,10 @@ public class Module extends ModuleInstall {
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
+    public static final String DBG_HL = "DebugNbHilight";
     private static BooleanOption dbgNb;
     private static BooleanOption dbgAct;
+    static BooleanOption dbgHL;
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static KeyBindingsFilter keyBindingsFilter;
@@ -354,6 +355,10 @@ public class Module extends ModuleInstall {
             dbgAct = Options.createBooleanOption(DBG_TC, false);
             Options.setupOptionDesc(DBG_TC, "Top Component",
                                     "TopComponent activation/open");
+            
+            dbgHL = Options.createBooleanOption(DBG_HL, false);
+            Options.setupOptionDesc(DBG_HL, "Hilighting",
+                                    "Visual/Search highlighting");
             
             ViManager.addStartupListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -972,11 +977,11 @@ public class Module extends ModuleInstall {
      *            but see icon comment in constructor.
      */
     private static class JViEnableAction extends CallableSystemAction {
-        protected static final String NAME="jVi";
+        protected static final String DISPLAY_NAME="jVi";
         private JCheckBoxMenuItem cb;
 
         private static class MyBox extends JCheckBoxMenuItem {
-            MyBox() { super(NAME); }
+            MyBox() { super(DISPLAY_NAME); }
             @Override
             public void addNotify() {
                 super.addNotify();
@@ -1052,7 +1057,7 @@ public class Module extends ModuleInstall {
 
         @Override
         public String getName() {
-            return NAME;
+            return DISPLAY_NAME;
         }
 
         @Override

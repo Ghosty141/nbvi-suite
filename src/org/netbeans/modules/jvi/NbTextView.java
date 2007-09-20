@@ -316,8 +316,6 @@ public class NbTextView extends TextView
     private BlocksHighlighter visualSelectHighlighter;
     private BlocksHighlighter searchResultsHighlighter;
 
-    private static boolean dbgHL = false;
-
     public static final String VISUAL_MODE_LAYER
             = "VISUAL_SELECT_JVI";
     public static final String  SEARCH_RESULTS_LAYER 
@@ -419,7 +417,7 @@ public class NbTextView extends TextView
 
             FileObject fo = NbEditorUtilities.getFileObject(
                     context.getDocument());
-            if(dbgHL)
+            if(Module.dbgHL.getBoolean())
                 System.err.println("Highlight Factory: "
                         + (fo != null ? fo.getNameExt() : ""));
 
@@ -589,20 +587,20 @@ public class NbTextView extends TextView
         protected abstract boolean isEnabled();
 
         void reset() {
-            if(dbgHL)
+            if(Module.dbgHL.getBoolean())
                 System.err.println(name + "BlocksHighlighter reset:");
             fillInTheBag();
         }
         
         public void highlightChanged(HighlightsChangeEvent event) {
-            if(dbgHL)
+            if(Module.dbgHL.getBoolean())
                 System.err.println(name + " highlightChanged: "
                     + event.getStartOffset() + "," + event.getEndOffset());
             fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
         }
         
         public HighlightsSequence getHighlights(int startOffset, int endOffset) {
-            if(dbgHL)
+            if(Module.dbgHL.getBoolean())
                 System.err.println(name + " getHighlights: "
                                    + startOffset + "," + endOffset);
             return bag.getHighlights(startOffset, endOffset);
@@ -671,7 +669,7 @@ public class NbTextView extends TextView
                     if (isEnabled() && tv != null) {
 
                         int [] blocks = getBlocks(tv, startOffset, endOffset);
-                        if(dbgHL)
+                        if(Module.dbgHL.getBoolean())
                             Buffer.dumpBlocks(name, blocks);
                         
                         AttributeSet as = getAttribs();

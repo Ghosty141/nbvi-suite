@@ -28,17 +28,26 @@
  */
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.AbbrevLookup;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.ColonCommands.ColonAction;
 import com.raelity.jvi.ColonCommands.ColonEvent;
+import com.raelity.jvi.Msg;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.Action;
+import javax.swing.JEditorPane;
 import org.openide.util.ContextAwareAction;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.TopComponentGroup;
+import org.openide.windows.WindowManager;
 
 public class NbColonCommands {
 
@@ -99,15 +108,12 @@ public class NbColonCommands {
         delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD);
         delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD);
         
-        /*
+        /* run and debug are now make targets
         ColonCommands.register("run", "run",
         ColonCommands.register("deb", "debug",
          */
         
-        /*
-        initToggleCommand();
         ColonCommands.register("tog", "toggle", toggleAction);
-        */
     }
 
     static private void delegate(String abrev, String name, String actionPath) {
@@ -362,103 +368,200 @@ public class NbColonCommands {
 
     ///////////////////////////////////////////////////////////////////////
     //
+    // :tog[gle] bo[ttom] | ou[tput] | de[bug]
+    //
 
-  /*
-  private static AbbrevLookup toggles = new AbbrevLookup();
-  static void initToggleCommand() {
-    toggles.add("cur", "curtain", BrowserView.ACTION_ToggleCurtain);
-    toggles.add("mes", "messages", BrowserView.STATE_MessagePaneVisible);
-    toggles.add("con", "content", Browser.STATE_ContentPaneVisible);
-    toggles.add("pro", "project", Browser.STATE_ProjectPaneVisible);
-    toggles.add("str", "structure", Browser.STATE_StructurePaneVisible);
-    toggles.add("sta", "statusbar", Browser.STATE_StatusPaneVisible);
-    tryCosmetics();
-  }
-  */
+    private static AbbrevLookup toggles;
 
-  /**
-   * If McGrath's open tool is available, then set up a toggle for the
-   * show/hide tabs action.
-   */
-  /*
-  static private void tryCosmetics() {
-    try {
-      Class cosm = Class.forName("mcgrath.opentools.cosmetics.ContentTabs");
-      Field f = cosm.getField("STATE_ContentTabsVisible");
-      BrowserStateAction act = (BrowserStateAction)f.get(null);
-      toggles.add("tab", "tabs", act);
-    } catch(Throwable t) {}
-  }
-  */
+    private static final String M_OUT = "output";
+    private static final String M_DBG = "debugger";
+    private static ToggleStuff toggleOutput;
+    private static ToggleStuff toggleDebug;
 
-  /** hide/show stuff as seen in view menu */
-  /*
-  static ColonAction toggleAction = new ColonAction() {
-    public void actionPerformed(ActionEvent ev) {
-      ColonEvent cev = (ColonEvent)ev;
-      if(cev.getNArg() == 1) {
-        AbbrevLookup.CommandElement ce = toggles.lookupCommand(cev.getArg(1));
-        if(ce != null) {
-          // pass on the same event that we got
-          ((ActionListener)ce.getValue()).actionPerformed(ev);
-        } else {
-          Msg.emsg("Unknown toggle option: " + cev.getArg(1));
-        }
-      } else {
-        Msg.emsg("Only single argument allowed");
-      }
+    static void initToggleCommand() {
+        if(toggles  != null)
+            return;
+        toggles = new AbbrevLookup();
+
+        toggleOutput = new ToggleMode(M_OUT);
+        //toggleDebug = new ToggleMode(M_DBG);
+        toggleDebug = new ToggleGroup(M_DBG);
+
+        toggles.add("ou", "output", toggleOutput);
+        toggles.add("de", "debug", toggleDebug);
+        toggles.add("bo", "bottom", new ToggleBottom());
+
     }
-  };
-  */
 
-  /*
-  static ColonAction makeAction = new ColonAction() {
-    public void actionPerformed(ActionEvent ev) {
-      ColonEvent cev = (ColonEvent)ev;
-      if(cev.getNArg() == 0) {
-        if(JBOT.has44()) {
-          BuildActionPool.ACTION_ProjectFirstBuildAction.actionPerformed(ev);
-        } else {
-          //JB7 BuildActionPool.ACTION_ProjectMake.actionPerformed(ev);
-          Msg.emsg("JB7");
+    //private static class ToggleTC implements ActionListener {
+    //}
+
+    /** Do both output and debugger */
+    private static class ToggleBottom implements ActionListener {
+
+        public void actionPerformed(ActionEvent e) {
+            if(toggleDebug.isOpen() || toggleOutput.isOpen()) {
+                if(toggleDebug.isOpen())
+                    toggleDebug.doClose();
+                if(toggleOutput.isOpen())
+                    toggleOutput.doClose();
+            } else {
+                toggleDebug.doOpen();
+                toggleOutput.doOpen();
+            }
+            Object o = e.getSource();
+            if(o instanceof JEditorPane) {
+                JEditorPane ep = (JEditorPane) o;
+                ep.requestFocus();
+            }
         }
-      } else if(cev.getNArg() == 1 && cev.getArg(1).equals("%")) {
-        BuildActionPool.ACTION_ProjectNodeMake.actionPerformed(ev);
-      } else {
-        Msg.emsg("Only single argument '%' allowed");
-      }
     }
-  };
 
-  static ColonAction buildAction = new ColonAction() {
-    public void actionPerformed(ActionEvent ev) {
-      ColonEvent cev = (ColonEvent)ev;
-      if(cev.getNArg() == 0) {
-        if(JBOT.has44()) {
-          BuildActionPool.ACTION_ProjectSecondBuildAction.actionPerformed(ev);
-          //BuildActionPool.ACTION_ProjectSecondBuildAction
-          //                .actionPerformed(Browser.getActiveBrowser());
-        } else {
-          //JB7 BuildActionPool.ACTION_ProjectRebuild.actionPerformed(ev);
-          Msg.emsg("JB7");
+    private abstract static class ToggleStuff {
+
+        abstract boolean isOpen();
+
+        abstract void doOpen();
+        abstract void doClose();
+
+        static void closeMode(String modeName,
+                              List<WeakReference<TopComponent>> closedList) {
+            closedList.clear();
+            Mode mode = WindowManager.getDefault().findMode(modeName);
+            for (TopComponent tc : mode.getTopComponents()) {
+                if(tc.isOpened()) {
+                    closedList.add(new WeakReference<TopComponent>(tc));
+                    tc.close();
+                }
+            }
         }
-      } else if(cev.getNArg() == 1 && cev.getArg(1).equals("%")) {
-        BuildActionPool.ACTION_ProjectNodeRebuild.actionPerformed(ev);
-      } else {
-        Msg.emsg("Only single argument '%' allowed");
-      }
-    }
-  };
-  */
 
-  /**
-   * Determines if JB's curtain is open or not.
-   */
-  /*
-  boolean hasCurtain(Object o) {
-    Browser b = Browser.findBrowser(o);
-    return Browser.STATE_ProjectPaneVisible.getState(b)
-           || Browser.STATE_StructurePaneVisible.getState(b);
-  }
-  */
+        static void openMode(String modeName,
+                             List<WeakReference<TopComponent>> closedList) {
+            for (WeakReference<TopComponent> wr : closedList) {
+                TopComponent tc = wr.get();
+                if(tc != null)
+                    tc.open();
+            }
+            closedList.clear();
+        }
+        
+        static boolean isOpenMode(String modeName) {
+            boolean open = false;
+            Mode mode = WindowManager.getDefault().findMode(modeName);
+            if(mode != null) {
+                for (TopComponent tc : mode.getTopComponents()) {
+                    if(tc.isOpened()) {
+                        open = true;
+                        break;
+                    }
+                }
+            }
+            return open;
+        }
+    }
+    
+    private static class ToggleMode extends ToggleStuff
+                                    implements ActionListener {
+        String modeName;
+        List<WeakReference<TopComponent>> closedList;
+
+        public ToggleMode(String modeName) {
+            this.modeName = modeName;
+            closedList = new ArrayList<WeakReference<TopComponent>>();
+        }
+
+        boolean isOpen() {
+            return isOpenMode(modeName) && closedList.isEmpty();
+        }
+
+        @Override
+        void doOpen() {
+            openMode(modeName, closedList);
+        }
+
+        @Override
+        void doClose() {
+            closeMode(modeName, closedList);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if(isOpen()) {
+                doClose();
+            } else {
+                doOpen();
+            }
+            Object o = e.getSource();
+            if(o instanceof JEditorPane) {
+                JEditorPane ep = (JEditorPane) o;
+                ep.requestFocus();
+            }
+        }
+    }
+    
+    private static class ToggleGroup extends ToggleStuff
+                                     implements ActionListener {
+        String groupName;
+        String modeName;
+        
+        ToggleGroup(String groupName) {
+            this.groupName = groupName;
+            this.modeName = groupName;
+        }
+
+        @Override
+        boolean isOpen() {
+            return isOpenMode(modeName);
+        }
+
+        @Override
+        void doOpen() {
+            TopComponentGroup tcg = findGroup();
+            if(tcg != null)
+                tcg.open();
+        }
+
+        @Override
+        void doClose() {
+            TopComponentGroup tcg = findGroup();
+            if(tcg != null)
+                tcg.close();
+        }
+
+        private TopComponentGroup findGroup() {
+            TopComponentGroup tcg
+                = WindowManager.getDefault().findTopComponentGroup(groupName);
+            if(tcg == null)
+                ViManager.dumpStack("Unknown TCGroup: " + groupName);
+            return tcg;
+        }
+        
+        public void actionPerformed(ActionEvent e) {
+            if(isOpen()) {
+                doClose();
+            } else {
+                doOpen();
+            }
+        }
+    }
+    
+    /** hide/show stuff as seen in view menu */
+    static ColonAction toggleAction = new ColonAction() {
+        public void actionPerformed(ActionEvent ev) {
+            initToggleCommand();
+            ColonEvent cev = (ColonEvent)ev;
+            if(cev.getNArg() == 1) {
+                AbbrevLookup.CommandElement ce
+                        = toggles.lookupCommand(cev.getArg(1));
+                if(ce != null) {
+                    // pass on the same event that we got
+                    ((ActionListener)ce.getValue()).actionPerformed(ev);
+                } else {
+                    Msg.emsg("Unknown toggle option: " + cev.getArg(1));
+                }
+            } else {
+                Msg.emsg("Only single argument allowed");
+            }
+        }
+    };
 }

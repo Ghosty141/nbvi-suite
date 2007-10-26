@@ -337,26 +337,60 @@ public class NbTextView extends TextView
             searchResultsHighlighter.reset();
     }
 
+    private static boolean dbgHL(BlocksHighlighter h) {
+        // filter out stuff if wanted
+        //if(h.name == VISUAL_MODE_LAYER)
+        //    return false;
+        //if(h.name == SEARCH_RESULTS_LAYER)
+        //    return false;
+
+        return Module.dbgHL.getBoolean();
+    }
+
     // NEEDSWORK: there is no guarenteed way implemented to hook up a
     // highlighter to the text view. Need to set up a map of ep-->highli
     private void hookupHighlighter(String name, BlocksHighlighter h) {
         if(isShutdown())
             return;
+        BlocksHighlighter discarded = null;
+        BlocksHighlighter installed = null;
         if(VISUAL_MODE_LAYER.equals(name)) {
             if(h != visualSelectHighlighter) {
-                if(visualSelectHighlighter != null)
-                    visualSelectHighlighter.discard();
+                if(visualSelectHighlighter != null) {
+                    discarded = visualSelectHighlighter;
+                }
                 visualSelectHighlighter = h;
+                installed = h;
             }
         } else if(SEARCH_RESULTS_LAYER.equals(name)) {
             if(h != searchResultsHighlighter) {
-                if(searchResultsHighlighter != null)
-                    searchResultsHighlighter.discard();
+                if(searchResultsHighlighter != null) {
+                    discarded = searchResultsHighlighter;
+                }
                 searchResultsHighlighter = h;
+                installed = h;
             }
         }
+        if(discarded != null) {
+            if(dbgHL(discarded))
+                System.err.println(discarded.displayName()
+                        + ": hookup discard");
+            discarded.discard();
+        }
+        if(installed != null) {
+            installed.tvTag = String.valueOf(mygen);
+            if(dbgHL(installed))
+                System.err.println(installed.displayName()
+                        + ": hookup");
+            ////////////////////////////////////////////////////////////////////
+            if(installed == visualSelectHighlighter)
+                updateVisualState(); // NEEDSWORK: CHANGE IF SHARE BAG?
+            else
+                updateHighlightSearchState(); // NEEDSWORK: CHANGE IF SHARE BAG?
+            ////////////////////////////////////////////////////////////////////
+        }
     }
-
+    
     // Map so that text view can get hold of the highlighter
     // shortly after textview creation.
     private static Map<JEditorPane, MyHl> hlMap
@@ -462,6 +496,8 @@ public class NbTextView extends TextView
                     = (ColorOption)Options.getOption(Options.selectColor);
 
             MyHl.putVisual(ep, this);
+            if(dbgHL(this))
+                System.err.println(displayName() + " putVisual");
 
             NbTextView tv = getTv();
             if(tv != null) {
@@ -527,6 +563,8 @@ public class NbTextView extends TextView
             attribs = t == null ? SimpleAttributeSet.EMPTY : t;
 
             MyHl.putSearch(ep, this);
+            if(dbgHL(this))
+                System.err.println(displayName() + " putSearch");
 
             NbTextView tv = getTv();
             if(tv != null) {
@@ -552,11 +590,15 @@ public class NbTextView extends TextView
         protected final Document document;
         protected final String name;
         protected boolean isDiscarded;
+        protected int mygen;
+        protected static int gen;
+        String tvTag = "";
 
         BlocksHighlighter(String name, JEditorPane ep) {
             this.name = name;
             this.ep = ep;
             this.document = ep.getDocument();
+            mygen = ++gen;
             
             // Let the bag update first...
             this.bag = new OffsetsBag(document);
@@ -565,6 +607,10 @@ public class NbTextView extends TextView
             // ...and the internal listener second
             this.document.addDocumentListener(
                     WeakListeners.document(this, this.document));
+        }
+
+        protected String displayName() {
+            return name + "-" + tvTag + "-" + mygen;
         }
 
         protected NbTextView getTv() {
@@ -587,22 +633,25 @@ public class NbTextView extends TextView
         protected abstract boolean isEnabled();
 
         void reset() {
-            if(Module.dbgHL.getBoolean())
-                System.err.println(name + "BlocksHighlighter reset:");
+            if(dbgHL(this))
+                System.err.println(displayName() + " BlocksHighlighter reset:");
             fillInTheBag();
         }
         
         public void highlightChanged(HighlightsChangeEvent event) {
-            if(Module.dbgHL.getBoolean())
-                System.err.println(name + " highlightChanged: "
+            if(dbgHL(this))
+                System.err.println(displayName() + " highlightChanged: "
                     + event.getStartOffset() + "," + event.getEndOffset());
             fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
         }
         
         public HighlightsSequence getHighlights(int startOffset, int endOffset) {
-            if(Module.dbgHL.getBoolean())
-                System.err.println(name + " getHighlights: "
+            if(dbgHL(this)) {
+                System.err.println(displayName() + " getHighlights: "
                                    + startOffset + "," + endOffset);
+                dumpHLSeq(displayName(),
+                          bag.getHighlights(startOffset, endOffset));
+            }
             return bag.getHighlights(startOffset, endOffset);
         }
         
@@ -669,8 +718,8 @@ public class NbTextView extends TextView
                     if (isEnabled() && tv != null) {
 
                         int [] blocks = getBlocks(tv, startOffset, endOffset);
-                        if(Module.dbgHL.getBoolean())
-                            Buffer.dumpBlocks(name, blocks);
+                        if(dbgHL(BlocksHighlighter.this))
+                            Buffer.dumpBlocks(displayName(), blocks);
                         
                         AttributeSet as = getAttribs();
                         for (int i = 0; blocks[i] >= 0; i += 2) {
@@ -692,6 +741,17 @@ public class NbTextView extends TextView
                 }
             });
         }
+    }
 
+    static void dumpHLSeq(String tag, HighlightsSequence seq) {
+        System.err.print(tag + " seq:");
+        if(HighlightsSequence.EMPTY.equals(seq)) {
+            System.err.print(" EMPTY");
+        }
+        while(seq.moveNext()) {
+            System.err.print(String.format(" {%d,%d}",
+                    seq.getStartOffset(), seq.getEndOffset()));
+        }
+        System.err.println("");
     }
 }

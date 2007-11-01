@@ -92,7 +92,7 @@ public class NbColonCommands {
         delegate("rfr","rfrename", FsAct.RF_RENAME);
         delegate("rfm","rfmove", FsAct.RF_MOVE);
         delegate("rfc","rfcopy", FsAct.RF_COPY);
-        delegate("rfsa", "rfsafelydelete", FsAct.RF_SAFE_DELETE);
+        delegate("rfsa", "rfsafedelete", FsAct.RF_SAFE_DELETE);
         delegate("rfde", "rfdelete", FsAct.RF_SAFE_DELETE);
 
         delegate("rfch","rfchangemethodparameters", FsAct.RF_CHANGE_PARAMETERS);

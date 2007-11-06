@@ -47,29 +47,35 @@ public class NbOutputStream extends OutputStreamAdaptor {
     /** Creates a new instance of NbOutputStream.
      * Type of ViOutputStream.OUTPUT is plain command output, the other
      * types will output lines from a file.
+     * 
+     * Priority in range 0 - 10 when 0 is lowest; only apply to OUTPUT.
      */
-    public NbOutputStream(ViTextView tv, String type, String info) {
+    public NbOutputStream(ViTextView tv,
+                          String type,
+                          String info,
+                          int priority) {
         this.tv = tv;
         this.type = type;
+        boolean bringUpWindow = priority > ViOutputStream.PRI_LOW;
         if(type.equals(ViOutputStream.OUTPUT)) {
             // plain output, no hyper text stuff or files or line numbers
             String tabTag = "jVi Output";
-            ow = getIO(tabTag, false); // reuse tab
+            ow = getIO(tabTag, false, bringUpWindow); // reuse tab
             ow.println("-----------------------------------------------------");
             if(info != null)
                 ow.println(info);
         } else {
             String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
             String tabTag = "jVi " + sep +  (info != null ? info : "") + sep;
-            ow = getIO(tabTag, true); // make a new tab
+            ow = getIO(tabTag, true, true); // make a new tab, always raise win
             fnTag = tv.getBuffer().getDisplayFileName() + ":";
         }
         checkOpen();
     }
     
-    private OutputWriter getIO(String tabTag, boolean fNew) {
+    private OutputWriter getIO(String tabTag, boolean fNew, boolean fRaise) {
         InputOutput io = IOProvider.getDefault().getIO(tabTag, fNew);
-        if(io.isClosed()) {
+        if(io.isClosed() && fRaise) {
             // See NetBeans Issue 101445
             try {
                 io.getOut().reset();//io = IOProvider.getDefault().getIO(tabTag, true);
@@ -78,7 +84,8 @@ public class NbOutputStream extends OutputStreamAdaptor {
                 io = IOProvider.getDefault().getIO(tabTag, true);
             }
         }
-        io.select();
+        if(fRaise)
+            io.select();
         return io.getOut();
     }
 

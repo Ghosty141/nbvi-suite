@@ -73,9 +73,13 @@ final public class NbFactory extends DefaultViFactory {
     
     @Override
     public ViOutputStream createOutputStream(ViTextView tv,
-                                             Object type, Object info) {
-        return new NbOutputStream(tv, type.toString(),
-                                  info == null ? null : info.toString());
+                                             Object type,
+                                             Object info,
+                                             int priority) {
+        return new NbOutputStream(tv,
+                                  type.toString(),
+                                  info == null ? null : info.toString(),
+                                  priority);
     }
     
     private Preferences prefs;

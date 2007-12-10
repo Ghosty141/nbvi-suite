@@ -16,6 +16,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 
 public class NbOptionsNode extends BeanNode {
+    private static final String NODE_GENERAL = "General";
     private static final String NODE_MODIFY = "Modify";
     private static final String NODE_SEARCH = "Search";
     private static final String NODE_CURSOR_WRAP = "CursorWrap";
@@ -34,7 +35,7 @@ public class NbOptionsNode extends BeanNode {
     }
     
     public NbOptionsNode() throws IntrospectionException {
-	super(new OptionsBean.General() {
+	super(new OptionsBean.Platform() {
             @Override
                   protected void put(String name, int val) {
                       try {
@@ -64,6 +65,8 @@ public class NbOptionsNode extends BeanNode {
 		    nodes[0] = new KeyBindingNode();
                 } else if(object.equals(NODE_KEYPAD_BINDINGS)) {
 		    nodes[0] = new KeypadBindingNode();
+                } else if(object.equals(NODE_GENERAL)) {
+		    nodes[0] = new GeneralNode();
                 } else if(object.equals(NODE_MODIFY)) {
 		    nodes[0] = new ModifyNode();
                 } else if(object.equals(NODE_SEARCH)) {
@@ -84,6 +87,7 @@ public class NbOptionsNode extends BeanNode {
         @Override
         protected void addNotify() {
            Collection<String> c = new ArrayList<String>();
+           c.add(NODE_GENERAL);
            c.add(NODE_MODIFY);
            c.add(NODE_SEARCH);
            c.add(NODE_CURSOR_WRAP);
@@ -109,6 +113,29 @@ public class NbOptionsNode extends BeanNode {
     private static class KeypadBindingNode extends BeanNode {
 	public KeypadBindingNode() throws IntrospectionException {
 	    super(new KeypadBindingBean());
+	}    
+    }
+    
+    private static class GeneralNode extends BeanNode {
+	public GeneralNode() throws IntrospectionException {
+	    super(new OptionsBean.General() {
+                @Override
+                protected void put(String name, int val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+                @Override
+                protected void put(String name, String val) {
+                    try {
+                        super.put(name, val);
+                    } catch (PropertyVetoException pve) {
+                        putEx(pve);
+                    }
+                }
+            });
 	}    
     }
     

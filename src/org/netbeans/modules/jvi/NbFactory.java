@@ -57,6 +57,12 @@ final public class NbFactory extends DefaultViFactory {
     }
 
     @Override
+    public Class loadClass(String name) throws ClassNotFoundException {
+        return ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
+            .loadClass(name);
+    }
+
+    @Override
     public boolean isStandalone() {
         return false;
     }

@@ -78,6 +78,8 @@ import org.openide.cookies.InstanceCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
+import org.openide.modules.ModuleInfo;
+import org.openide.modules.SpecificationVersion;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.util.actions.CallableSystemAction;
@@ -158,6 +160,18 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
+
+        for(ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+            if (mi.getCodeNameBase().equals(
+                        "org.netbeans.modules.editor.codetemplates")) {
+                if(mi.getSpecificationVersion()
+                        .compareTo(new SpecificationVersion("1.8.0")) < 0) {
+                    ViManager.HackMap.put("NB-codetemplatesHang", Boolean.TRUE);
+                }
+                break;
+            }
+        }
+
         if(dbgNb != null && dbgNb.getBoolean())
             System.err.println(MOD + "***** restored *****");
         earlyInit();

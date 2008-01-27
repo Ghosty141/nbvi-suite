@@ -3,7 +3,6 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.OptionsBean;
 import com.raelity.jvi.swing.KeyBindingBean;
 import com.raelity.jvi.swing.KeypadBindingBean;
-import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyVetoException;

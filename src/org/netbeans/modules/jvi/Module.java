@@ -413,55 +413,6 @@ public class Module extends ModuleInstall {
         //
         // Some debug commands
         //
-        ColonCommands.register("optionsDump", "optionsDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    ViManager.getViFactory().getPreferences().exportSubtree(os);
-                    ViOutputStream vios = ViManager.createOutputStream(
-                            null, ViOutputStream.OUTPUT, "Preferences");
-                    vios.println(os.toString());
-                    vios.close();
-                    
-                } catch (BackingStoreException ex) {
-                    ex.printStackTrace();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-        ColonCommands.register("optionsDelete", "optionsDelete", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    Preferences prefs = ViManager.getViFactory().getPreferences();
-                    String keys[] = prefs.keys();
-                    for (String key : keys) {
-                        prefs.remove(key);
-                    }
-                    prefs = prefs.node(ViManager.PREFS_KEYS);
-                    keys = prefs.keys();
-                    for (String key : keys) {
-                        prefs.remove(key);
-                    }
-                } catch (BackingStoreException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-        ColonCommands.register("optionDelete", "optionDelete",
-                               new ColonCommands.ColonAction() {
-
-            public void actionPerformed(ActionEvent ev) {
-                ColonEvent cev = (ColonEvent) ev;
-            
-                if(cev.getNArg() == 1) {
-                    String key = cev.getArg(1);
-                    Preferences prefs = ViManager.getViFactory().getPreferences();
-                    prefs.remove(key);
-                } else
-                    Msg.emsg("optionDelete takes exactly one argument");
-            }
-        });
         ColonCommands.register("topcomponentDump", "topcomponentDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Set<TopComponent> s = TopComponent.getRegistry().getOpened();
@@ -1128,7 +1079,7 @@ public class Module extends ModuleInstall {
         } catch(BadLocationException ex) {}
 
         // see if initial conditions warrent bringing up completion
-        if(text.startsWith("e#")) {
+        if(text != null && text.startsWith("e#")) {
             // Wait till combo's ready to go.
             if(ceText.hasFocus())
                 initShowCompletion.focusGained(null);

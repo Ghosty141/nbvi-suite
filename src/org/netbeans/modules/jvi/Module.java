@@ -10,6 +10,7 @@ import com.raelity.jvi.Util;
 import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
@@ -1312,8 +1313,7 @@ public class Module extends ModuleInstall {
             Completion.get().hideAll();
 
             // Go for it
-            Action act = jtc.getKeymap().getAction(
-                    KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
+            Action act = jtc.getKeymap().getAction(CommandLine.EXECUTE_KEY);
             if(act != null)
                 act.actionPerformed(
                     new ActionEvent(jtc, ActionEvent.ACTION_PERFORMED, "\n"));

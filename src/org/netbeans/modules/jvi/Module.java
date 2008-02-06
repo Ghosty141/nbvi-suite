@@ -83,6 +83,7 @@ import org.openide.modules.ModuleInfo;
 import org.openide.modules.SpecificationVersion;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+import org.openide.util.NbPreferences;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.Mode;
@@ -153,9 +154,15 @@ public class Module extends ModuleInstall {
 
     /** @return the module specific preferences.
      */
-    public static Preferences getModulePreferences() {
-        return ViManager.getViFactory().getPreferences()
-                        .userNodeForPackage(Module.class);
+    private static Preferences getModulePreferences() {
+        return ViManager.getViFactory().getPreferences().node("module");
+    }
+    private static boolean isModuleEnabled() {
+        Preferences prefs = ViManager.getViFactory().getPreferences();
+        return prefs.getBoolean(PREF_ENABLED, true);
+    }
+    private static void setModuleEnabled(boolean flag) {
+        getModulePreferences().putBoolean(PREF_ENABLED, flag);
     }
     
     /** called when the module is loaded (at netbeans startup time) */
@@ -179,8 +186,9 @@ public class Module extends ModuleInstall {
             
         JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
 
-        Preferences prefs = getModulePreferences();
-        if(prefs.getBoolean(PREF_ENABLED, true)) {
+        // Preferences prefs = getModulePreferences();
+        // if(prefs.getBoolean(PREF_ENABLED, true))
+        if(isModuleEnabled()) {
             jvi.setSelected(true);
             runInDispatch(true, new RunJViEnable());
         } else {
@@ -1013,7 +1021,8 @@ public class Module extends ModuleInstall {
                         new RunJViDisable().run();
                 }
             });
-            getModulePreferences().putBoolean(PREF_ENABLED, enabled);
+            // getModulePreferences().putBoolean(PREF_ENABLED, enabled);
+            setModuleEnabled(enabled);
         }
         
         @Override

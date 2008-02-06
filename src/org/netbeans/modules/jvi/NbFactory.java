@@ -4,6 +4,7 @@ import com.raelity.jvi.Buffer;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Msg;
+import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.ViFS;
@@ -37,8 +38,10 @@ import org.openide.windows.TopComponent;
 import com.raelity.jvi.ViTextView.TAGOP;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.prefs.BackingStoreException;
 import javax.swing.text.JTextComponent;
 import org.openide.util.Lookup;
+import org.openide.util.NbPreferences;
 
 final public class NbFactory extends DefaultViFactory {
     
@@ -91,26 +94,55 @@ final public class NbFactory extends DefaultViFactory {
     private Preferences prefs;
     @Override
     public Preferences getPreferences() {
-        Preferences retValue = null;
-        
         if(prefs == null) {
-            if(Module.isNb6()) {
+            Preferences jdkPrefs
+                        = Preferences.userRoot().node(ViManager.PREFS_ROOT);
+            if(!jdkPrefs.getBoolean(Options.platformPreferences, false)) {
+                // Use the jdk's Preferences implementation
+                prefs = jdkPrefs;
+            } else {
+                // May use NetBeans platform Preferences implementation
+                // unless it is set to false
+                Preferences platformPrefs
+                        = NbPreferences.forModule(Module.class);
                 try {
-                    Class c = ((ClassLoader)(Lookup.getDefault()
-                                .lookup(ClassLoader.class)))
-                                .loadClass("org.openide.util.NbPreferences");
-                    Method m = c.getMethod("root");
-                    Preferences p = (Preferences)m.invoke(null);
-                    prefs = p.userRoot().node(ViManager.PREFS_ROOT);
-                } catch(ClassNotFoundException ex) {
-                } catch(NoSuchMethodException ex) {
-                } catch(IllegalAccessException ex) {
-                } catch(InvocationTargetException ex) { }
-                //retValue = NbPreferences.forModule(ViManager.class);
-                //retValue = NbPreferences.root()
-                //                  .userRoot().node(ViManager.PREFS_ROOT);
-                //return Preferences.userRoot().node(ViManager.PREFS_ROOT);
+                    platformPrefs.nodeExists("");
+                    // Options.platformPreferences is a boolean,
+                    // if it is empty, then it has never been initialized
+                    // and we should copy over the options from the jdk
+                    // and start using the platform preferences
+                    if(platformPrefs.get(Options.platformPreferences, "")
+                            .equals("")) {
+                        //System.err.println("COPY JVI PREFERENCES");
+                        ViManager.copyPreferences(
+                                    platformPrefs, jdkPrefs, false);
+                        platformPrefs.putBoolean(
+                            Options.platformPreferences, true);
+                    }
+
+                    // Default doesn't matter in following, since this
+                    // must have a value.
+                    boolean usePlatform = platformPrefs.getBoolean(
+                            Options.platformPreferences, false);
+
+                    if(usePlatform) {
+                        prefs = platformPrefs;
+                        //System.err.println("USE PLATFORM PREFERENCES NODE");
+                    } else {
+                        // switching back to the jdk preferences
+                        jdkPrefs.putBoolean(Options.platformPreferences, false);
+                        // leave the platformPrefs side of the value as true,
+                        // so things are ready if/when jdk side is set to true
+                        platformPrefs.putBoolean(
+                                Options.platformPreferences, true);
+                        prefs = jdkPrefs;
+                        //System.err.println("USE JDK PREFERENCES NODE");
+                    }
+                } catch(BackingStoreException ex) {
+                    ex.printStackTrace();
+                }
             }
+
             // If for whatever reason, there aren't preferences at this
             // point, try the superclass
             if(prefs == null)

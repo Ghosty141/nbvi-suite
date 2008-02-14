@@ -16,6 +16,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
@@ -486,7 +487,9 @@ public class NbTextView extends TextView
 
     private static class VisualSelectHighlighter extends BlocksHighlighter {
         private ColorOption selectColorOption;
+        private ColorOption selectFgColorOption;
         private Color selectColor;
+        private Color selectFgColor;
         private AttributeSet selectAttribs;
 
         VisualSelectHighlighter(String name, JEditorPane ep) {
@@ -494,6 +497,8 @@ public class NbTextView extends TextView
 
             selectColorOption
                     = (ColorOption)Options.getOption(Options.selectColor);
+            selectFgColorOption
+                    = (ColorOption)Options.getOption(Options.selectFgColor);
 
             MyHl.putVisual(ep, this);
             if(dbgHL(this))
@@ -514,10 +519,21 @@ public class NbTextView extends TextView
         @Override
         protected AttributeSet getAttribs() {
             // NEEDSWORK: could listen to option change.
-            if(!selectColorOption.getColor().equals(selectColor)) {
+            // NEEDSWORK: using "!=" in following instead of '.equals'
+            // to avoid messy 'null' handling (listener would fix that)
+            if(selectColorOption.getColor() != selectColor
+                    || selectFgColorOption.getColor() != selectFgColor) {
                 selectColor = selectColorOption.getColor();
+                selectFgColor = selectFgColorOption.getColor();
+                List<Object> l = new ArrayList<Object>();
+                l.add(StyleConstants.Background);
+                l.add(selectColor);
+                if(selectFgColor != null) {
+                    l.add(StyleConstants.Foreground);
+                    l.add(selectFgColor);
+                }
                 selectAttribs = AttributesUtilities.createImmutable(
-                        StyleConstants.Background, selectColor);
+                        l.toArray());
             }
             return selectAttribs;
         }

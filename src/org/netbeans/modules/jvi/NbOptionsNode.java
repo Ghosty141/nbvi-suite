@@ -3,8 +3,12 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.OptionsBean;
 import com.raelity.jvi.swing.KeyBindingBean;
 import com.raelity.jvi.swing.KeypadBindingBean;
+import java.awt.Color;
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import java.beans.PropertyEditor;
+import java.beans.PropertyEditorManager;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,28 +38,65 @@ public class NbOptionsNode extends BeanNode {
     }
     
     public NbOptionsNode() throws IntrospectionException {
-	super(new OptionsBean.Platform() {
-            @Override
-                  protected void put(String name, int val) {
-                      try {
-                          super.put(name, val);
-                      } catch (PropertyVetoException pve) {
-                          putEx(pve);
-                      }
-                  }
-            @Override
-                  protected void put(String name, String val) {
-                      try {
-                          super.put(name, val);
-                      } catch (PropertyVetoException pve) {
-                          putEx(pve);
-                      }
-                  }
-              },
-              new OptionsSubnodes());
-    }    
+        super(new MainOptionsBean(), new MainOptionsSubnodes());
+        // String[] a = PropertyEditorManager.getEditorSearchPath();
+        // PropertyEditor b = PropertyEditorManager.findEditor(Color.class);
+        // Node[] n = getChildren().getNodes();
+        // System.err.println("OK1 " + n.length);
+    }
+
+    @Override
+    protected void createProperties(Object bean, BeanInfo info) {
+        super.createProperties(bean, info);
+        // Node[] n = getChildren().getNodes();
+        // System.err.println("OK2 " + n.length);
+    }
     
-    private static class OptionsSubnodes extends Children.Keys {
+    /**
+     * The properties accessed from the root node of the options tree.
+     * 
+     * VERY STRANGE: the createPropertyDescriptor method never gets called.
+     * The one in OptionsBeanBase gets called directly
+     * with "this" OptionsBean.Platform. Probably some strange class loader
+     * bug in netbeans that has to do with introspection. My guess is that
+     * it is searching up from BeanInfo and grabbing the first constructor
+     * that has no arguments.
+     */
+    private static class MainOptionsBean extends OptionsBean.Platform {
+
+        @Override
+        protected PropertyDescriptor createPropertyDescriptor(String optName,
+                                                              String methodName,
+                                                              Class clazz)
+        throws IntrospectionException {
+            PropertyDescriptor pd
+                   = super.createPropertyDescriptor(optName, methodName, clazz);
+            // if(pd.getPropertyType() == Color.class) {
+            //     System.err.println("PROP: " + optName);
+            //     pd.setValue("inplaceEditor", "no-such-class");
+            // }
+            return pd;
+        }
+
+        @Override
+        protected void put(String name, int val) {
+            try {
+                super.put(name, val);
+            } catch (PropertyVetoException pve) {
+                putEx(pve);
+            }
+        }
+        @Override
+        protected void put(String name, String val) {
+            try {
+                super.put(name, val);
+            } catch (PropertyVetoException pve) {
+                putEx(pve);
+            }
+        }
+    }
+
+    private static class MainOptionsSubnodes extends Children.Keys {
         @Override
         protected Node[] createNodes(Object object) {
             Node[] nodes = new Node[1];

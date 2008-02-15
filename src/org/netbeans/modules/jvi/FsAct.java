@@ -43,7 +43,17 @@ public class FsAct {
         = "Actions/System/org-netbeans-core-actions-JumpNextAction.instance";
     public static final String JUMP_PREV
         = "Actions/System/org-netbeans-core-actions-JumpPrevAction.instance";
+
+    public static final String WORD_MATCH_NEXT
+        = "Menu/Source/org-netbeans-modules-editor-"
+        + "MainMenuAction$WordMatchNextAction.instance";
+    public static final String WORD_MATCH_PREV
+        = "Menu/Source/org-netbeans-modules-editor-"
+        + "MainMenuAction$WordMatchPrevAction.instance";
     
+    //
+    // refactoring
+    //
     public static final String RF_RENAME
         = "Menu/Refactoring/RenameAction.instance";
     public static final String RF_MOVE
@@ -52,21 +62,21 @@ public class FsAct {
         = "Menu/Refactoring/CopyAction.instance";
     public static final String RF_SAFE_DELETE
         = "Menu/Refactoring/SafeDeleteAction.instance";
-    
+    //
     public static final String RF_CHANGE_PARAMETERS
         = "Menu/Refactoring/"
         + "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance";
     public static final String RF_ENCAPSULATE_FIELD
         = "Menu/Refactoring/"
         + "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance";
-    
+    //
     public static final String RF_PULL_UP
         = "Menu/Refactoring/"
         + "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance";
     public static final String RF_PUSH_DOWN
         = "Menu/Refactoring/"
         + "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance";
-    
+    //
     public static final String RF_INTRODUCE_VARIABLE
         = "Actions/Refactoring/"
         + "org-netbeans-modules-java-hints-introduce-IntroduceVariableAction.instance";
@@ -85,8 +95,9 @@ public class FsAct {
     //      MK_P_xx current projet
     //      MK_F_xx current file
     // note the thing-type vs operation matrix is sparse
-
-    // Main project
+    //
+    // Make for main project
+    // 
     public static final String MK_M_BUILD
         = "Actions/Project/"
         + "org-netbeans-modules-project-ui-BuildMainProject.instance";
@@ -105,8 +116,9 @@ public class FsAct {
     public static final String MK_M_TEST = null;
     public static final String MK_M_DBGTEST = null;
     public static final String MK_M_DOC = null;
-
-    // Current project
+    //
+    // Make for current project
+    //
     public static final String MK_P_BUILD
         = "Actions/Project/"
         + "org-netbeans-modules-project-ui-BuildProject.instance";
@@ -127,8 +139,9 @@ public class FsAct {
     public static final String MK_P_DOC
         = "Actions/Project/"
         + "org-netbeans-modules-project-ui-JavadocProject.instance";
-                
-    // Current file actions
+    //
+    // Make for current file actions
+    //
     public static final String MK_F_BUILD
         = "Actions/Project/"
         + "org-netbeans-modules-project-ui-CompileSingle.instance";

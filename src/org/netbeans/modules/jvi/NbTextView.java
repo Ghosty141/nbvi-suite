@@ -11,6 +11,7 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
+import com.raelity.jvi.ViTextView.WMOP;
 import com.raelity.jvi.swing.TextView;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -207,6 +208,24 @@ public class NbTextView extends TextView
                 break;
             case FOLDOP_OPEN_ALL:
                 action = NbEditorKit.expandAllFoldsAction;
+                break;
+        }
+        if(action != null) {
+            ops.xact(action);
+        } else {
+            Util.vim_beep();
+        }
+    }
+
+    @Override
+    public void wordMatchOperation(WMOP op) {
+        String action = null;
+        switch(op) {
+            case NEXT_WORD_MATCH:
+                action = BaseKit.wordMatchNextAction;
+                break;
+            case PREV_WORD_MATCH:
+                action = BaseKit.wordMatchPrevAction;
                 break;
         }
         if(action != null) {

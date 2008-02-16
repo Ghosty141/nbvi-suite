@@ -1,6 +1,9 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.Options;
 import com.raelity.jvi.OptionsBean;
+import com.raelity.jvi.OptionsBeanBase;
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.KeyBindingBean;
 import com.raelity.jvi.swing.KeypadBindingBean;
 import java.awt.Color;
@@ -39,45 +42,32 @@ public class NbOptionsNode extends BeanNode {
     
     public NbOptionsNode() throws IntrospectionException {
         super(new MainOptionsBean(), new MainOptionsSubnodes());
-        // String[] a = PropertyEditorManager.getEditorSearchPath();
-        // PropertyEditor b = PropertyEditorManager.findEditor(Color.class);
-        // Node[] n = getChildren().getNodes();
-        // System.err.println("OK1 " + n.length);
     }
 
-    @Override
-    protected void createProperties(Object bean, BeanInfo info) {
-        super.createProperties(bean, info);
-        // Node[] n = getChildren().getNodes();
-        // System.err.println("OK2 " + n.length);
+    static PropertyDescriptor createPropertyDescriptor(String optName,
+                                                            String methodName,
+                                                            Class clazz)
+    throws IntrospectionException {
+        PropertyDescriptor pd
+                = OptionsBeanBase.createPropertyDescriptor(
+                                        optName, methodName, clazz);
+        //
+        // tweak some things
+        //
+        if(optName.equals(Options.selectFgColor))
+            pd.setHidden(true);
+
+        // if(pd.getPropertyType() == Color.class) {
+        //     System.err.println("PROP: " + optName);
+        //     //pd.setValue("inplaceEditor", "no-such-class");
+        // }
+        return pd;
     }
     
     /**
      * The properties accessed from the root node of the options tree.
-     * 
-     * VERY STRANGE: the createPropertyDescriptor method never gets called.
-     * The one in OptionsBeanBase gets called directly
-     * with "this" OptionsBean.Platform. Probably some strange class loader
-     * bug in netbeans that has to do with introspection. My guess is that
-     * it is searching up from BeanInfo and grabbing the first constructor
-     * that has no arguments.
      */
     private static class MainOptionsBean extends OptionsBean.Platform {
-
-        @Override
-        protected PropertyDescriptor createPropertyDescriptor(String optName,
-                                                              String methodName,
-                                                              Class clazz)
-        throws IntrospectionException {
-            PropertyDescriptor pd
-                   = super.createPropertyDescriptor(optName, methodName, clazz);
-            // if(pd.getPropertyType() == Color.class) {
-            //     System.err.println("PROP: " + optName);
-            //     pd.setValue("inplaceEditor", "no-such-class");
-            // }
-            return pd;
-        }
-
         @Override
         protected void put(String name, int val) {
             try {
@@ -307,13 +297,16 @@ public class NbOptionsNode extends BeanNode {
             PropertyDescriptor d02 = null;
             PropertyDescriptor d03 = null;
             try {
-                d01 = createPropertyDescriptor(Module.DBG_MODULE,
+                d01 = ViManager.getViFactory()
+                     .createPropertyDescriptor(Module.DBG_MODULE,
                                                GETSET_DBG_MODULE,
                                                NbDebugOptions.class);
-                d02 = createPropertyDescriptor(Module.DBG_TC,
+                d02 = ViManager.getViFactory()
+                     .createPropertyDescriptor(Module.DBG_TC,
                                                GETSET_DBG_TC,
                                                NbDebugOptions.class);
-                d03 = createPropertyDescriptor(Module.DBG_HL,
+                d03 = ViManager.getViFactory()
+                     .createPropertyDescriptor(Module.DBG_HL,
                                                GETSET_DBG_HL,
                                                NbDebugOptions.class);
             } catch (IntrospectionException ex) {

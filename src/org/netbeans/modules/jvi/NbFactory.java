@@ -15,6 +15,8 @@ import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Container;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -253,6 +255,15 @@ final public class NbFactory extends DefaultViFactory {
         // Don't want jVi keys treated as options
         a.putValue(BaseAction.NO_KEYBINDING, Boolean.TRUE);
         return a;
+    }
+
+    @Override
+    public PropertyDescriptor createPropertyDescriptor(String optName,
+                                                       String methodName,
+                                                       Class clazz)
+    throws IntrospectionException {
+        return NbOptionsNode.createPropertyDescriptor(
+                optName, methodName, clazz);
     }
 
     @Override

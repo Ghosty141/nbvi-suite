@@ -2,17 +2,20 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
 import com.raelity.jvi.G;
+import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
 import com.raelity.jvi.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViBuffer;
+import com.raelity.jvi.ViFPOS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
 import com.raelity.jvi.swing.TextView;
+import com.raelity.text.TextUtil.MySegment;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
@@ -144,6 +147,98 @@ public class NbTextView extends TextView
         ops.init(editorPane);
     }
     
+    /**
+     * open_line: Add a new line within, below or above the current line.
+     * <p>
+     * VREPLACE mode not supported.
+     * </p><p>
+     * For insert/replace put the newline wherever the cursor is. Otherwise,
+     * create an empty line either before or after the current line, according
+     * to dir.
+     * </p><p>
+     * This is made messy by auto indent, guarded text, code folding
+     * and end of file handling.
+     * Consider a line, cursor shown as '|'
+     * <pre>
+     *     line1|\n
+     *     line2\n
+     * </pre>
+     * This shows the simplest way to add a new line after the "line1",
+     * auto-indent works fine and this positioning also works if line1 was the
+     * last line of the file. But, consider the case where the cursor was on
+     * line2 and the "O" command is given. Line 1 might be
+     * guarded/write-protected in which case we generate an error. Also,
+     * if line1 is the end of a fold, then the fold gets opened. So instead
+     * we need to start with the cursor positioned as in
+     * <pre>
+     *     line1\n
+     * |   line2\n
+     * </pre>
+     * Now stuff a '\n' directly into the document (not a newline action)
+     * <pre>
+     *     line1\n
+     *
+     * |   line2\n
+     * </pre>
+     * and the middle line has no indent. So we need to put the cursor back on
+     * the middle line and do an indent and then finally we get
+     *     line1\n
+     *     |
+     *     line2\n
+     * </p>
+     */
+    @Override
+    public void openNewLine(NLOP op) {
+        final ViFPOS cursor = getWCursor();
+        if(op == NLOP.NL_BACKWARD && cursor.getLine() == 1) {
+            // Special case if BACKWARD and at first line of document.
+            // set the caret position to 0 so that insert line on first line
+            // works as well, set position just before new line of first line
+            setCaretPosition(0);
+            insertNewLine();
+            
+            MySegment seg = getBuffer().getLineSegment(1);
+            setCaretPosition(0 + Misc.coladvanceColumnIndex(MAXCOL, seg));
+            //cursor.setPosition(1, coladvanceColumnIndex(MAXCOL, seg));
+            return;
+        }
+        
+        // position cursor according to dir, probably an 'O' or 'o' command
+        int line;
+        int offset;
+        boolean afterEOF = false;
+        if(op == NLOP.NL_FORWARD) {
+            // after the current line, but since we might be sitting on
+            // a fold,
+            offset = G.curwin.getBufferLineOffset(
+                    G.curwin.getCoordLine(cursor.getLine()) + 1);
+            if(offset > getBuffer().getLength()) {
+                afterEOF = true;
+                line = 0; // dont' care
+            } else {
+                line = getBuffer().getLineNumber(offset);
+            }
+        } else {
+            // before the current line
+            offset = getBuffer()
+                        .getLineStartOffsetFromOffset(cursor.getOffset());
+            line = cursor.getLine();
+        }
+        
+        if(afterEOF) {
+            offset--;
+            G.curwin.setCaretPosition(offset);
+            G.curwin.insertNewLine();
+            return;
+        }
+        
+        // offset is after the newline where insert happens
+        G.curwin.setCaretPosition(offset);
+        //G.curwin.insertNewLine();
+        getBuffer().insertText(offset, "\n");
+        setCaretPosition(offset);
+        getBuffer().reindent(line, 1);
+    }
     /**
      * Find matching brace for char at the cursor
      */

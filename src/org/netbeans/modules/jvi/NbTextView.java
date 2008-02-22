@@ -1,6 +1,7 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Buffer;
+import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
@@ -188,19 +189,21 @@ public class NbTextView extends TextView
      * </p>
      */
     @Override
-    public void openNewLine(NLOP op) {
+    public boolean openNewLine(NLOP op) {
         final ViFPOS cursor = getWCursor();
         if(op == NLOP.NL_BACKWARD && cursor.getLine() == 1) {
             // Special case if BACKWARD and at first line of document.
             // set the caret position to 0 so that insert line on first line
             // works as well, set position just before new line of first line
+            if(!Edit.canEdit(this, getBuffer(), 0))
+                return false;
             setCaretPosition(0);
             insertNewLine();
             
             MySegment seg = getBuffer().getLineSegment(1);
             setCaretPosition(0 + Misc.coladvanceColumnIndex(MAXCOL, seg));
             //cursor.setPosition(1, coladvanceColumnIndex(MAXCOL, seg));
-            return;
+            return true;
         }
         
         // position cursor according to dir, probably an 'O' or 'o' command
@@ -227,17 +230,22 @@ public class NbTextView extends TextView
         
         if(afterEOF) {
             offset--;
+            if(!Edit.canEdit(this, getBuffer(), offset))
+                return false;
             G.curwin.setCaretPosition(offset);
             G.curwin.insertNewLine();
-            return;
+            return true;
         }
         
-        // offset is after the newline where insert happens
+        // offset is where insert happens
+        if(!Edit.canEdit(this, getBuffer(), offset))
+            return false;
         G.curwin.setCaretPosition(offset);
         //G.curwin.insertNewLine();
         getBuffer().insertText(offset, "\n");
         setCaretPosition(offset);
         getBuffer().reindent(line, 1);
+        return true;
     }
     /**
      * Find matching brace for char at the cursor

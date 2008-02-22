@@ -34,6 +34,7 @@ import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseDocumentEvent;
+import org.netbeans.editor.GuardedDocument;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.NbEditorKit;
@@ -205,6 +206,15 @@ public class NbBuffer extends DefaultBuffer {
     //
     // Things that go bump in the document
     //
+
+    @Override
+    public boolean isGuarded(int offset) {
+        boolean isGuarded = false;
+        if(getDoc() instanceof GuardedDocument) {
+            return ((GuardedDocument)getDoc()).isPosGuarded(offset);
+        }
+        return isGuarded;
+    }
 
     @Override
     protected String getRemovedText(DocumentEvent e) {

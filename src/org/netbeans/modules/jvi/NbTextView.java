@@ -34,6 +34,9 @@ import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import org.netbeans.api.editor.fold.Fold;
+import org.netbeans.api.editor.fold.FoldHierarchy;
+import org.netbeans.api.editor.fold.FoldUtilities;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.AttributesUtilities;
@@ -297,19 +300,19 @@ public class NbTextView extends TextView
     }
     
     @Override
-    public void foldOperation(int op) {
+    public void foldOperation(FOLDOP op) {
         String action = null;
         switch(op) {
-            case FOLDOP_CLOSE:
+            case CLOSE:
                 action = NbEditorKit.collapseFoldAction;
                 break;
-            case FOLDOP_OPEN:
+            case OPEN:
                 action = NbEditorKit.expandFoldAction;
                 break;
-            case FOLDOP_CLOSE_ALL:
+            case CLOSE_ALL:
                 action = NbEditorKit.collapseAllFoldsAction;
                 break;
-            case FOLDOP_OPEN_ALL:
+            case OPEN_ALL:
                 action = NbEditorKit.expandAllFoldsAction;
                 break;
         }
@@ -318,6 +321,55 @@ public class NbTextView extends TextView
         } else {
             Util.vim_beep();
         }
+    }
+    
+    @Override
+    public void foldOperation(FOLDOP op, final int offset) {
+        boolean error = false;
+        switch(op) {
+            case CLOSE:
+                error = true;
+                break;
+            case OPEN:
+                break;
+            case CLOSE_ALL:
+                error = true;
+                break;
+            case OPEN_ALL:
+                error = true;
+                break;
+        }
+
+        if(error) {
+            Util.vim_beep();
+            return;
+        }
+
+        // NOTE: OPEN is the only thing supported
+
+        final FoldHierarchy fh = FoldHierarchy.get(getEditorComponent());
+
+        getEditorComponent().getDocument().render(new Runnable() {
+            public void run() {
+                fh.lock();
+                try {
+                    Fold collapsed = FoldUtilities.findCollapsedFold(
+                            fh, offset, offset);
+                    // int start = collapsed.getStartOffset();
+                    // int end = collapsed.getEndOffset();
+                    // System.err.println(String.format("%s < %s < %s",
+                    //         start, offset, end));
+                    if (collapsed != null) {
+                        // if(!(start < offset && offset < end)) {
+                        //     System.err.println("FOLD NOT IN RANGE");
+                        // }
+                        fh.expand(collapsed);
+                    }
+                } finally {
+                    fh.unlock();
+                }
+            }
+        });
     }
 
     @Override

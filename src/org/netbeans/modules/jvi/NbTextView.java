@@ -327,16 +327,13 @@ public class NbTextView extends TextView
     public void foldOperation(FOLDOP op, final int offset) {
         boolean error = false;
         switch(op) {
-            case CLOSE:
-                error = true;
-                break;
             case OPEN:
-                break;
+            case CLOSE:
+            case OPEN_ALL:
             case CLOSE_ALL:
                 error = true;
                 break;
-            case OPEN_ALL:
-                error = true;
+            case MAKE_VISIBLE:
                 break;
         }
 
@@ -345,25 +342,34 @@ public class NbTextView extends TextView
             return;
         }
 
-        // NOTE: OPEN is the only thing supported
+        // NOTE: MAKE_VISIBLE is the only thing supported
 
         final FoldHierarchy fh = FoldHierarchy.get(getEditorComponent());
 
+        // get the fold containing the offset,
+        // expand it and all its parents
         getEditorComponent().getDocument().render(new Runnable() {
             public void run() {
                 fh.lock();
                 try {
-                    Fold collapsed = FoldUtilities.findCollapsedFold(
-                            fh, offset, offset);
-                    // int start = collapsed.getStartOffset();
-                    // int end = collapsed.getEndOffset();
-                    // System.err.println(String.format("%s < %s < %s",
-                    //         start, offset, end));
-                    if (collapsed != null) {
-                        // if(!(start < offset && offset < end)) {
-                        //     System.err.println("FOLD NOT IN RANGE");
-                        // }
-                        fh.expand(collapsed);
+                    // Fold f = FoldUtilities.findCollapsedFold(
+                    //         fh, offset, offset);
+                    Fold f = FoldUtilities.findOffsetFold(fh, offset);
+                    while(true) {
+                        if (f == null) {
+                            // System.err.println("NULL FOLD");
+                            break;
+                        } else {
+                            // int start = f.getStartOffset();
+                            // int end = f.getEndOffset();
+                            // System.err.println(String.format("%s < %s < %s",
+                            //         start, offset, end));
+                            // if(!(start < offset && offset < end)) {
+                            //     System.err.println("FOLD NOT IN RANGE");
+                            // }
+                            fh.expand(f);
+                        }
+                        f = f.getParent();
                     }
                 } finally {
                     fh.unlock();

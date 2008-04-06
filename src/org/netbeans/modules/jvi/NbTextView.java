@@ -93,11 +93,11 @@ public class NbTextView extends TextView
     public void shutdown() {
         super.shutdown();
         if(visualSelectHighlighter != null) {
-            visualSelectHighlighter.discard();
+            visualSelectHighlighter.goIdle();
             visualSelectHighlighter = null;
         }
         if(searchResultsHighlighter != null) {
-            searchResultsHighlighter.discard();
+            searchResultsHighlighter.goIdle();
             searchResultsHighlighter = null;
         }
     }
@@ -528,8 +528,6 @@ public class NbTextView extends TextView
         return Module.dbgHL.getBoolean();
     }
 
-    // NEEDSWORK: there is no guarenteed way implemented to hook up a
-    // highlighter to the text view. Need to set up a map of ep-->highli
     private void hookupHighlighter(String name, BlocksHighlighter h) {
         if(isShutdown())
             return;
@@ -795,8 +793,8 @@ public class NbTextView extends TextView
             this.ep = ep;
             this.document = ep.getDocument();
             mygen = ++gen;
-            
-            // Let the bag update first...
+
+            // Let the bag update first... (it's doc listener)
             this.bag = new OffsetsBag(document);
             this.bag.addHighlightsChangeListener(this);
             
@@ -819,6 +817,10 @@ public class NbTextView extends TextView
             bag.removeHighlightsChangeListener(this);
             bag.discard();
             isDiscarded = true;
+        }
+
+        protected void goIdle() {
+            bag.clear();
         }
 
         protected abstract int[] getBlocks(

@@ -18,6 +18,11 @@ import java.util.List;
  * @author erra
  */
 public class FsAct {
+    public static final String UNDO
+        = "Actions/Edit/org-openide-actions-UndoAction.instance";
+    public static final String REDO
+        = "Actions/Edit/org-openide-actions-RedoAction.instance";
+
     public static final String GO_TYPE
         = "Actions/Edit/org-netbeans-modules-jumpto-type-GoToType.instance";
 
@@ -165,6 +170,9 @@ public class FsAct {
     public static List<String> getFsActList() {
         List<String> l = new ArrayList<String>();
         
+        l.add(UNDO);
+        l.add(REDO);
+
         l.add(GO_TYPE);
 
         l.add(TAB_NEXT);

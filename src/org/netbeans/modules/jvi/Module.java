@@ -158,7 +158,7 @@ public class Module extends ModuleInstall {
         return ViManager.getViFactory().getPreferences().node("module");
     }
     private static boolean isModuleEnabled() {
-        Preferences prefs = ViManager.getViFactory().getPreferences();
+        Preferences prefs = getModulePreferences();
         return prefs.getBoolean(PREF_ENABLED, true);
     }
     private static void setModuleEnabled(boolean flag) {
@@ -186,8 +186,6 @@ public class Module extends ModuleInstall {
             
         JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
 
-        // Preferences prefs = getModulePreferences();
-        // if(prefs.getBoolean(PREF_ENABLED, true))
         if(isModuleEnabled()) {
             jvi.setSelected(true);
             runInDispatch(true, new RunJViEnable());
@@ -1021,7 +1019,6 @@ public class Module extends ModuleInstall {
                         new RunJViDisable().run();
                 }
             });
-            // getModulePreferences().putBoolean(PREF_ENABLED, enabled);
             setModuleEnabled(enabled);
         }
         

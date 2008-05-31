@@ -17,6 +17,7 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.DefaultBuffer;
 import com.raelity.text.TextUtil;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,7 +29,9 @@ import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoableEdit;
+import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.modules.editor.indent.api.Indent;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
@@ -262,12 +265,12 @@ public class NbBuffer extends DefaultBuffer {
 
     @Override
     protected void redoOperation() {
-        undoOrRedo("Redo", NbEditorKit.redoAction);
+        undoOrRedo("Redo", FsAct.REDO);
     }
     
     @Override
     protected void undoOperation() {
-        undoOrRedo("Undo", NbEditorKit.undoAction);
+        undoOrRedo("Undo", FsAct.UNDO);
     }
     
     private void undoOrRedo(String tag, String action) {
@@ -284,7 +287,12 @@ public class NbBuffer extends DefaultBuffer {
         
         isUndoChange(); // clears the flag
         int n = getLineCount();
-        tv.getOps().xact(action);
+        //tv.getOps().xact(action);
+        ActionEvent e = new ActionEvent(tv.getEditorComponent(),
+                                        ActionEvent.ACTION_PERFORMED,
+                                        "");
+        Module.execFileSystemAction(action, e);
+        
         if(isUndoChange()) {
             // NEEDSWORK: check if need newline adjust
             tv.setCaretPosition(getUndoOffset());

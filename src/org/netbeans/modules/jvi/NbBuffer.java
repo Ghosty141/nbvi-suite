@@ -265,12 +265,14 @@ public class NbBuffer extends DefaultBuffer {
 
     @Override
     protected void redoOperation() {
-        undoOrRedo("Redo", FsAct.REDO);
+        //undoOrRedo("Redo", FsAct.REDO);
+        undoOrRedo("Redo", NbEditorKit.redoAction);
     }
     
     @Override
     protected void undoOperation() {
-        undoOrRedo("Undo", FsAct.UNDO);
+        //undoOrRedo("Undo", FsAct.UNDO);
+        undoOrRedo("Undo", NbEditorKit.undoAction);
     }
     
     private void undoOrRedo(String tag, String action) {
@@ -287,11 +289,11 @@ public class NbBuffer extends DefaultBuffer {
         
         isUndoChange(); // clears the flag
         int n = getLineCount();
-        //tv.getOps().xact(action);
-        ActionEvent e = new ActionEvent(tv.getEditorComponent(),
-                                        ActionEvent.ACTION_PERFORMED,
-                                        "");
-        Module.execFileSystemAction(action, e);
+        tv.getOps().xact(action);
+        ///// ActionEvent e = new ActionEvent(tv.getEditorComponent(),
+        /////                                 ActionEvent.ACTION_PERFORMED,
+        /////                                 "");
+        ///// Module.execFileSystemAction(action, e);
         
         if(isUndoChange()) {
             // NEEDSWORK: check if need newline adjust

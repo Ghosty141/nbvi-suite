@@ -50,7 +50,7 @@ final public class NbFactory extends DefaultViFactory {
     NbFS fs = new NbFS();
     
     NbFactory() {
-        super((CommandLine)null);
+        super();
     }
     
     static Set<JEditorPane> getEditorSet() {

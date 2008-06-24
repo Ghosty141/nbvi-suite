@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE editor-preferences PUBLIC "-//NetBeans//DTD Editor Preferences 1.0//EN" "http://www.netbeans.org/dtds/EditorPreferences-1_0.dtd">
+
+<editor-preferences>
+    <entry javaType="methodvalue"
+           name="kit-install-action-name-list"
+           value="org.netbeans.modules.jvi.Module.getKitInstallActionNameList" />
+    <entry javaType="methodvalue"
+           name="custom-action-list"
+           value="org.netbeans.modules.jvi.Module.getCustomActionList" />
+</editor-preferences>

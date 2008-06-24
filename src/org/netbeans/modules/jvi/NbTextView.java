@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.prefs.Preferences;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -42,9 +43,8 @@ import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.FontColorNames;
 import org.netbeans.api.editor.settings.FontColorSettings;
+import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
-import org.netbeans.editor.Settings;
-import org.netbeans.editor.SettingsNames;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
@@ -117,9 +117,9 @@ public class NbTextView extends TextView
     public void viOptionSet(ViTextView tv, String name) {
         if("w_p_nu".equals(name)) {
             showLineNumbers = w_p_nu;
-            Settings.setValue(BaseKit.class,
-                              SettingsNames.LINE_NUMBER_VISIBLE,
-                              w_p_nu);
+            String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+            Preferences prefs = MimeLookup.getLookup(mimeType).lookup(Preferences.class);
+            prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
             Options.SetCommand.syncAllInstances("w_p_nu");
         }
     }
@@ -572,7 +572,7 @@ public class NbTextView extends TextView
     
     // Map so that text view can get hold of the highlighter
     // shortly after textview creation.
-    private static Map<JEditorPane, MyHl> hlMap
+    private static final Map<JEditorPane, MyHl> hlMap
             = new WeakHashMap<JEditorPane, MyHl>();
 
     private static class MyHl {

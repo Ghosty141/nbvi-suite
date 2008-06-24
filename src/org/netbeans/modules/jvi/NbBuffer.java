@@ -17,10 +17,10 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.DefaultBuffer;
 import com.raelity.text.TextUtil;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.prefs.Preferences;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -29,21 +29,17 @@ import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoableEdit;
-import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.modules.editor.indent.api.Indent;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.GuardedDocument;
 import org.netbeans.editor.GuardedException;
-import org.netbeans.modules.editor.FormatterIndentEngine;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
-import org.netbeans.modules.editor.options.BaseOptions;
-import org.openide.text.IndentEngine;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -104,27 +100,19 @@ public class NbBuffer extends DefaultBuffer {
 
     @Override
     public void viOptionSet(ViTextView tv, String name) {
-        String mimeType = tv.getEditorComponent().getContentType();
-        BaseOptions baseOptions = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(BaseOptions.class);
-        FormatterIndentEngine fie = null;
-        IndentEngine ie = baseOptions.getIndentEngine();
-        if(ie instanceof FormatterIndentEngine)
-            fie = (FormatterIndentEngine) ie;
+        // String mimeType = tv.getEditorComponent().getContentType();
+        String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        Preferences prefs = MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(Preferences.class);
 
         TabWarning.setInternalAction(true);
         try {
             
             if("b_p_ts".equals(name)) {
-                baseOptions.setTabSize(b_p_ts);
+                prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
             } else if("b_p_sw".equals(name)) {
-                baseOptions.setSpacesPerTab(b_p_sw);
-                if(fie != null)
-                    fie.setSpacesPerTab(b_p_sw); // space per tab ??????
+                prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
             } else if("b_p_et".equals(name)) {
-                baseOptions.setExpandTabs(b_p_et);
-                if(fie != null)
-                    fie.setExpandTabs(b_p_et);
+                prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
             }
         } finally {
             TabWarning.setInternalAction(false);
@@ -133,22 +121,15 @@ public class NbBuffer extends DefaultBuffer {
     
     @Override
     public void activateOptions(ViTextView tv) {
-        String mimeType = tv.getEditorComponent().getContentType();
-        BaseOptions baseOptions = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(BaseOptions.class);
+        // String mimeType = tv.getEditorComponent().getContentType();
+        String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        Preferences prefs = MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(Preferences.class);
 
         TabWarning.setInternalAction(true);
         try {
-            baseOptions.setExpandTabs(b_p_et);
-            baseOptions.setSpacesPerTab(b_p_sw);
-            baseOptions.setTabSize(b_p_ts);
-            
-            IndentEngine ie = baseOptions.getIndentEngine();
-            if(ie instanceof FormatterIndentEngine) {
-                FormatterIndentEngine fie = (FormatterIndentEngine) ie;
-                fie.setExpandTabs(b_p_et);
-                fie.setSpacesPerTab(b_p_sw);
-            }
+            prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
+            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
+            prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
         } finally {
             TabWarning.setInternalAction(false);
         }

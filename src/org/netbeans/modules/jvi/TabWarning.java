@@ -15,12 +15,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
+import java.util.prefs.Preferences;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import org.netbeans.editor.Settings;
-import org.netbeans.editor.SettingsChangeEvent;
-import org.netbeans.editor.SettingsChangeListener;
-import org.netbeans.editor.SettingsNames;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.openide.windows.WindowManager;
 
 /**
@@ -79,31 +81,36 @@ public class TabWarning extends JDialog {
     }
 
     private static TabWarning tabWarning;
-    private static SettingsChangeListener scl;
+    private static Preferences prefs;
+    private static PreferenceChangeListener scl;
 
-    private static MutableBoolean isInternalSetting = new MutableBoolean();
+    private static final MutableBoolean isInternalSetting = new MutableBoolean();
 
     static void setTabWarning(boolean enableFlag) {
         if(enableFlag) {
             if(scl == null) {
                 scl = new TabSetListener();
-                Settings.addSettingsChangeListener(scl);
+                prefs = MimeLookup.getLookup(MimePath.EMPTY).lookup(Preferences.class);
+                prefs.addPreferenceChangeListener(scl);
             }
         } else {
             if(scl != null) {
-                Settings.removeSettingsChangeListener(scl);
+                prefs.removePreferenceChangeListener(scl);
+                prefs = null;
                 scl= null;
             }
         }
     }
 
-    private static class TabSetListener implements SettingsChangeListener {
-        public void settingsChange(SettingsChangeEvent e) {
+    private static class TabSetListener implements PreferenceChangeListener {
+        public void preferenceChange(PreferenceChangeEvent evt) {
+            String settingName = evt == null ? null : evt.getKey();
             if(!isInternalSetting.getValue()
-               && (SettingsNames.SPACES_PER_TAB.equals(e.getSettingName())
-                   || SettingsNames.EXPAND_TABS.equals(e.getSettingName())
-                   || SettingsNames.TAB_SIZE.equals(e.getSettingName()))
-               && e.getOldValue() != null) {
+               && (settingName == null
+                   || SimpleValueNames.SPACES_PER_TAB.equals(settingName)
+                   || SimpleValueNames.EXPAND_TABS.equals(settingName)
+                   || SimpleValueNames.TAB_SIZE.equals(settingName))
+               ) {
 
                 // Note there may be lots of events, but only one dialog
                 if(tabWarning == null) {
@@ -257,7 +264,7 @@ public class TabWarning extends JDialog {
             public void run() {
                 TabWarning dialog = new TabWarning(new javax.swing.JFrame(), true);
                 dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    public void windowClosing(java.awt.event.WindowEvent e) {
+                    public @Override void windowClosing(java.awt.event.WindowEvent e) {
                         System.exit(0);
                     }
                 });

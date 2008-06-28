@@ -529,7 +529,7 @@ public class Module extends ModuleInstall {
         return m.get(clazz);
     }
     
-    static void updateKeymap() {
+    private static void updateKeymap() {
         if (KB_INJECTOR != null) {
             KB_INJECTOR.forceKeymapRefresh();
         } // else no keymap has been loaded yet
@@ -541,27 +541,29 @@ public class Module extends ModuleInstall {
         l = Collections.singletonList(JVI_INSTALL_ACTION_NAME);
         return l;
     }
-    
-    // "custom-action-list" setting value factory
-    public static List<Action> getCustomActionList() {
-        List <Action> l;
-        l = KeyBinding.getActionsList();
-        return l;
+
+    // invoked by filesytem for adding actions to "Editor/Actions"
+    public static Action createKBA(Map params) {
+        return KeyBinding.getAction((String)params.get("action-name"));
     }
+    
 
+    //
     // registered in META-INF/services
+    //
+    // http://www.netbeans.org/issues/show_bug.cgi?id=90403
+    //
     public static final class KeybindingsInjector
-    extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding> {
-
-        private static final MultiKeyBinding UP = new MultiKeyBinding(
+    extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
+    implements PropertyChangeListener {
+        private static final MultiKeyBinding KP_UP = new MultiKeyBinding(
                 KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0), "ViUpKey");
-        private static final MultiKeyBinding DOWN = new MultiKeyBinding(
+        private static final MultiKeyBinding KP_DOWN = new MultiKeyBinding(
                 KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, 0), "ViDownKey");
 
-        // Want a static mapJvi that only gets rebuilt/updated
-        // when the jvi bindings change
-        Map<Collection<KeyStroke>, MultiKeyBinding> mapJvi
-          = new HashMap<Collection<KeyStroke>, MultiKeyBinding>();
+        // rebuilt/updated when the jvi bindings change
+        private static final Map<Collection<KeyStroke>, MultiKeyBinding> mapJvi
+                = new HashMap<Collection<KeyStroke>, MultiKeyBinding>();
 
         Map<String, Map<Collection<KeyStroke>, MultiKeyBinding> > origMaps
             = new HashMap<String,Map<Collection<KeyStroke>,MultiKeyBinding> >();
@@ -569,16 +571,53 @@ public class Module extends ModuleInstall {
         public KeybindingsInjector() {
             super("Keybindings");
             KB_INJECTOR = this;
-            System.err.println("~~~ KeybindingsInjector: " + this);
+            KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
+            if(dbgNb.getBoolean())
+                System.err.println("~~~ KeybindingsInjector: " + this);
         }
 
-        private String createBindingKey(MimePath mimePath,
+        public void propertyChange(PropertyChangeEvent evt) {
+            if(dbgNb.getBoolean())
+                System.err.println("Injector: change: "+evt.getPropertyName());
+            if(evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS)) {
+                // clear mapJvi so it will be rebuilt
+                synchronized(mapJvi) {
+                    mapJvi.clear();
+                }
+                // inform infrastructure that the bindings have changed
+                forceKeymapRefresh();
+            }
+        }
+
+        private String createKey(MimePath mimePath,
                                         String profile,
                                         boolean defaults) {
             String key = mimePath.toString()
                          + ":" + profile
                          + ":" + String.valueOf(defaults);
             return key;
+        }
+
+        private void checkBinding(String tag,
+                Map<Collection<KeyStroke>, MultiKeyBinding> map) {
+            for(MultiKeyBinding mkb : map.values()) {
+                String match = "";
+                if("caret-up".equals(mkb.getActionName())) {
+                    match += "ACTION-MATCH: ";
+                }
+                if(mkb.getKeyStroke(0)
+                        .equals(KeyStroke.getKeyStroke(KeyEvent.VK_UP,0))
+                 ||mkb.getKeyStroke(0)
+                        .equals(KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP,0))) {
+                    match += "KEY-MATCH: ";
+                }
+                if(!match.equals("")) {
+                    System.err.println("UP-BINDING: " + tag + ": "
+                            + match
+                            + "key: " + mkb.getKeyStroke(0) + " "
+                            + "action: " + mkb.getActionName());
+                }
+            }
         }
         
         @Override
@@ -590,75 +629,74 @@ public class Module extends ModuleInstall {
             if (!jViEnabled())
                 return;
             
-            String key = createBindingKey(mimePath, profile, defaults);
+            String key = createKey(mimePath, profile, defaults);
             Map<Collection<KeyStroke>, MultiKeyBinding> mapOrig
                     = origMaps.get(key);
             if(mapOrig == null)
                     mapOrig = new HashMap<Collection<KeyStroke>,
                                           MultiKeyBinding>();
+            else
+                mapOrig.clear(); // NEEDSWORK: is this the right thing?
             origMaps.put(key, mapOrig);
 
-            // Going through this path, in the end result, the only bindings
-            // for "caret-up/down" are VK_KP_UP/DOWN. Code completion uses
-            // "caret-up" for scrolling, and VK_UP/DOWN is what is needed.
-            // jVi doesn't use "caret-up" but somewhere they are getting
-            // trashed. They are probably getting trashed because we are
-            // providing a mapping for VK_UP, and the same key can not be
-            // mapped to multiple events; so VK_UP --> "caret-up" is removed
-            // So add mappings for VK_KP_UP/DOWN, then there will be no
-            // bindings for "caret-up" and the defaults for code comletion
-            // will be used. (This means that VK_KP_UP won't work, sigh.)
-            // If interested see editor/completion/src/org/netbeans/modules
+            // jVi binds VK_UP/DOWN, it doesn't bind VK_KP_UP/DOWN (but they
+            // work as they should). However, NB code completion searches for
+            // "caret-up" action and uses its keybindings for up in the code
+            // completion list. CodeCompletion doesn't find VK_UP, it does find
+            // VK_KP_UP so it binds that and VK_UP doesn't work in code
+            // completion list. If code completion doesn't find anything, it
+            // binds to its default, which is VK_UP. So here we also bind to
+            // VK_KP_UP, so CC finds no bindings for "caret-up" and defaults
+            // to VK_UP.(This means that VK_KP_UP won't work, sigh.)
+            // If interested see editor.completion/src/org/netbeans/modules
             //                      /editor/completion/CompletionScrollPane
-            
-            List<JTextComponent.KeyBinding> l
-                    = KeyBinding.getBindingsList();
 
-            // build map of jvi bindings.
-            // NEEDSWORK: if keybinding list hasn't changed, don't rebuild map
-            for(JTextComponent.KeyBinding kb : l) {
-                MultiKeyBinding mkb = new MultiKeyBinding(kb.key, kb.actionName);
-                mapJvi.put(mkb.getKeyStrokeList(), mkb);
-            }
-            
-            // NEEDSWORK: cleanup
-            mapJvi.put(UP.getKeyStrokeList(), UP);
-            mapJvi.put(DOWN.getKeyStrokeList(), DOWN);
-
-            // HACK
-            // Check all NB multiple key bindings and remove/stash them if
-            // the first key is a jvi binding.
-
-            // Check each NB keybinding, if the first key
-            // (of either mulit or single key binding) is
-            // a jvi key, then save the NB binding for use
-            // in beforeSave.
-            List<KeyStroke> ksl = new ArrayList<KeyStroke>();
-            ksl.add(null);
-            Iterator<MultiKeyBinding> it = map.values().iterator();
-            while(it.hasNext()) {
-                MultiKeyBinding mkbOrig = it.next();
-                // 
-                // if(mkbOrig.getKeyStrokeCount() == 1)
-                //     continue;
-                ksl.set(0, mkbOrig.getKeyStroke(0));
-                if(mapJvi.get(ksl) != null) {
-                    mapOrig.put(mkbOrig.getKeyStrokeList(), mkbOrig);
-                    it.remove();
+            // If needed, build map of jvi bindings.
+            synchronized(mapJvi) {
+                if(mapJvi.size() == 0) {
+                    List<JTextComponent.KeyBinding> l
+                            = KeyBinding.getBindingsList();
+                    for(JTextComponent.KeyBinding kb : l) {
+                        MultiKeyBinding mkb
+                                = new MultiKeyBinding(kb.key, kb.actionName);
+                        mapJvi.put(mkb.getKeyStrokeList(), mkb);
+                    }
+                    // NEEDSWORK: cleanup
+                    mapJvi.put(KP_UP.getKeyStrokeList(), KP_UP);
+                    mapJvi.put(KP_DOWN.getKeyStrokeList(), KP_DOWN);
+                    if(dbgNb.getBoolean())
+                        checkBinding("mapJvi", mapJvi);
                 }
+                if(dbgNb.getBoolean())
+                    checkBinding("mapOrig", map);
+
+                // Check each NB keybinding, if the first key
+                // (of either mulit or single key binding) is
+                // a jvi key, then save the NB binding for use
+                // in beforeSave and remove it from map.
+                List<KeyStroke> ksl = new ArrayList<KeyStroke>();
+                ksl.add(null);
+                Iterator<MultiKeyBinding> it = map.values().iterator();
+                while(it.hasNext()) {
+                    MultiKeyBinding mkbOrig = it.next();
+                    // ksl is a keyStrokList of the first key of the NB binding
+                    ksl.set(0, mkbOrig.getKeyStroke(0));
+                    // If the NB binding starts with a jVi binding, then stash it
+                    if(mapJvi.get(ksl) != null) {
+                        mapOrig.put(mkbOrig.getKeyStrokeList(), mkbOrig);
+                        it.remove();
+                    }
+                }
+
+                if(dbgNb.getBoolean())
+                    System.err.println("Injector: afterLoad: "
+                            +"mimePath '"+mimePath
+                            +"' profile '"+profile
+                            +"' defaults '" + defaults
+                            +"' orig map size: " + map.size());
+
+                map.putAll(mapJvi);
             }
-
-            // for(JTextComponent.KeyBinding kb : l) {
-            //     MultiKeyBinding mkb = new MultiKeyBinding(kb.key, kb.actionName);
-            //     MultiKeyBinding orig = map.get(mkb.getKeyStrokeList());
-            //     if(orig !=null)
-            //         mapOrig.put(orig.getKeyStrokeList(), orig);
-            //     mapJvi.put(mkb.getKeyStrokeList(), mkb);
-            // }
-
-            map.putAll(mapJvi);
-            if(dbgNb.getBoolean())
-                System.err.println("AFTER_LOAD: mimePath '"+mimePath+"' profile '"+profile+"'");
 
         }
 
@@ -674,37 +712,31 @@ public class Module extends ModuleInstall {
                 return;
 
             Map<Collection<KeyStroke>, MultiKeyBinding> mapOrig = 
-                    origMaps.get(createBindingKey(mimePath, profile, defaults));
+                    origMaps.get(createKey(mimePath, profile, defaults));
 
-            //= new HashMap<Collection<KeyStroke>, MultiKeyBinding>();
-
-//            MultiKeyBinding mkb1 = map.get(UP.getKeyStrokeList());
-//            if (mkb1.getActionName().equals(UP.getActionName())) {
-//                map.remove(UP.getKeyStrokeList());
-//            }
-//
-//            MultiKeyBinding mkb2 = map.get(DOWN.getKeyStrokeList());
-//            if (mkb2.getActionName().equals(DOWN.getActionName())) {
-//                map.remove(DOWN.getKeyStrokeList());
-//            }
-
-            //
-            // NEEDSWORK: the map doesn't have the jvi keybindings YET
-            //
-            // for(MultiKeyBinding kb : mapJvi.values()) {
-            //     MultiKeyBinding curKb = map.get(kb.getkeyStrokeList());
-            //     if(curKb == null)
-            //     if(!curKb.getActionName().equals(kb.getActionname()))
-            //     // assert curKb != null : "lost binding";
-            //     // assert curkb.getActionName().equals(kb.getActionName())
-            //     //                         : "changed";
-            //     map.remove(curKb.getKeystrokeList());
-            // }
+            synchronized(mapJvi) {
+                //
+                // NEEDSWORK: the map doesn't have the jvi keybindings YET
+                //
+                // for(MultiKeyBinding kb : mapJvi.values()) {
+                //     MultiKeyBinding curKb = map.get(kb.getkeyStrokeList());
+                //     if(curKb == null)
+                //     if(!curKb.getActionName().equals(kb.getActionname()))
+                //     // assert curKb != null : "lost binding";
+                //     // assert curkb.getActionName().equals(kb.getActionName())
+                //     //                         : "changed";
+                //     map.remove(curKb.getKeystrokeList());
+                // }
+            }
             if(mapOrig != null)
                 map.putAll(mapOrig);
 
             if(dbgNb.getBoolean())
-                System.err.println("BEFORE_SAVE: mimePath '"+mimePath+"' profile '"+profile+"'");
+                System.err.println("Injector: beforeSave: "
+                        +"mimePath '"+mimePath
+                        +"' profile '"+profile
+                        +"' defaults '" + defaults
+                        +"' orig map size: " + map.size());
 
             // ARE THERE ISSUES AROUND THE ORIGINAL DEFAULT KEYMAP???
 
@@ -714,7 +746,7 @@ public class Module extends ModuleInstall {
             notifyChanges();
         }
     } // End of KeybindingsInjector class
-    
+
     // public because of the layer registration
     public static class JViInstallAction extends TextAction {
         public JViInstallAction() {
@@ -755,12 +787,13 @@ public class Module extends ModuleInstall {
                 ep.getKeymap().setDefaultAction(ViManager.getViFactory().createCharAction(
                     DefaultEditorKit.defaultKeyTypedAction));
                 
-                System.err.println("~~~ captured defaultKeyTypedAction in " + ep.getClass() + "@" + Integer.toHexString(System.identityHashCode(ep)));
-                
                 if(dbgNb.getBoolean()) {
                     System.err.println(MOD + "capture:"
                                 + " kit: " + kit.getClass().getSimpleName()
                                 + " action: " + a.getClass().getSimpleName());
+                    System.err.println("~~~ captured defaultKeyTypedAction in "
+                            + ep.getClass() + "@"
+                            + Integer.toHexString(System.identityHashCode(ep)));
                 }
             }
         }

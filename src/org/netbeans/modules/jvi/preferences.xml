@@ -5,7 +5,4 @@
     <entry javaType="methodvalue"
            name="kit-install-action-name-list"
            value="org.netbeans.modules.jvi.Module.getKitInstallActionNameList" />
-    <entry javaType="methodvalue"
-           name="custom-action-list"
-           value="org.netbeans.modules.jvi.Module.getCustomActionList" />
 </editor-preferences>

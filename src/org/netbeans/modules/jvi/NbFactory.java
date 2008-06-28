@@ -78,11 +78,6 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     @Override
-    public void updateKeymap() {
-        Module.updateKeymap();
-    }
-    
-    @Override
     public ViOutputStream createOutputStream(ViTextView tv,
                                              Object type,
                                              Object info,

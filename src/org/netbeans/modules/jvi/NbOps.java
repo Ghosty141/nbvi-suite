@@ -40,10 +40,8 @@ public class NbOps extends OpsBase {
                 actionName = NbEditorKit.insertContentAction;
                 break;
             case KEY_TYPED:
-                // actionName = NbEditorKit.defaultKeyTypedAction;
-                // break;
-                EditorKit kit = textView.getEditorComponent().getEditorKit();
-                Action a = Module.getDefaultKeyAction(kit.getClass());
+                Action a = Module.getDefaultKeyAction(
+                        textView.getEditorComponent());
                 xact(a != null ? a : keyTypedAction);
                 return;
             case INSERT_NEW_LINE:

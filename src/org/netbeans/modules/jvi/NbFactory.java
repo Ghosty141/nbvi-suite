@@ -11,14 +11,11 @@ import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.ViCaret;
 import java.awt.Container;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Set;
 import java.util.Stack;
@@ -215,6 +212,8 @@ final public class NbFactory extends DefaultViFactory {
             FileObject fo = NbEditorUtilities.getFileObject(doc);
             return fo.getNameExt();
         }
+        if(o == null)
+            return "(null)";
         return "";
     }
 

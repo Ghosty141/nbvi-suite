@@ -54,7 +54,6 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.editor.BaseAction;
-import org.netbeans.editor.BaseKit;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
@@ -67,7 +66,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.modules.editor.NbEditorUtilities;
@@ -126,8 +124,8 @@ public class Module extends ModuleInstall {
     private static KeybindingsInjector KB_INJECTOR = null;
     
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
-    private static Map<Class, Action> kitToDefaultKeyAction
-            = new HashMap<Class, Action>();
+    private static Map<JEditorPane, Action> epToDefaultKeyAction
+            = new HashMap<JEditorPane, Action>();
     
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
@@ -277,6 +275,8 @@ public class Module extends ModuleInstall {
                         topComponentRegistryListener);
                 topComponentRegistryListener = null;
             }
+
+            // NEEDSWORK: ?? restore default key typed in following....
             
             // remove all jVi connections, replace original caret
             TopComponent tc = (TopComponent)ViManager.getTextBuffer(1);
@@ -310,7 +310,7 @@ public class Module extends ModuleInstall {
                 if(dbgNb.getBoolean())
                     System.err.println(MOD + "shutdown nomad"
                             + (c01 != null ? " restore caret" : ""));
-                ViManager.getViFactory().shutdown(ep);
+                ViManager.closeFile(ep, null);
             }
             
             for (Document doc : NbFactory.getDocSet()) {
@@ -420,13 +420,13 @@ public class Module extends ModuleInstall {
         });
         ColonCommands.register("kitDump", "kitDump", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Map<Class, Action> m = kitToDefaultKeyAction;
+                Map<JEditorPane, Action> m = epToDefaultKeyAction;
                 ViOutputStream os = ViManager.createOutputStream(
                         null, ViOutputStream.OUTPUT, "Known Kits");
-                for (Map.Entry<Class, Action> entry
-                        : kitToDefaultKeyAction.entrySet()) {
+                for (Map.Entry<JEditorPane, Action> entry
+                        : epToDefaultKeyAction.entrySet()) {
                     os.println(String.format("%20s %s",
-                               entry.getKey().getSimpleName(),
+                               entry.getKey().getClass().getSimpleName(),
                                entry.getValue().getClass().getSimpleName()));
                 }
                 os.close();
@@ -524,9 +524,8 @@ public class Module extends ModuleInstall {
         return act;
     }
     
-    public static final Action getDefaultKeyAction(Class clazz) {
-        Map<Class, Action> m = kitToDefaultKeyAction;
-        return m.get(clazz);
+    static final Action getDefaultKeyAction(JEditorPane ep) {
+        return epToDefaultKeyAction.get(ep);
     }
     
     private static void updateKeymap() {
@@ -776,24 +775,20 @@ public class Module extends ModuleInstall {
     }
     
     private static void captureDefaultKeyTypedAction(JEditorPane ep) {
-        EditorKit kit = ep.getEditorKit();
-        Action a = kitToDefaultKeyAction.get(kit.getClass());
-        if(a == null && kit instanceof BaseKit) {
-            a = ((BaseKit)kit).getActionByName(BaseKit.defaultKeyTypedAction);
+        Action a = epToDefaultKeyAction.get(ep);
+        if(a == null) {
+            a = ep.getKeymap().getDefaultAction();
             if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-                
-                // XXX: IMO this should be changed to Map<JEditorPane, a>
-                kitToDefaultKeyAction.put(kit.getClass(), a);
-                ep.getKeymap().setDefaultAction(ViManager.getViFactory().createCharAction(
-                    DefaultEditorKit.defaultKeyTypedAction));
+                epToDefaultKeyAction.put(ep, a);
+                ep.getKeymap().setDefaultAction(
+                        ViManager.getViFactory().createCharAction(
+                        DefaultEditorKit.defaultKeyTypedAction));
                 
                 if(dbgNb.getBoolean()) {
-                    System.err.println(MOD + "capture:"
-                                + " kit: " + kit.getClass().getSimpleName()
-                                + " action: " + a.getClass().getSimpleName());
-                    System.err.println("~~~ captured defaultKeyTypedAction in "
+                    System.err.println(MOD + "capture: "
                             + ep.getClass() + "@"
-                            + Integer.toHexString(System.identityHashCode(ep)));
+                            + Integer.toHexString(System.identityHashCode(ep))
+                            + " action: " + a.getClass().getSimpleName());
                 }
             }
         }

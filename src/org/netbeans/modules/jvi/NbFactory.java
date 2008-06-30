@@ -204,15 +204,15 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     @Override
-    public String getDisplayFilename(Object o) {
-        if(o instanceof TopComponent)
-            return ((TopComponent)o).getDisplayName();
-        if(o instanceof Document) {
-            Document doc = (Document) o;
+    public String getDisplayFilename(Object appHandle) {
+        if(appHandle instanceof TopComponent)
+            return ((TopComponent)appHandle).getDisplayName();
+        if(appHandle instanceof Document) {
+            Document doc = (Document) appHandle;
             FileObject fo = NbEditorUtilities.getFileObject(doc);
             return fo.getNameExt();
         }
-        if(o == null)
+        if(appHandle == null)
             return "(null)";
         return "";
     }

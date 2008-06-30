@@ -221,6 +221,8 @@ public class Module extends ModuleInstall {
                         topComponentRegistryListener);
             }
             
+            updateKeymap();
+
             // See if there's anything to attach to, there are two cases to
             // consider:
             // enbable through the menu/toolbar
@@ -233,19 +235,18 @@ public class Module extends ModuleInstall {
             //      not be captured, oh well. Could capture the nomads by
             //      checking at keyTyped, not worth it.
             //
-            Set<TopComponent> s = TopComponent.getRegistry().getOpened();
-            for (TopComponent tc : s) {
+            for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null) {
                     captureDefaultKeyTypedAction(ep);
                     activateTC(ep, tc, "JVI-ENABLE");
                 }
             }
-            
+
             // And setup the nomads
             // nomadicEditors
-            
-            updateKeymap();
+
+            ///// hackCaptureCheck();
 
             TabWarning.setTabWarning(true);
         }
@@ -310,7 +311,7 @@ public class Module extends ModuleInstall {
                 if(dbgNb.getBoolean())
                     System.err.println(MOD + "shutdown nomad"
                             + (c01 != null ? " restore caret" : ""));
-                ViManager.closeFile(ep, null);
+                ViManager.closeAppEditor(ep, null);
             }
             
             for (Document doc : NbFactory.getDocSet()) {
@@ -546,6 +547,33 @@ public class Module extends ModuleInstall {
         return KeyBinding.getAction((String)params.get("action-name"));
     }
     
+    private static void hackCaptureCheck() {
+        for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
+            JEditorPane ep = getTCEditor(tc);
+            if(ep != null) {
+                //System.err.println("CAPTURE CHECK: "
+                //        + ep.getClass() + "@"
+                //        + Integer.toHexString(
+                //                System.identityHashCode(ep))
+                //        + ", Action: " + ep.getKeymap().getDefaultAction());
+                Action a = ep.getKeymap().getDefaultAction();
+                if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
+                    //System.err.println("LOST CAPTURED KEY: "
+                    //    + ep.getClass() + "@"
+                    //    + Integer.toHexString(
+                    //            System.identityHashCode(ep)));
+                    captureDefaultKeyTypedAction(ep);
+                }
+            }
+        }
+    }
+    private static void hackCaptureCheckLater() {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                hackCaptureCheck();
+            }
+        });
+    }
 
     //
     // registered in META-INF/services
@@ -696,7 +724,6 @@ public class Module extends ModuleInstall {
 
                 map.putAll(mapJvi);
             }
-
         }
 
         @Override
@@ -770,26 +797,23 @@ public class Module extends ModuleInstall {
     }
     
     private static void closeTC(JEditorPane ep, TopComponent tc) {
-        ViManager.closeFile(ep, tc);
+        ViManager.closeAppEditor(ep, tc);
         editorToCaret.remove(ep);
     }
     
     private static void captureDefaultKeyTypedAction(JEditorPane ep) {
-        Action a = epToDefaultKeyAction.get(ep);
-        if(a == null) {
-            a = ep.getKeymap().getDefaultAction();
-            if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-                epToDefaultKeyAction.put(ep, a);
-                ep.getKeymap().setDefaultAction(
-                        ViManager.getViFactory().createCharAction(
-                        DefaultEditorKit.defaultKeyTypedAction));
-                
-                if(dbgNb.getBoolean()) {
-                    System.err.println(MOD + "capture: "
-                            + ep.getClass() + "@"
-                            + Integer.toHexString(System.identityHashCode(ep))
-                            + " action: " + a.getClass().getSimpleName());
-                }
+        Action a = ep.getKeymap().getDefaultAction();
+        if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
+            epToDefaultKeyAction.put(ep, a);
+            ep.getKeymap().setDefaultAction(
+                    ViManager.getViFactory().createCharAction(
+                    DefaultEditorKit.defaultKeyTypedAction));
+
+            if(dbgNb.getBoolean()) {
+                System.err.println(MOD + "capture: "
+                        + ep.getClass() + "@"
+                        + Integer.toHexString(System.identityHashCode(ep))
+                        + " action: " + a.getClass().getSimpleName());
             }
         }
     }
@@ -813,7 +837,7 @@ public class Module extends ModuleInstall {
         if(ep != null)
             checkCaret(ep);
         addEpToTC(tc, ep);
-        ViManager.activateFile(ep, tc, tag);
+        ViManager.activateAppEditor(ep, tc, tag);
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -856,8 +880,8 @@ public class Module extends ModuleInstall {
     
     /** This class monitors the TopComponent registry and issues
      * <ul>
-     * <li> ViManager.activateFile("debuginfo", tc) </li>
-     * <li> ViManager.deactivateFile(ep, tc) </li>
+     * <li> ViManager.activateAppEditor("debuginfo", tc) </li>
+     * <li> ViManager.deactivateCurrentAppEditor(ep, tc) </li>
      * <li> ViManager.exitInputMode() </li>
      * </ul>
      */
@@ -877,7 +901,7 @@ public class Module extends ModuleInstall {
                 tcDumpInfo(evt.getNewValue(), "activated newTC");
                 
                 if(getTCEditor(evt.getOldValue()) != null)
-                    ViManager.deactivateCurrentFile(evt.getOldValue());
+                    ViManager.deactivateCurrentAppEditor(evt.getOldValue());
                 
                 JEditorPane ep = getTCEditor(evt.getNewValue());
                 if(ep != null) {
@@ -1291,7 +1315,7 @@ public class Module extends ModuleInstall {
                     }
                 }
                 if(name == null)
-                    name = ViManager.getViFactory().getDisplayFilename(o);
+                    name = ViManager.getViFactory().getDisplayFilename(tc);
                 query.add(new ViCommandCompletionItem(
                                 name, String.format("%02d", i), icon,
                                 false, flags, font,

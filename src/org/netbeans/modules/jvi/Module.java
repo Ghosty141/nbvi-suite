@@ -330,19 +330,6 @@ public class Module extends ModuleInstall {
         }
     }
     
-    // XXX private static boolean didOptionsInit;
-    /** Somehow NbOptions.init() causes java default keybinding to get lost,
-     * if it is run too early. In this class we defer this initialization
-     *  until after the first editor TC gets activated.
-     * <p>This even happens if ieHACK is removed.
-     */
-    //private static final void doOptionsInitHack() {
-    //    if(didOptionsInit)
-    //        return;
-    //    didOptionsInit = true;
-    //    NbOptions.enable(); // HORROR STORY
-    //}
-    
     private static boolean didEarlyInit = false;
     private static synchronized void earlyInit() {
         if(didEarlyInit)
@@ -396,7 +383,6 @@ public class Module extends ModuleInstall {
             earlyInit();
             
             NbColonCommands.init();
-            // NbOptions.init(); HORROR STORY
             
             addDebugColonCommands();
         }
@@ -894,9 +880,8 @@ public class Module extends ModuleInstall {
                         + evt.getOldValue()
                         + " --> " + evt.getNewValue());
             }
-            //
-            // For NB6 use PROP_TC_OPENED, PROP_TC_CLOSED
-            if(evt.getPropertyName().equals(TopComponent.Registry.PROP_ACTIVATED)) {
+            if(evt.getPropertyName()
+                    .equals(TopComponent.Registry.PROP_ACTIVATED)) {
                 tcDumpInfo(evt.getOldValue(), "activated oldTC");
                 tcDumpInfo(evt.getNewValue(), "activated newTC");
                 
@@ -906,58 +891,23 @@ public class Module extends ModuleInstall {
                 JEditorPane ep = getTCEditor(evt.getNewValue());
                 if(ep != null) {
                     activateTC(ep, evt.getNewValue(), "P_ACTV");
-                    // XXX doOptionsInitHack(); // HORROR STORY
                     // Do this for activate (but not for open)
                     ViManager.requestSwitch(ep);
                 }
-            } else if(evt.getPropertyName().equals(TopComponent.Registry.PROP_OPENED)) {
-                // For each top component we know about, see if it is still
-                // opened.
-                // NEEDSWORK: checking each buffer (until NB6 PROP_TC_OPENED)
-                @SuppressWarnings("unchecked")
-                Set<TopComponent> newSet = (Set<TopComponent>)evt.getNewValue();
-                @SuppressWarnings("unchecked")
-                Set<TopComponent> oldSet = (Set<TopComponent>)evt.getOldValue();
-                if(newSet.size() > oldSet.size()) {
-                    // something OPENing
-                    @SuppressWarnings("unchecked")
-                    Set<TopComponent> s = (Set<TopComponent>)
-                            ((HashSet<TopComponent>)newSet).clone();
-                    s.removeAll(oldSet);
-                    if(s.size() != 1) {
-                        System.err.println("TC OPEN: OPEN not size 1");
-                    } else {
-                        TopComponent tc = null;
-                        for (TopComponent t : s) {
-                            tc = t;
-                            break;
-                        }
-                        tcDumpInfo(tc, "open");
-                        JEditorPane ep = getTCEditor(tc);
-                        if(ep != null)
-                            activateTC(ep, tc, "P_OPEN");
-                    }
-                } else if(oldSet.size() > newSet.size()) {
-                    // something CLOSEing
-                    @SuppressWarnings("unchecked")
-                    Set<TopComponent> s = (Set<TopComponent>)
-                                ((HashSet<TopComponent>)oldSet).clone();
-                    s.removeAll(newSet);
-                    if(s.size() != 1) {
-                        System.err.println("TC OPEN: CLOSE not size 1");
-                    } else {
-                        TopComponent tc = null;
-                        for (TopComponent t : s) {
-                            tc = t;
-                            break;
-                        }
-                        for (JEditorPane ep : fetchEpFromTC(tc)) {
-                            tcDumpInfo(tc, "close");
-                            closeTC(ep, tc);
-                        }
-                    }
-                } else
-                    System.err.println("TC OPEN: SAME SET SIZE");
+            } else if(evt.getPropertyName()
+                    .equals(TopComponent.Registry.PROP_TC_OPENED)) {
+                TopComponent tc = (TopComponent) evt.getNewValue();
+                tcDumpInfo(tc, "open");
+                JEditorPane ep = getTCEditor(tc);
+                if(ep != null)
+                    activateTC(ep, tc, "P_OPEN");
+            } else if(evt.getPropertyName()
+                    .equals(TopComponent.Registry.PROP_TC_CLOSED)) {
+                TopComponent tc = (TopComponent) evt.getNewValue();
+                for (JEditorPane ep : fetchEpFromTC(tc)) {
+                    tcDumpInfo(tc, "close");
+                    closeTC(ep, tc);
+                }
             }
         }
     }

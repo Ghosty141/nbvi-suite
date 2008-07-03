@@ -1,25 +1,19 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Buffer;
-import com.raelity.jvi.ColonCommands;
-import com.raelity.jvi.G;
-import com.raelity.jvi.Msg;
-import com.raelity.jvi.Options;
-import com.raelity.jvi.Util;
-import com.raelity.jvi.ViCmdEntry;
-import com.raelity.jvi.ViFS;
-import com.raelity.jvi.ViManager;
-import com.raelity.jvi.ViOutputStream;
-import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.swing.DefaultViFactory;
-import com.raelity.jvi.swing.ViCaret;
+import com.raelity.jvi.*;
+import com.raelity.jvi.swing.*;
+import com.raelity.jvi.ViTextView.TAGOP;
+
 import java.awt.Container;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.Stack;
-import java.util.prefs.Preferences;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -27,20 +21,17 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
+
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
 import org.openide.text.Line;
-import org.openide.windows.TopComponent;
-import com.raelity.jvi.ViTextView.TAGOP;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.prefs.BackingStoreException;
-import javax.swing.text.JTextComponent;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
+import org.openide.windows.TopComponent;
 
 final public class NbFactory extends DefaultViFactory {
     
@@ -51,11 +42,13 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     static Set<JEditorPane> getEditorSet() {
-        return Collections.unmodifiableSet(((NbFactory)INSTANCE).editorSet.keySet());
+        return Collections.unmodifiableSet(
+                ((NbFactory)INSTANCE).editorSet.keySet());
     }
     
     static Set<Document> getDocSet() {
-        return Collections.unmodifiableSet(((NbFactory)INSTANCE).docSet.keySet());
+        return Collections.unmodifiableSet(
+                ((NbFactory)INSTANCE).docSet.keySet());
     }
 
     @Override

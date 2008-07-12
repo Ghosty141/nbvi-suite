@@ -140,6 +140,10 @@ public class NbBuffer extends DefaultBuffer {
     //
     //
 
+    /**
+     * This method provides a file only so that the path can be examined.
+     * @return null or the path for this file
+     */
     @Override
     public File getJavaFile() {
         File fi = null;

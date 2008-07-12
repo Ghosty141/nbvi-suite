@@ -78,8 +78,8 @@ public class NbTextView extends TextView
     }
     
     @Override
-    public void startup(Buffer buf) {
-        super.startup(buf);
+    public void startup() {
+        super.startup();
         
         getBuffer().getDocument().render(new Runnable() {
             public void run() {

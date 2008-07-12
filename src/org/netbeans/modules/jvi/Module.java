@@ -103,6 +103,7 @@ import org.openide.windows.WindowManager;
  */
 public class Module extends ModuleInstall {
     
+    private static boolean isInitialized;
     private static boolean jViEnabled;
     private static boolean nb6;
 
@@ -163,29 +164,41 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
+        runInDispatch(true, new MainInitialization());
+    }
 
-        for(ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
-            if (mi.getCodeNameBase().equals(
-                        "org.netbeans.modules.editor.codetemplates")) {
-                if(mi.getSpecificationVersion()
-                        .compareTo(new SpecificationVersion("1.8.0")) < 0) {
-                    ViManager.HackMap.put("NB-codetemplatesHang", Boolean.TRUE);
-                }
-                break;
+    private static class MainInitialization implements Runnable
+    {
+        public void run()
+        {
+            if (isInitialized) {
+                return;
             }
-        }
+            isInitialized = true;
 
-        if(dbgNb != null && dbgNb.getBoolean())
-            System.err.println(MOD + "***** restored *****");
-        earlyInit();
-            
-        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
+            for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+                if (mi.getCodeNameBase().equals(
+                        "org.netbeans.modules.editor.codetemplates")) {
+                    if (mi.getSpecificationVersion().compareTo(new SpecificationVersion("1.8.0")) < 0) {
+                        ViManager.HackMap.put("NB-codetemplatesHang", Boolean.TRUE);
+                    }
+                    break;
+                }
+            }
 
-        if(isModuleEnabled()) {
-            jvi.setSelected(true);
-            runInDispatch(true, new RunJViEnable());
-        } else {
-            jvi.setSelected(false);
+            if (dbgNb != null && dbgNb.getBoolean()) {
+                System.err.println(MOD + "***** restored *****");
+            }
+            earlyInit();
+
+            JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
+
+            if (isModuleEnabled()) {
+                jvi.setSelected(true);
+                runInDispatch(true, new RunJViEnable());
+            } else {
+                jvi.setSelected(false);
+            }
         }
     }
 
@@ -584,6 +597,7 @@ public class Module extends ModuleInstall {
         public KeybindingsInjector() {
             super("Keybindings");
             KB_INJECTOR = this;
+            runInDispatch(true, new MainInitialization());
             KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
             if(dbgNb.getBoolean())
                 System.err.println("~~~ KeybindingsInjector: " + this);

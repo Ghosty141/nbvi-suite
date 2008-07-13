@@ -5,7 +5,6 @@ import com.raelity.jvi.ViBuffer;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
-import java.io.File;
 import java.io.IOException;
 import javax.swing.text.Document;
 import org.netbeans.modules.editor.NbEditorUtilities;
@@ -59,7 +58,8 @@ public class NbFS implements ViFS
         return false;
     }
 
-    public void write(ViTextView tv, boolean force) {
+    private boolean write(ViTextView tv, boolean force) {
+        boolean ok = true;
         ViBuffer buf = tv.getBuffer();
         DataObject dobj = getDataObject(buf);
         if(dobj != null) {
@@ -73,24 +73,41 @@ public class NbFS implements ViFS
                     Msg.smsg(buf.getDisplayFileNameAndSize() + " written");
                 } catch (IOException ex) {
                     Msg.emsg("error writing " + buf.getDisplayFileName());
+                    ok = false;
                 }
             } else {
                 // Msg.wmsg(fo.getNameExt() + " not dirty");
             }
         }
+        return ok;
     }
 
-    public void writeAll(boolean force) {
-	SaveAllAction sa = SystemAction.get(SaveAllAction.class);
-        sa.performAction();
-    }
-
-    public void write(ViTextView tv, File file, boolean force) {
+    private boolean write(ViTextView tv, String fName, boolean force) {
 	// Will probably never implement
 	Msg.emsg("WRITE new_name NOT IMPLEMENTED, " + force);
+        return false;
     }
 
-    public void edit(ViTextView tv, int i, boolean force) {
+    public boolean write(
+            ViTextView tv, boolean force, String fName, Integer[] range)
+    {
+        if(range.length == 0) {
+            if(fName == null) {
+                return write(tv, force);
+            }
+            return write(tv, fName, force);
+        }
+	Msg.emsg("WRITE RANGE NOT IMPLEMENTED, ");
+        return false;
+    }
+
+    public boolean writeAll(boolean force) {
+	SaveAllAction sa = SystemAction.get(SaveAllAction.class);
+        sa.performAction();
+        return true;
+    }
+
+    public void edit(ViTextView tv, boolean force, int i) {
 	TopComponent tc = (TopComponent)ViManager.getTextBuffer(i);
 	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
@@ -98,5 +115,10 @@ public class NbFS implements ViFS
 	}
 	tc.requestActive();
         Msg.smsg(tv.getBuffer().getDisplayFileNameAndSize());
-    }    
+    }
+
+    public void edit(ViTextView tv, boolean force, String fName)
+    {
+	Msg.emsg("edit fname NOT IMPLEMENTED ");
+    }
 }

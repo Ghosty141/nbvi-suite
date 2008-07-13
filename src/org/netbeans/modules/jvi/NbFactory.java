@@ -217,7 +217,7 @@ final public class NbFactory extends DefaultViFactory {
                 .getAncestorOfClass(TopComponent.class, editorPane);
         while (parent != null) {
             tc = (TopComponent)parent;
-            if(ViManager.isBuffer(tc))
+            if(ViManager.isKnownAppHandle(tc))
                 break;
             parent = SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
         }

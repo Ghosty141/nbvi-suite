@@ -12,20 +12,21 @@ import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.EventQueue;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -38,50 +39,51 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.prefs.Preferences;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JEditorPane;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.TextAction;
+import javax.swing.UIManager;
+
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
+import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
 import org.netbeans.spi.editor.completion.CompletionTask;
 import org.netbeans.spi.editor.completion.support.CompletionUtilities;
-import org.openide.loaders.DataObjectNotFoundException;
-import org.openide.modules.ModuleInstall;
-import javax.swing.JEditorPane;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.JTextComponent;
-import org.netbeans.api.editor.settings.MultiKeyBinding;
-import org.netbeans.modules.editor.NbEditorUtilities;
-import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
-import org.openide.ErrorManager;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
+import org.openide.ErrorManager;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInfo;
+import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
-import org.openide.util.HelpCtx;
-import org.openide.util.Lookup;
 import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
+import org.openide.util.HelpCtx;
+import org.openide.util.Lookup;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -101,9 +103,8 @@ import org.openide.windows.WindowManager;
  *   <li>Stuff that can be done later</li>
  * </ol>
  */
-public class Module extends ModuleInstall {
-    
-    private static boolean isInitialized;
+public class Module extends ModuleInstall
+{
     private static boolean jViEnabled;
     private static boolean nb6;
 
@@ -164,41 +165,32 @@ public class Module extends ModuleInstall {
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
-        runInDispatch(true, new MainInitialization());
-    }
+        if (dbgNb != null && dbgNb.getBoolean()) {
+            System.err.println(MOD + "***** restored *****");
+        }
 
-    private static class MainInitialization implements Runnable
-    {
-        public void run()
-        {
-            if (isInitialized) {
-                return;
-            }
-            isInitialized = true;
-
-            for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
-                if (mi.getCodeNameBase().equals(
-                        "org.netbeans.modules.editor.codetemplates")) {
-                    if (mi.getSpecificationVersion().compareTo(new SpecificationVersion("1.8.0")) < 0) {
-                        ViManager.HackMap.put("NB-codetemplatesHang", Boolean.TRUE);
-                    }
-                    break;
+        //runInDispatch(true, new MainInitialization("restored"));
+        for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+            if (mi.getCodeNameBase().equals(
+                    "org.netbeans.modules.editor.codetemplates")) {
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("1.8.0")) < 0) {
+                    ViManager.HackMap.put(
+                            "NB-codetemplatesHang", Boolean.TRUE);
                 }
+                break;
             }
+        }
 
-            if (dbgNb != null && dbgNb.getBoolean()) {
-                System.err.println(MOD + "***** restored *****");
-            }
-            earlyInit();
+        earlyInit();
 
-            JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
+        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
 
-            if (isModuleEnabled()) {
-                jvi.setSelected(true);
-                runInDispatch(true, new RunJViEnable());
-            } else {
-                jvi.setSelected(false);
-            }
+        if (isModuleEnabled()) {
+            jvi.setSelected(true);
+            runInDispatch(true, new RunJViEnable());
+        } else {
+            jvi.setSelected(false);
         }
     }
 
@@ -233,7 +225,7 @@ public class Module extends ModuleInstall {
                 TopComponent.getRegistry().addPropertyChangeListener(
                         topComponentRegistryListener);
             }
-            
+
             updateKeymap();
 
             // See if there's anything to attach to, there are two cases to
@@ -530,6 +522,8 @@ public class Module extends ModuleInstall {
     
     private static void updateKeymap() {
         if (KB_INJECTOR != null) {
+            if(dbgNb.getBoolean())
+                System.err.println("Injector: updateKeymap: ");
             KB_INJECTOR.forceKeymapRefresh();
         } // else no keymap has been loaded yet
     }
@@ -596,24 +590,29 @@ public class Module extends ModuleInstall {
 
         public KeybindingsInjector() {
             super("Keybindings");
-            KB_INJECTOR = this;
-            runInDispatch(true, new MainInitialization());
+            earlyInit();
             KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
             if(dbgNb.getBoolean())
                 System.err.println("~~~ KeybindingsInjector: " + this);
+            KB_INJECTOR = this;
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
             if(dbgNb.getBoolean())
                 System.err.println("Injector: change: "+evt.getPropertyName());
             if(evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS)) {
-                // clear mapJvi so it will be rebuilt
-                synchronized(mapJvi) {
-                    mapJvi.clear();
-                }
-                // inform infrastructure that the bindings have changed
+                // the bindings have changed
                 forceKeymapRefresh();
             }
+        }
+
+        void forceKeymapRefresh() {
+            if(dbgNb.getBoolean())
+                System.err.println("Injector: forceKeymapRefresh: ");
+            synchronized(mapJvi) {
+                mapJvi.clear();
+            }
+            notifyChanges();
         }
 
         private String createKey(MimePath mimePath,
@@ -678,9 +677,8 @@ public class Module extends ModuleInstall {
             // If interested see editor.completion/src/org/netbeans/modules
             //                      /editor/completion/CompletionScrollPane
 
-            // If needed, build map of jvi bindings.
             synchronized(mapJvi) {
-                if(mapJvi.size() == 0) {
+                if(mapJvi.size() == 0) { // If needed, build jvi bindings map.
                     List<JTextComponent.KeyBinding> l
                             = KeyBinding.getBindingsList();
                     for(JTextComponent.KeyBinding kb : l) {
@@ -766,10 +764,6 @@ public class Module extends ModuleInstall {
 
             // ARE THERE ISSUES AROUND THE ORIGINAL DEFAULT KEYMAP???
 
-        }
-        
-        public void forceKeymapRefresh() {
-            notifyChanges();
         }
     } // End of KeybindingsInjector class
 

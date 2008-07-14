@@ -21,6 +21,7 @@ import org.netbeans.editor.Coloring;
 import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
 import org.netbeans.editor.Utilities;
+import org.openide.awt.StatusDisplayer;
 
 /**
  * This status display displays status messages in the EditorUI's StatusBar.
@@ -189,13 +190,22 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     private void setText(String cellName, String text, Coloring coloring) {
         if(!useMyCells) {
             // direct CELL_STATUS messsages to the pre-defined location
-            if(cellName == CELL_STATUS)
+            if(cellName.equals(CELL_STATUS))
                 cellName = StatusBar.CELL_MAIN;
          }
 	StatusBar sb = getStatusBar();
 	if(sb != null) {
 	    sb.setText(cellName, text, coloring);
 	}
+        boolean allBlank = true;
+        for(int i = 0; i < text.length(); i++) {
+            if(text.charAt(i) != ' ') {
+                allBlank = false;
+                break;
+            }
+        }
+        if(!allBlank)
+            StatusDisplayer.getDefault().setStatusText(text);
     }
 
     private StatusBar getStatusBar() {

@@ -59,6 +59,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.TextAction;
 import javax.swing.UIManager;
 
+import javax.swing.text.EditorKit;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
@@ -128,6 +129,8 @@ public class Module extends ModuleInstall
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
     private static Map<JEditorPane, Action> epToDefaultKeyAction
             = new HashMap<JEditorPane, Action>();
+    private static Map<EditorKit, Action> kitToDefaultKeyAction
+            = new HashMap<EditorKit, Action>();
     
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
@@ -169,7 +172,7 @@ public class Module extends ModuleInstall
             System.err.println(MOD + "***** restored *****");
         }
 
-        //runInDispatch(true, new MainInitialization("restored"));
+        if(false) {
         for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
             if (mi.getCodeNameBase().equals(
                     "org.netbeans.modules.editor.codetemplates")) {
@@ -180,6 +183,7 @@ public class Module extends ModuleInstall
                 }
                 break;
             }
+        }
         }
 
         earlyInit();
@@ -516,10 +520,6 @@ public class Module extends ModuleInstall
         return act;
     }
     
-    static final Action getDefaultKeyAction(JEditorPane ep) {
-        return epToDefaultKeyAction.get(ep);
-    }
-    
     private static void updateKeymap() {
         if (KB_INJECTOR != null) {
             if(dbgNb.getBoolean())
@@ -590,11 +590,11 @@ public class Module extends ModuleInstall
 
         public KeybindingsInjector() {
             super("Keybindings");
+            KB_INJECTOR = this;
             earlyInit();
             KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
             if(dbgNb.getBoolean())
                 System.err.println("~~~ KeybindingsInjector: " + this);
-            KB_INJECTOR = this;
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
@@ -799,6 +799,14 @@ public class Module extends ModuleInstall
         Action a = ep.getKeymap().getDefaultAction();
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
             epToDefaultKeyAction.put(ep, a);
+
+            // Sometimes the ep when install action has the wrong default KTA
+            // so kleep track per kit as well
+            EditorKit kit = ep.getEditorKit();
+            if(kitToDefaultKeyAction.get(kit) == null) {
+                kitToDefaultKeyAction.put(kit, a);
+            }
+
             ep.getKeymap().setDefaultAction(
                     ViManager.getViFactory().createCharAction(
                     DefaultEditorKit.defaultKeyTypedAction));
@@ -810,6 +818,22 @@ public class Module extends ModuleInstall
                         + " action: " + a.getClass().getSimpleName());
             }
         }
+    }
+
+    /**
+     * Find NB's DefaultKeyTypedAction for the edtior pane, or one for
+     * the associted editor kit if the JEP doesn't have one.
+     *
+     * @param ep the edtior pane.
+     * @return a best guess defaultKeytypedAction.
+     */
+    static final Action getDefaultKeyAction(JEditorPane ep) {
+        Action a = epToDefaultKeyAction.get(ep);
+        if(a == null) {
+            EditorKit kit = ep.getEditorKit();
+            a = kitToDefaultKeyAction.get(kit);
+        }
+        return a;
     }
     
     public static final void checkCaret(JEditorPane ep) {

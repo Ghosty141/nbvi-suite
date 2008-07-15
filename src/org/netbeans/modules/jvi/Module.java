@@ -691,6 +691,9 @@ public class Module extends ModuleInstall
                     mapJvi.put(KP_DOWN.getKeyStrokeList(), KP_DOWN);
                     if(dbgNb.getBoolean())
                         checkBinding("mapJvi", mapJvi);
+                    if(dbgNb.getBoolean())
+                        System.err.println("Injector: build jVi map. size "
+                                + mapJvi.size());
                 }
                 if(dbgNb.getBoolean())
                     checkBinding("mapOrig", map);
@@ -817,6 +820,12 @@ public class Module extends ModuleInstall
                         + Integer.toHexString(System.identityHashCode(ep))
                         + " action: " + a.getClass().getSimpleName());
             }
+        }
+        else if(dbgNb.getBoolean()) {
+            System.err.println(MOD + "MISSED CAPTURE: "
+                    + ep.getClass() + "@"
+                    + Integer.toHexString(System.identityHashCode(ep))
+                    + " action: " + a.getClass().getSimpleName());
         }
     }
 

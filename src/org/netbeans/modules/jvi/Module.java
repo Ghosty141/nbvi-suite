@@ -60,6 +60,7 @@ import javax.swing.text.TextAction;
 import javax.swing.UIManager;
 
 import javax.swing.text.EditorKit;
+import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
@@ -255,10 +256,34 @@ public class Module extends ModuleInstall
             //      not be captured, oh well. Could capture the nomads by
             //      checking at keyTyped, not worth it.
             //
-
-            // NEEDSWORK:
+if(false) {
+            // NEEDSWORK: use this to grab editors
             // EditorRegistry.componentList()
-
+            for(JTextComponent jtc : EditorRegistry.componentList()) {
+                if(dbgNb.getBoolean())
+                    System.err.println(MOD+"init EditorRegistry " + cid(jtc));
+                if(jtc instanceof JEditorPane) {
+                    TopComponent tc = NbEditorUtilities.getTopComponent(jtc);
+                    JEditorPane ep = (JEditorPane) jtc;
+                    captureDefaultKeyTypedAction(ep); // includes nomads
+                    if(tc != null) {
+                        activateTC(ep, tc, "JVI-ENABLE");
+                    }
+                    else if(dbgNb.getBoolean())
+                        System.err.println(MOD+"initNomad" + cid(ep));
+                }
+                else if(dbgNb.getBoolean())
+                    System.err.println(MOD+"init not a JEP " + cid(jtc));
+            }
+            for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
+                JEditorPane ep = getTCEditor(tc);
+                if(ep != null) {
+                    if(dbgNb.getBoolean())
+                        System.err.println(MOD
+                                + "init TCRegistry editor " + cid(ep));
+                }
+            }
+} else {
             for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null) {
@@ -266,7 +291,7 @@ public class Module extends ModuleInstall
                     activateTC(ep, tc, "JVI-ENABLE");
                 }
             }
-
+}
             // And setup the nomads
             // nomadicEditors
 

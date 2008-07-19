@@ -196,19 +196,18 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 	StatusBar sb = getStatusBar();
 	if(sb != null) {
 	    sb.setText(cellName, text, coloring);
-	}
-
-        if(!sb.getPanel().isShowing()) {
-            boolean allBlank = true;
-            for(int i = 0; i < text.length(); i++) {
-                if(text.charAt(i) != ' ') {
-                    allBlank = false;
-                    break;
+            if(!sb.getPanel().isShowing()) {
+                boolean allBlank = true;
+                for(int i = 0; i < text.length(); i++) {
+                    if(text.charAt(i) != ' ') {
+                        allBlank = false;
+                        break;
+                    }
                 }
+                if(!allBlank)
+                    StatusDisplayer.getDefault().setStatusText(text);
             }
-            if(!allBlank)
-                StatusDisplayer.getDefault().setStatusText(text);
-        }
+	}
     }
 
     private StatusBar getStatusBar() {

@@ -109,8 +109,9 @@ public class Module extends ModuleInstall
     private static boolean jViEnabled;
     private static boolean nb6;
 
-    private static final String MOD = "Module-" +
-            System.identityHashCode(Module.class.getClassLoader()) + ": ";
+    private static final String MOD
+            = "Module-" + Integer.toHexString(System.identityHashCode(
+                            Module.class.getClassLoader())) + ": ";
     
     private static final String PROP_JEP = "ViJEditorPane";
     private static final String PREF_ENABLED = "viEnabled";
@@ -142,6 +143,16 @@ public class Module extends ModuleInstall
             //Class.forName("org.openide.util.NbPreferences");
             nb6 = true;
         } catch (ClassNotFoundException ex) { }
+    }
+
+    public static String cid(Object o)
+    {
+        return o.getClass().getSimpleName() + "@" + id(o);
+    }
+
+    public static String id(Object o)
+    {
+        return Integer.toHexString(System.identityHashCode(o));
     }
 
     public static boolean isNb6() {
@@ -244,6 +255,10 @@ public class Module extends ModuleInstall
             //      not be captured, oh well. Could capture the nomads by
             //      checking at keyTyped, not worth it.
             //
+
+            // NEEDSWORK:
+            // EditorRegistry.componentList()
+
             for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null) {
@@ -545,16 +560,12 @@ public class Module extends ModuleInstall
             JEditorPane ep = getTCEditor(tc);
             if(ep != null) {
                 //System.err.println("CAPTURE CHECK: "
-                //        + ep.getClass() + "@"
-                //        + Integer.toHexString(
-                //                System.identityHashCode(ep))
+                //        + cid(ep)
                 //        + ", Action: " + ep.getKeymap().getDefaultAction());
                 Action a = ep.getKeymap().getDefaultAction();
                 if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
                     //System.err.println("LOST CAPTURED KEY: "
-                    //    + ep.getClass() + "@"
-                    //    + Integer.toHexString(
-                    //            System.identityHashCode(ep)));
+                    //    + cid(ep)
                     captureDefaultKeyTypedAction(ep);
                 }
             }
@@ -793,11 +804,6 @@ public class Module extends ModuleInstall
         }
     }
     
-    private static void closeTC(JEditorPane ep, TopComponent tc) {
-        ViManager.closeAppEditor(ep, tc);
-        editorToCaret.remove(ep);
-    }
-    
     private static void captureDefaultKeyTypedAction(JEditorPane ep) {
         Action a = ep.getKeymap().getDefaultAction();
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
@@ -816,15 +822,13 @@ public class Module extends ModuleInstall
 
             if(dbgNb.getBoolean()) {
                 System.err.println(MOD + "capture: "
-                        + ep.getClass() + "@"
-                        + Integer.toHexString(System.identityHashCode(ep))
+                        + cid(ep)
                         + " action: " + a.getClass().getSimpleName());
             }
         }
         else if(dbgNb.getBoolean()) {
             System.err.println(MOD + "MISSED CAPTURE: "
-                    + ep.getClass() + "@"
-                    + Integer.toHexString(System.identityHashCode(ep))
+                    + cid(ep)
                     + " action: " + a.getClass().getSimpleName());
         }
     }
@@ -855,6 +859,11 @@ public class Module extends ModuleInstall
             }
             NbFactory.installCaret(ep, new NbCaret());
         }
+    }
+
+    private static void closeTC(JEditorPane ep, TopComponent tc) {
+        ViManager.closeAppEditor(ep, tc);
+        editorToCaret.remove(ep);
     }
     
     // This was private, but there are times when a TopComponent with
@@ -962,7 +971,7 @@ public class Module extends ModuleInstall
             s.append(" ")
                 .append(parent.getDisplayName())
                 .append(":")
-                .append(parent.hashCode());
+                .append(cid(parent));
             tc = parent;
             parent = (TopComponent)SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
         }
@@ -982,7 +991,7 @@ public class Module extends ModuleInstall
         Mode mode = WindowManager.getDefault().findMode(tc);
         if(dbgAct.getBoolean()) {
             System.err.println("trackTC: " + tag + ": "
-                        + tc.getDisplayName() + ":" + tc.hashCode()
+                        + tc.getDisplayName() + ":" + cid(tc)
                         + " '" + (mode == null ? "null" : mode.getName()) + "'"
                         + (ec == null ? " ec null"
                            : " : nPanes = "
@@ -991,7 +1000,7 @@ public class Module extends ModuleInstall
         if(panes != null) {
             for (JEditorPane ep : panes) {
                 if(dbgAct.getBoolean()) {
-                    System.err.println("\tep " + ep.hashCode()
+                    System.err.println("\tep " + cid(ep)
                                        + ancestorStringTC(ep));
                 }
             }

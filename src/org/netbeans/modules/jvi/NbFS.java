@@ -89,13 +89,18 @@ public class NbFS implements ViFS
     }
 
     public boolean write(
-            ViTextView tv, boolean force, String fName, Integer[] range)
+            ViTextView tv, boolean force, Object writeTarget, Integer[] range)
     {
         if(range.length == 0) {
-            if(fName == null) {
+            if(writeTarget == null) {
                 return write(tv, force);
+            } else if(writeTarget instanceof String) {
+                return write(tv, (String) writeTarget, force);
+            } else {
+                Msg.emsg("WRITE TO " + writeTarget.getClass().getName()
+                        + " NOT IMPLEMENTED");
+                return false;
             }
-            return write(tv, fName, force);
         }
 	Msg.emsg("WRITE RANGE NOT IMPLEMENTED, ");
         return false;

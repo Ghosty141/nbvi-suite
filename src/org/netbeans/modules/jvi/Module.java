@@ -148,11 +148,15 @@ public class Module extends ModuleInstall
 
     public static String cid(Object o)
     {
+        if (o == null)
+            return "(null)";
         return o.getClass().getSimpleName() + "@" + id(o);
     }
 
     public static String id(Object o)
     {
+        if (o == null)
+            return "(null)";
         return Integer.toHexString(System.identityHashCode(o));
     }
 

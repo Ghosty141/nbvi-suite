@@ -193,7 +193,7 @@ public class NbTextView extends TextView
      */
     @Override
     public boolean openNewLine(NLOP op) {
-        final ViFPOS cursor = getWCursor();
+        final ViFPOS cursor = w_cursor;
         if(op == NLOP.NL_BACKWARD && cursor.getLine() == 1) {
             // Special case if BACKWARD and at first line of document.
             // set the caret position to 0 so that insert line on first line

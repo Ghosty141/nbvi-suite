@@ -13,6 +13,9 @@ import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.prefs.PreferenceChangeEvent;
@@ -20,14 +23,22 @@ import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.SimpleValueNames;
+import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.windows.WindowManager;
 
 /**
- *
- * @author  erra
+ * This class monitors particular preference changes, and gives a warning
+ * if they are changed outside of jVi.
+ * <p>
+ * Use monitorMimeType to add a mimeType. And use clear to stop monitoring,
+ * all resources are cleared.
+ * The monitoring can be temporarily suspended using setInternalAction.
+ * </p>
+ * @author  err
  */
 public class TabWarning extends JDialog {
     
@@ -81,35 +92,55 @@ public class TabWarning extends JDialog {
     }
 
     private static TabWarning tabWarning;
-    private static Preferences prefs;
+    private static Date lastShowTime = new Date(0);
     private static PreferenceChangeListener scl;
+    private final static Set<MimePath> mimePaths = new HashSet();
 
     private static final MutableBoolean
             isInternalSetting = new MutableBoolean();
 
-    static void setTabWarning(boolean enableFlag) {
-        if(enableFlag) {
-            if(scl == null) {
+    static void monitorMimeType(JEditorPane ep)
+    {
+        synchronized(mimePaths) {
+            if(scl == null)
                 scl = new TabSetListener();
-                prefs = MimeLookup.getLookup(MimePath.EMPTY)
-                        .lookup(Preferences.class);
-                prefs.addPreferenceChangeListener(scl);
-            }
-        } else {
-            if(scl != null) {
-                prefs.removePreferenceChangeListener(scl);
-                prefs = null;
-                scl= null;
-            }
+            String mimeType = NbEditorUtilities.getMimeType(ep);
+            Preferences prefs = MimeLookup.getLookup(
+                    MimePath.parse(mimeType)).lookup(Preferences.class);
+            prefs.addPreferenceChangeListener(scl);
         }
     }
 
+    /**
+     * Enable or disable the tab warning feature.
+     * @param enableFlag
+     */
+    static void clear() {
+        synchronized(mimePaths) {
+            for (MimePath mimePath : mimePaths) {
+                Preferences prefs = MimeLookup.getLookup(mimePath)
+                                        .lookup(Preferences.class);
+                prefs.removePreferenceChangeListener(scl);
+            }
+            scl = null;
+        }
+    }
+
+    /**
+     * If the preference is one we care about, and its not changed by jVi
+     * and its been 5 minutes since we've warned, then show the warning.
+     */
     private static class TabSetListener implements PreferenceChangeListener {
         public void preferenceChange(PreferenceChangeEvent evt) {
             String settingName = evt == null ? null : evt.getKey();
+            long i = new Date().getTime();
+            i = i - lastShowTime.getTime();
+            System.err.println("T: " + i);
             if(!isInternalSetting.getValue()
+               && new Date().getTime() - lastShowTime.getTime() > 5 * 60 * 1000
                && (settingName == null
                    || SimpleValueNames.SPACES_PER_TAB.equals(settingName)
+                   || SimpleValueNames.INDENT_SHIFT_WIDTH.equals(settingName)
                    || SimpleValueNames.EXPAND_TABS.equals(settingName)
                    || SimpleValueNames.TAB_SIZE.equals(settingName))
                ) {
@@ -119,6 +150,7 @@ public class TabWarning extends JDialog {
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
                             if(tabWarning == null) {
+                                lastShowTime = new Date();
                                 Frame f = WindowManager.getDefault()
                                                        .getMainWindow();
                                 tabWarning = new TabWarning(f, false);

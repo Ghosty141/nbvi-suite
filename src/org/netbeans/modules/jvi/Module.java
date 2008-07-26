@@ -269,7 +269,7 @@ if(false) {
                 if(jtc instanceof JEditorPane) {
                     TopComponent tc = NbEditorUtilities.getTopComponent(jtc);
                     JEditorPane ep = (JEditorPane) jtc;
-                    captureDefaultKeyTypedAction(ep); // includes nomads
+                    captureDefaultKeyTypedActionAndEtc(ep); // includes nomads
                     if(tc != null) {
                         activateTC(ep, tc, "JVI-ENABLE");
                     }
@@ -291,7 +291,7 @@ if(false) {
             for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null) {
-                    captureDefaultKeyTypedAction(ep);
+                    captureDefaultKeyTypedActionAndEtc(ep);
                     activateTC(ep, tc, "JVI-ENABLE");
                 }
             }
@@ -300,8 +300,6 @@ if(false) {
             // nomadicEditors
 
             ///// hackCaptureCheck();
-
-            TabWarning.setTabWarning(true);
         }
     }
     
@@ -331,6 +329,7 @@ if(false) {
             }
 
             // NEEDSWORK: ?? restore default key typed in following....
+            // NEEDSWORK: clear out default keyTypedCaptures.
             
             // remove all jVi connections, replace original caret
             TopComponent tc = (TopComponent)ViManager.getTextBuffer(1);
@@ -379,6 +378,7 @@ if(false) {
             if(dbgNb.getBoolean())
                 ViManager.dump(System.err);
             
+            TabWarning.clear();
             updateKeymap();
         }
     }
@@ -595,7 +595,7 @@ if(false) {
                 }
                 Action a = ep.getKeymap().getDefaultAction();
                 if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-                    captureDefaultKeyTypedAction(ep);
+                    captureDefaultKeyTypedActionAndEtc(ep);
                 }
             }
         }
@@ -827,14 +827,20 @@ if(false) {
                                 + ep.getEditorKit().getClass().getSimpleName());
             }
             
-            captureDefaultKeyTypedAction(ep);
+            captureDefaultKeyTypedActionAndEtc(ep);
             
             // Make sure the nomadic editors have the right cursor.
             checkCaret(ep);
         }
     }
     
-    private static void captureDefaultKeyTypedAction(JEditorPane ep) {
+    /**
+     * Get the defaultKeyTypedAction and other per ep stuff.
+     * Do TabWarning.
+     * @param ep
+     */
+    private static void captureDefaultKeyTypedActionAndEtc(JEditorPane ep) {
+        TabWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
             epToDefaultKeyAction.put(ep, a);

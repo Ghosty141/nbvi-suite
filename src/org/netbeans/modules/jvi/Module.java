@@ -588,13 +588,13 @@ if(false) {
         for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
             JEditorPane ep = getTCEditor(tc);
             if(ep != null) {
-                //System.err.println("CAPTURE CHECK: "
-                //        + cid(ep)
-                //        + ", Action: " + ep.getKeymap().getDefaultAction());
+                if(dbgNb.getBoolean()) {
+                    System.err.println("HACK CAPTURE CHECK: "
+                            + cid(ep)
+                            + ", Action: " + ep.getKeymap().getDefaultAction());
+                }
                 Action a = ep.getKeymap().getDefaultAction();
                 if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-                    //System.err.println("LOST CAPTURED KEY: "
-                    //    + cid(ep)
                     captureDefaultKeyTypedAction(ep);
                 }
             }
@@ -765,6 +765,7 @@ if(false) {
 
                 map.putAll(mapJvi);
             }
+            hackCaptureCheckLater();
         }
 
         @Override

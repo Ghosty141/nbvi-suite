@@ -101,8 +101,10 @@ public class NbBuffer extends DefaultBuffer {
     @Override
     public void viOptionSet(ViTextView tv, String name) {
         // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
-        Preferences prefs = MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(Preferences.class);
+        String mimeType
+                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        Preferences prefs = MimeLookup.getLookup(
+                MimePath.parse(mimeType)).lookup(Preferences.class);
 
         TabWarning.setInternalAction(true);
         try {
@@ -111,6 +113,7 @@ public class NbBuffer extends DefaultBuffer {
                 prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
             } else if("b_p_sw".equals(name)) {
                 prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
+                prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
             } else if("b_p_et".equals(name)) {
                 prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
             }
@@ -122,13 +125,16 @@ public class NbBuffer extends DefaultBuffer {
     @Override
     public void activateOptions(ViTextView tv) {
         // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
-        Preferences prefs = MimeLookup.getLookup(MimePath.parse(mimeType)).lookup(Preferences.class);
+        String mimeType
+                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        Preferences prefs = MimeLookup.getLookup(
+                MimePath.parse(mimeType)).lookup(Preferences.class);
 
         TabWarning.setInternalAction(true);
         try {
             prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
             prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
+            prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
             prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
         } finally {
             TabWarning.setInternalAction(false);

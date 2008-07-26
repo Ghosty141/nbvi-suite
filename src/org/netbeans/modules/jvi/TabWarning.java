@@ -84,13 +84,15 @@ public class TabWarning extends JDialog {
     private static Preferences prefs;
     private static PreferenceChangeListener scl;
 
-    private static final MutableBoolean isInternalSetting = new MutableBoolean();
+    private static final MutableBoolean
+            isInternalSetting = new MutableBoolean();
 
     static void setTabWarning(boolean enableFlag) {
         if(enableFlag) {
             if(scl == null) {
                 scl = new TabSetListener();
-                prefs = MimeLookup.getLookup(MimePath.EMPTY).lookup(Preferences.class);
+                prefs = MimeLookup.getLookup(MimePath.EMPTY)
+                        .lookup(Preferences.class);
                 prefs.addPreferenceChangeListener(scl);
             }
         } else {

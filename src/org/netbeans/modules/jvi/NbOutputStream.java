@@ -148,7 +148,9 @@ public class NbOutputStream extends OutputStreamAdaptor {
         }
 
         public void outputLineAction(OutputEvent outputEvent) {
-            nbLine.show(Line.SHOW_TOFRONT, offset);
+            nbLine.show(Line.ShowOpenType.OPEN,
+                        Line.ShowVisibilityType.FRONT,
+                        offset);
         }
 
         public void outputLineCleared(OutputEvent outputEvent) {

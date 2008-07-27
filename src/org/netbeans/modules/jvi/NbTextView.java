@@ -115,10 +115,14 @@ public class NbTextView extends TextView
     
     @Override
     public void viOptionSet(ViTextView tv, String name) {
+        super.viOptionSet(tv, name);
+
         if("w_p_nu".equals(name)) {
             showLineNumbers = w_p_nu;
-            String mimeType = NbEditorUtilities.getMimeType(tv.getEditorComponent());
-            Preferences prefs = MimeLookup.getLookup(mimeType).lookup(Preferences.class);
+            String mimeType = NbEditorUtilities
+                    .getMimeType(tv.getEditorComponent());
+            Preferences prefs = MimeLookup.getLookup(mimeType)
+                    .lookup(Preferences.class);
             prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
             Options.SetCommand.syncAllInstances("w_p_nu");
         }
@@ -690,7 +694,7 @@ public class NbTextView extends TextView
 
         @Override
         protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
-            return  tv.getBuffer().getVisualSelectBlocks(
+            return  tv.w_buffer.getVisualSelectBlocks(
                                         tv, startOffset, endOffset);
         }
 
@@ -733,8 +737,8 @@ public class NbTextView extends TextView
 
         @Override
         protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
-            return tv.getBuffer().getHighlightSearchBlocks(startOffset,
-                                                           endOffset);
+            return tv.w_buffer.getHighlightSearchBlocks(startOffset,
+                                                        endOffset);
         }
 
         protected AttributeSet getAttribs() {
@@ -859,7 +863,7 @@ public class NbTextView extends TextView
             // redo the full lines of the inserted area
             NbTextView tv = getTv();
             if(tv != null) {
-                ViBuffer buf = tv.getBuffer();
+                ViBuffer buf = tv.w_buffer;
                 // set start,end to line numbers around the change
                 int start = buf.getLineNumber(e.getOffset());
                 int end = buf.getLineNumber(e.getOffset() + e.getLength());
@@ -875,7 +879,7 @@ public class NbTextView extends TextView
             // pick a few lines around the change
             NbTextView tv = getTv();
             if(tv != null) {
-                ViBuffer buf = tv.getBuffer();
+                ViBuffer buf = tv.w_buffer;
                 // set start,end to line numbers around the change
                 int start = buf.getLineNumber(e.getOffset());
                 int end = start;

@@ -378,7 +378,8 @@ final public class NbFactory extends DefaultViFactory {
                 break;
             
             Tag tag = tagStack.get(iActiveTag);
-            tag.fromLine.show(Line.SHOW_TOFRONT,
+            tag.fromLine.show(Line.ShowOpenType.OPEN,
+                              Line.ShowVisibilityType.FRONT,
                               calcColumnOffset(tag.fromDoc,
                                                tag.fromPosition.getOffset()));
             break;
@@ -403,7 +404,8 @@ final public class NbFactory extends DefaultViFactory {
             Tag tag = tagStack.get(iActiveTag -1);
             // modify the tag entry to reflect where we're coming from
             fillTagFrom(tag, G.curwin);
-            tag.toLine.show(Line.SHOW_TOFRONT,
+            tag.toLine.show(Line.ShowOpenType.OPEN,
+                            Line.ShowVisibilityType.FRONT,
                             calcColumnOffset(tag.toDoc,
                                              tag.toPosition.getOffset()));
             break;

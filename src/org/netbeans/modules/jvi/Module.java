@@ -213,18 +213,6 @@ public class Module extends ModuleInstall
             jvi.setSelected(false);
         }
     }
-
-    @Override
-    public void uninstalled() {
-        super.uninstalled();
-        
-        if(dbgNb.getBoolean())
-            System.err.println(MOD + "***** uninstalled *****");
-        
-        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
-        jvi.setSelected(false);
-        runInDispatch(true, new RunJViDisable());
-    }
     
     private static class RunJViEnable implements Runnable {
         public void run() {
@@ -615,7 +603,8 @@ if(false) {
     //
     public static final class KeybindingsInjector
     extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
-    implements PropertyChangeListener {
+    implements PropertyChangeListener
+    {
         private static final MultiKeyBinding KP_UP = new MultiKeyBinding(
                 KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0), "ViUpKey");
         private static final MultiKeyBinding KP_DOWN = new MultiKeyBinding(

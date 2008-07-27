@@ -97,9 +97,10 @@ public class NbBuffer extends DefaultBuffer {
             stopDocumentEvents();
         super.removeShare();
     }
-
+    
     @Override
-    public void viOptionSet(ViTextView tv, String name) {
+    public void activateOptions(ViTextView tv) {
+        super.activateOptions(tv);
         // String mimeType = tv.getEditorComponent().getContentType();
         String mimeType
                 = NbEditorUtilities.getMimeType(tv.getEditorComponent());
@@ -108,7 +109,29 @@ public class NbBuffer extends DefaultBuffer {
 
         TabWarning.setInternalAction(true);
         try {
-            
+            // NEEDSWORK: only do the "put" if something changed
+            prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
+            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
+            prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
+            prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
+        } finally {
+            TabWarning.setInternalAction(false);
+        }
+
+    }
+
+    @Override
+    public void viOptionSet(ViTextView tv, String name) {
+        super.viOptionSet(tv, name);
+        // String mimeType = tv.getEditorComponent().getContentType();
+        String mimeType
+                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        Preferences prefs = MimeLookup.getLookup(
+                MimePath.parse(mimeType)).lookup(Preferences.class);
+
+        TabWarning.setInternalAction(true);
+        try {
+
             if("b_p_ts".equals(name)) {
                 prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
             } else if("b_p_sw".equals(name)) {
@@ -120,26 +143,6 @@ public class NbBuffer extends DefaultBuffer {
         } finally {
             TabWarning.setInternalAction(false);
         }
-    }
-    
-    @Override
-    public void activateOptions(ViTextView tv) {
-        // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType
-                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
-        Preferences prefs = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(Preferences.class);
-
-        TabWarning.setInternalAction(true);
-        try {
-            prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
-            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
-            prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
-            prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
-        } finally {
-            TabWarning.setInternalAction(false);
-        }
-
     }
 
     //////////////////////////////////////////////////////////////////////

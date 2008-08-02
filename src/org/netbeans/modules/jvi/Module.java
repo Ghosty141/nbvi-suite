@@ -366,7 +366,7 @@ if(false) {
             if(dbgNb.getBoolean())
                 ViManager.dump(System.err);
             
-            TabWarning.clear();
+            JViOptionWarning.clear();
             updateKeymap();
         }
     }
@@ -825,11 +825,11 @@ if(false) {
     
     /**
      * Get the defaultKeyTypedAction and other per ep stuff.
-     * Do TabWarning.
+     * Do JViOptionWarning.
      * @param ep
      */
     private static void captureDefaultKeyTypedActionAndEtc(JEditorPane ep) {
-        TabWarning.monitorMimeType(ep);
+        JViOptionWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
             epToDefaultKeyAction.put(ep, a);

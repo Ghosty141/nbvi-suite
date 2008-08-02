@@ -107,7 +107,7 @@ public class NbBuffer extends DefaultBuffer {
         Preferences prefs = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(Preferences.class);
 
-        TabWarning.setInternalAction(true);
+        JViOptionWarning.setInternalAction(true);
         try {
             // NEEDSWORK: only do the "put" if something changed
             prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
@@ -115,7 +115,7 @@ public class NbBuffer extends DefaultBuffer {
             prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
             prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
         } finally {
-            TabWarning.setInternalAction(false);
+            JViOptionWarning.setInternalAction(false);
         }
 
     }
@@ -129,7 +129,7 @@ public class NbBuffer extends DefaultBuffer {
         Preferences prefs = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(Preferences.class);
 
-        TabWarning.setInternalAction(true);
+        JViOptionWarning.setInternalAction(true);
         try {
 
             if("b_p_ts".equals(name)) {
@@ -141,7 +141,7 @@ public class NbBuffer extends DefaultBuffer {
                 prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
             }
         } finally {
-            TabWarning.setInternalAction(false);
+            JViOptionWarning.setInternalAction(false);
         }
     }
 

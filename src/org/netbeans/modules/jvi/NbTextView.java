@@ -693,7 +693,10 @@ public class NbTextView extends TextView
         }
 
         @Override
-        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
+        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset)
+        {
+            // NEEDSWORK: why is tv in the signature? This is in tv.
+            // ???? assert tv == this
             return  tv.w_buffer.getVisualSelectBlocks(
                                         tv, startOffset, endOffset);
         }

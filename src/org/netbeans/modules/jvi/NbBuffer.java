@@ -111,8 +111,10 @@ public class NbBuffer extends DefaultBuffer {
         try {
             // NEEDSWORK: only do the "put" if something changed
             prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
-            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
+
             prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
+
+            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
             prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
         } finally {
             JViOptionWarning.setInternalAction(false);
@@ -134,8 +136,8 @@ public class NbBuffer extends DefaultBuffer {
 
             if("b_p_ts".equals(name)) {
                 prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
+                prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
             } else if("b_p_sw".equals(name)) {
-                prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_sw);
                 prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
             } else if("b_p_et".equals(name)) {
                 prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);

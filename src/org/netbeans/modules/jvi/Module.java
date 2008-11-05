@@ -121,8 +121,8 @@ public class Module extends ModuleInstall
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
     public static final String DBG_HL = "DebugNbHilight";
-    private static BooleanOption dbgNb;
-    private static BooleanOption dbgAct;
+    static BooleanOption dbgNb;
+    static BooleanOption dbgAct;
     static BooleanOption dbgHL;
     
     private static TopComponentRegistryListener topComponentRegistryListener;

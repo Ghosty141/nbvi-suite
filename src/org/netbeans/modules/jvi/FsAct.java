@@ -226,7 +226,7 @@ public class FsAct {
         l.add(MK_F_DOC);
 
         // some nulls may have been added.
-        while(l.remove(null));
+        while(l.remove(null)) { }
         return l;
     }
 }

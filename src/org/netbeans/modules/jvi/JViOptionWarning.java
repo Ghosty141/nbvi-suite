@@ -85,12 +85,15 @@ public class JViOptionWarning {
     static void monitorMimeType(JEditorPane ep)
     {
         synchronized(mimePaths) {
-            if(scl == null)
-                scl = new TabSetListener();
-            String mimeType = NbEditorUtilities.getMimeType(ep);
-            Preferences prefs = MimeLookup.getLookup(
-                    MimePath.parse(mimeType)).lookup(Preferences.class);
-            prefs.addPreferenceChangeListener(scl);
+            MimePath mimePath
+                    = MimePath.parse(NbEditorUtilities.getMimeType(ep));
+            if(mimePaths.add(mimePath)) {
+                if(scl == null)
+                    scl = new TabSetListener();
+                Preferences prefs = MimeLookup.getLookup(mimePath)
+                        .lookup(Preferences.class);
+                prefs.addPreferenceChangeListener(scl);
+            }
         }
     }
 
@@ -109,13 +112,18 @@ public class JViOptionWarning {
         }
     }
 
-    private static int noDrawTime = 5 * 60 * 1000;
+    private static int noDrawTime = 1;//5 * 60 * 1000;
     /**
      * If the preference is one we care about, and its not changed by jVi
      * and its been 5 minutes since we've warned, then show the warning.
      */
     private static class TabSetListener implements PreferenceChangeListener {
         public void preferenceChange(PreferenceChangeEvent evt) {
+            // workaround for Issue 142723
+            //      "preference change events when nothing changes"
+            if(evt == null || evt.getNewValue() == null)
+                return;
+
             String settingName = evt == null ? null : evt.getKey();
             if(!isInternalSetting.getValue()
                && (settingName == null
@@ -173,7 +181,6 @@ public class JViOptionWarning {
 
     private static void closeDialog(boolean doDispose) {
         if(warning != null) {
-            System.err.println("CLOSING OPTION WARNING DIALOG: " + doDispose);
             if(doDispose) {
                 if(dialog != null) {
                     dialog.setVisible(false);

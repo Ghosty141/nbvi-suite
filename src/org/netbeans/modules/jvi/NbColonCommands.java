@@ -356,7 +356,7 @@ public class NbColonCommands {
                         + " " + mkThingDesc()[mkThing] + "\"");
                 fError = true;
             }
-            if(true) {
+            if(Module.dbgNb.getBoolean()) {
                 System.err.println( "\"make " + mkOpDesc()[mkOp]
                         + " " + mkThingDesc()[mkThing] + "\"");
             }

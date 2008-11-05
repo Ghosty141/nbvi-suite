@@ -9,7 +9,6 @@ import com.raelity.jvi.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViBuffer;
-import com.raelity.jvi.ViFPOS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
@@ -150,9 +149,8 @@ public class NbTextView extends TextView
     }
     
     @Override
-    protected void createOps(JEditorPane editorPane) {
+    protected void createOps() {
         ops = new NbOps(this);
-        ops.init(editorPane);
     }
     
     /**
@@ -197,19 +195,18 @@ public class NbTextView extends TextView
      */
     @Override
     public boolean openNewLine(NLOP op) {
-        final ViFPOS cursor = w_cursor;
-        if(op == NLOP.NL_BACKWARD && cursor.getLine() == 1) {
+        if(op == NLOP.NL_BACKWARD && w_cursor.getLine() == 1) {
             // Special case if BACKWARD and at first line of document.
             // set the caret position to 0 so that insert line on first line
             // works as well, set position just before new line of first line
             if(!Edit.canEdit(this, getBuffer(), 0))
                 return false;
-            setCaretPosition(0);
+            w_cursor.set(0);
             insertNewLine();
             
             MySegment seg = getBuffer().getLineSegment(1);
-            setCaretPosition(0 + Misc.coladvanceColumnIndex(MAXCOL, seg));
-            //cursor.setPosition(1, coladvanceColumnIndex(MAXCOL, seg));
+            w_cursor.set(0 + Misc.coladvanceColumnIndex(MAXCOL, seg));
+            //w_cursor.setPosition(1, coladvanceColumnIndex(MAXCOL, seg));
             return true;
         }
         
@@ -220,8 +217,8 @@ public class NbTextView extends TextView
         if(op == NLOP.NL_FORWARD) {
             // after the current line, but since we might be sitting on
             // a fold,
-            offset = G.curwin.getBufferLineOffset(
-                    G.curwin.getCoordLine(cursor.getLine()) + 1);
+            offset = getBufferLineOffset(
+                    getCoordLine(w_cursor.getLine()) + 1);
             if(offset > getBuffer().getLength()) {
                 afterEOF = true;
                 line = 0; // dont' care
@@ -231,26 +228,26 @@ public class NbTextView extends TextView
         } else {
             // before the current line
             offset = getBuffer()
-                        .getLineStartOffsetFromOffset(cursor.getOffset());
-            line = cursor.getLine();
+                        .getLineStartOffsetFromOffset(w_cursor.getOffset());
+            line = w_cursor.getLine();
         }
         
         if(afterEOF) {
             offset--;
             if(!Edit.canEdit(this, getBuffer(), offset))
                 return false;
-            G.curwin.setCaretPosition(offset);
-            G.curwin.insertNewLine();
+            w_cursor.set(offset);
+            insertNewLine();
             return true;
         }
         
         // offset is where insert happens
         if(!Edit.canEdit(this, getBuffer(), offset))
             return false;
-        G.curwin.setCaretPosition(offset);
-        //G.curwin.insertNewLine();
+        w_cursor.set(offset);
+        //insertNewLine();
         getBuffer().insertText(offset, "\n");
-        setCaretPosition(offset);
+        w_cursor.set(offset);
         getBuffer().reindent(line, 1);
         return true;
     }
@@ -263,15 +260,15 @@ public class NbTextView extends TextView
             ops.xact(NbEditorKit.matchBraceAction);
         } else {
             // NB's match brace action uses the character before the cursor
-            int startingOffset = getCaretPosition();
-            setCaretPosition(startingOffset + 1);
+            int startingOffset = w_cursor.getOffset();
+            w_cursor.set(startingOffset + 1);
             ops.xact(NbEditorKit.matchBraceAction);
-            if(getCaretPosition() != startingOffset + 1) {
+            if(w_cursor.getOffset() != startingOffset + 1) {
                 // it moved, success match, need to backup
-                setCaretPosition(getCaretPosition()-1);
+                w_cursor.set(w_cursor.getOffset()-1);
             } else {
                 // match failed, back to original position (is this needed?)
-                setCaretPosition(startingOffset);
+                w_cursor.set(startingOffset);
             }
         }
     }

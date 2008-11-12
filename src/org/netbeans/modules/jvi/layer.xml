@@ -28,20 +28,18 @@
 	        <attr name="position" intvalue="3078"/>
             </file>
             <file name="JViEnableAction.instance">
-                <attr name="instanceClass"
-                      stringvalue="org.netbeans.modules.jvi.Module$JViEnableAction"/>
+                <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$JViEnableAction"/>
                 <attr name="position" intvalue="3079"/>
             </file>
         </folder>
     </folder>
 
-    <folder name="OptionsDialog">
-        <folder name="Actions">
-            <folder name="Tools">
-                <file name="jVi.shadow">
-                    <attr name="originalFile" stringvalue="Menu/Tools/org-netbeans-modules-jvi-Module$JViEnableAction.instance"/>
-                </file>
-            </folder>
+    <!-- register into action pool to allow user to define shortcut, put it on toolbar etc. -->
+    <folder name="Actions">
+        <folder name="Tools">
+            <file name="JViEnableAction.shadow">
+                <attr name="originalFile" stringvalue="Menu/Tools/JViEnableAction.instance"/>
+            </file>
         </folder>
     </folder>
 
@@ -70,380 +68,317 @@
             <!-- cf Class InstanceDataObject -->
             <file name="ViUpKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViUpKey"/>
             </file>
             <file name="ViDownKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViDownKey"/>
             </file>
             <file name="ViLeftKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViLeftKey"/>
             </file>
             <file name="ViRightKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViRightKey"/>
             </file>
             <file name="ViInsertKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViInsertKey"/>
             </file>
             <file name="ViDeleteKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViDeleteKey"/>
             </file>
             <file name="ViTabKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViTabKey"/>
             </file>
             <file name="ViHomeKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViHomeKey"/>
             </file>
             <file name="ViEndKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViEndKey"/>
             </file>
             <file name="ViHelpKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViHelpKey"/>
             </file>
             <file name="ViUndoKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViUndoKey"/>
             </file>
             <file name="ViBack_spaceKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViBack_spaceKey"/>
             </file>
             <file name="ViPageUpKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViPageUpKey"/>
             </file>
             <file name="ViPageDownKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViPageDownKey"/>
             </file>
             <file name="ViPlusKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViPlusKey"/>
             </file>
             <file name="ViMinusKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViMinusKey"/>
             </file>
             <file name="ViDivideKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViDivideKey"/>
             </file>
             <file name="ViMultiplyKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViMultiplyKey"/>
             </file>
             <file name="ViEnterKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViEnterKey"/>
             </file>
             <file name="ViPeriodCloseAngleKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViPeriodCloseAngleKey"/>
             </file>
             <file name="ViCommaOpenAngleKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCommaOpenAngleKey"/>
             </file>
             <file name="ViCtrl-AKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-AKey"/>
             </file>
             <file name="ViCtrl-BKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-BKey"/>
             </file>
             <file name="ViCtrl-CKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-CKey"/>
             </file>
             <file name="ViCtrl-DKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-DKey"/>
             </file>
             <file name="ViCtrl-EKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-EKey"/>
             </file>
             <file name="ViCtrl-FKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-FKey"/>
             </file>
             <file name="ViCtrl-GKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-GKey"/>
             </file>
             <file name="ViCtrl-HKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-HKey"/>
             </file>
             <file name="ViCtrl-IKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-IKey"/>
             </file>
             <file name="ViCtrl-JKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-JKey"/>
             </file>
             <file name="ViCtrl-KKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-KKey"/>
             </file>
             <file name="ViCtrl-LKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-LKey"/>
             </file>
             <file name="ViCtrl-MKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-MKey"/>
             </file>
             <file name="ViCtrl-NKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-NKey"/>
             </file>
             <file name="ViCtrl-OKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-OKey"/>
             </file>
             <file name="ViCtrl-PKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-PKey"/>
             </file>
             <file name="ViCtrl-QKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-QKey"/>
             </file>
             <file name="ViCtrl-RKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-RKey"/>
             </file>
             <file name="ViCtrl-SKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-SKey"/>
             </file>
             <file name="ViCtrl-TKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-TKey"/>
             </file>
             <file name="ViCtrl-UKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-UKey"/>
             </file>
             <file name="ViCtrl-VKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-VKey"/>
             </file>
             <file name="ViCtrl-WKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-WKey"/>
             </file>
             <file name="ViCtrl-XKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-XKey"/>
             </file>
             <file name="ViCtrl-YKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-YKey"/>
             </file>
             <file name="ViCtrl-ZKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-ZKey"/>
             </file>
             <file name="ViEscapeKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViEscapeKey"/>
             </file>
             <file name="ViCtrl-BackslashKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCtrl-BackslashKey"/>
             </file>
             <file name="ViCloseBracketKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCloseBracketKey"/>
             </file>
             <file name="ViSpaceKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViSpaceKey"/>
             </file>
             <file name="ViF1Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF1Key"/>
             </file>
             <file name="ViF2Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF2Key"/>
             </file>
             <file name="ViF3Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF3Key"/>
             </file>
             <file name="ViF4Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF4Key"/>
             </file>
             <file name="ViF5Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF5Key"/>
             </file>
             <file name="ViF6Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF6Key"/>
             </file>
             <file name="ViF7Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF7Key"/>
             </file>
             <file name="ViF8Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF8Key"/>
             </file>
             <file name="ViF9Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF9Key"/>
             </file>
             <file name="ViF10Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF10Key"/>
             </file>
             <file name="ViF11Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF11Key"/>
             </file>
             <file name="ViF12Key.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
-                <attr name="instanceCreate"
-                      methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViF12Key"/>
             </file>
         </folder>

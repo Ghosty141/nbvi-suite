@@ -121,8 +121,8 @@ public class JViOptionWarning {
         public void preferenceChange(PreferenceChangeEvent evt) {
             // workaround for Issue 142723
             //      "preference change events when nothing changes"
-            if(evt == null || evt.getNewValue() == null)
-                return;
+            // if(evt == null || evt.getNewValue() == null)
+            //     return;
 
             String settingName = evt == null ? null : evt.getKey();
             if(!isInternalSetting.getValue()

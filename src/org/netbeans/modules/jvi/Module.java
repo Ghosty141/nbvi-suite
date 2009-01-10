@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -107,6 +109,8 @@ import org.openide.windows.WindowManager;
  */
 public class Module extends ModuleInstall
 {
+    private static Logger LOG = Logger.getLogger(Module.class.getName());
+
     private static boolean jViEnabled;
     private static boolean nb6;
 
@@ -1081,13 +1085,16 @@ if(false) {
         } else if(!wait) {
             EventQueue.invokeLater(runnable);
         } else {
-                try {
-                    EventQueue.invokeAndWait(runnable);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                } catch (InvocationTargetException ex) {
-                    ex.printStackTrace();
-                }
+            Exception ex1 = null;
+            try {
+                EventQueue.invokeAndWait(runnable);
+            } catch (InterruptedException ex) {
+                ex1 = ex;
+            } catch (InvocationTargetException ex) {
+                ex1 = ex;
+            }
+            if(ex1 != null)
+                LOG.log(Level.SEVERE, null, ex1);
         }
     }
 
@@ -1270,7 +1277,7 @@ if(false) {
                 Completion.get().hideCompletion();
             }
         } catch (BadLocationException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, null, ex);
         }
     }
 

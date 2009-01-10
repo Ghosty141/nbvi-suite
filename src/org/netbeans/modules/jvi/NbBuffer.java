@@ -20,6 +20,8 @@ import com.raelity.text.TextUtil;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -52,6 +54,7 @@ import static com.raelity.jvi.Constants.*;
  * @author erra
  */
 public class NbBuffer extends DefaultBuffer {
+    private static Logger LOG = Logger.getLogger(NbBuffer.class.getName());
     private UndoRedo.Manager undoRedo;
 
     private static Method beginUndo;
@@ -188,7 +191,7 @@ public class NbBuffer extends DefaultBuffer {
                     indent.reindent(getLineStartOffset(line),
                                     getLineEndOffset(line + count - 1));
                 } catch (BadLocationException ex) {
-                    ex.printStackTrace();
+                    LOG.log(Level.SEVERE, null, ex);
                 } finally {
                     if(!keepAtomicLock)
                         doc.atomicUnlock();

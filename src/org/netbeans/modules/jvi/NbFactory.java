@@ -14,6 +14,8 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -34,6 +36,8 @@ import org.openide.util.NbPreferences;
 import org.openide.windows.TopComponent;
 
 final public class NbFactory extends DefaultViFactory {
+
+    private static Logger LOG = Logger.getLogger(NbFactory.class.getName());
     
     NbFS fs = new NbFS();
     
@@ -126,7 +130,7 @@ final public class NbFactory extends DefaultViFactory {
                         //System.err.println("USE JDK PREFERENCES NODE");
                     }
                 } catch(BackingStoreException ex) {
-                    ex.printStackTrace();
+                    LOG.log(Level.SEVERE, null, ex);
                 }
             }
 
@@ -264,6 +268,7 @@ final public class NbFactory extends DefaultViFactory {
 
             // register combo's editor with infrastructure, see Issue 110237
             boolean done = false;
+            Exception ex1 = null;
             try {
                 Class c = ((ClassLoader)(Lookup.getDefault()
                             .lookup(ClassLoader.class))).loadClass(
@@ -275,10 +280,16 @@ final public class NbFactory extends DefaultViFactory {
                 register.invoke(o, jtc);
                 done = true;
             } catch(ClassNotFoundException ex) {
+                ex1 = ex;
             } catch(InvocationTargetException ex) {
+                ex1 = ex;
             } catch(NoSuchMethodException ex) {
+                ex1 = ex;
             } catch(IllegalAccessException ex) {
+                ex1 = ex;
             }
+            if(ex1 != null)
+                LOG.log(Level.SEVERE, null, ex1);
         }
 
         return ce;
@@ -323,7 +334,7 @@ final public class NbFactory extends DefaultViFactory {
                 = tag.fromDoc.createPosition(
                             tv.getEditorComponent().getCaretPosition());
         } catch (BadLocationException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, null, ex);
         }
         tag.fromLine = NbEditorUtilities.getLine(
                 tag.fromDoc, tag.fromPosition.getOffset(), false);
@@ -449,7 +460,7 @@ final public class NbFactory extends DefaultViFactory {
             pushingTag.toPosition
                    = doc.createPosition(tv.getEditorComponent().getCaretPosition());
         } catch (BadLocationException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, null, ex);
         }
         
         // If at same doc and same position, then forget the tag

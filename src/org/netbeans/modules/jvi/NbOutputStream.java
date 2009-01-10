@@ -13,6 +13,8 @@ import com.raelity.jvi.OutputStreamAdaptor;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.text.Segment;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.text.Line;
@@ -34,6 +36,7 @@ import org.openide.windows.OutputWriter;
  * @author erra
  */
 public class NbOutputStream extends OutputStreamAdaptor {
+    private static Logger LOG = Logger.getLogger(NbOutputStream.class.getName());
     String type;
     ViTextView tv;
     OutputWriter ow;
@@ -80,7 +83,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             try {
                 io.getOut().reset();//io = IOProvider.getDefault().getIO(tabTag, true);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                LOG.log(Level.SEVERE, null, ex);
                 io = IOProvider.getDefault().getIO(tabTag, true);
             }
         }
@@ -108,8 +111,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
                 ow.println(sb.toString());
             }
         } catch (IOException ex) {
-            // NEEDSWORK: Error manager stuff for exception
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, null, ex);
         }
     }
 

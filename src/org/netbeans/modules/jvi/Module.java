@@ -78,6 +78,7 @@ import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.ErrorManager;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
@@ -520,6 +521,7 @@ if(false) {
         if(!FsAct.getFsActList().contains(path)) {
             ViManager.dumpStack("unlisted action");
         }
+        //FileObject fo = FileUtil.getConfigFile(path);
         FileObject fo = Repository.getDefault().getDefaultFileSystem()
                                                 .getRoot().getFileObject(path);
         if(fo == null)

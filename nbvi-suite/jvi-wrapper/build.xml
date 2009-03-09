@@ -9,6 +9,8 @@
     <property name="original.project.dir" value="../jvi-project"/>
     <property name="original.project.jar"
               value="${original.project.dir}/dist/jvi-project.jar"/>
+    <property name="l2fprod.common.sheet.jar"
+              value="../../../jvi/lib/l2fprod-common-sheet.jar"/>
     
     <target name="release">
         <echo message="Building ${original.project.dir}" level="info"/>
@@ -16,8 +18,25 @@
              target="jar" inheritall="false" inheritrefs="false"/>
         <echo message="Done building ${original.project.dir}" level="info"/>
 
+        <echo message="Copying jvi stuff to ${cluster}/modules/ext" level="info"/>
+        <!--
+        <copy todir="${cluster}/modules/ext">
+            <filelist dir=".">
+                <file name="${original.project.jar}"/>
+                <file name="${l2fprod.common.sheet.jar}"/>
+            </filelist>
+        </copy>
+        <copy todir="${cluster}/modules/ext">
+            <fileset dir=".">
+                <include name="${original.project.jar}"/>
+                <include name="${l2fprod.common.sheet.jar}"/>
+            </fileset>
+        </copy>
+        -->
         <copy todir="${cluster}/modules/ext"
               file="${original.project.jar}"/>
+        <copy todir="${cluster}/modules/ext"
+              file="${l2fprod.common.sheet.jar}"/>
     </target>
     
     <target name="clean" depends="projectized-common.clean">

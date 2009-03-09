@@ -16,6 +16,10 @@
                 <runtime-relative-path>ext/jvi-project.jar</runtime-relative-path>
                 <binary-origin>../jvi-project/dist/jvi-project.jar</binary-origin>
             </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/l2fprod-common-sheet.jar</runtime-relative-path>
+                <binary-origin>../../../jvi/lib/l2fprod-common-sheet.jar</binary-origin>
+            </class-path-extension>
         </data>
     </configuration>
 </project>

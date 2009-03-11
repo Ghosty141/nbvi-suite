@@ -733,32 +733,20 @@ public class NbTextView extends TextView
             implements HighlightsChangeListener,
                        DocumentListener {
         
-        private final AttributeSet attribs;
+        private ColorOption searchColorOption;
+        private ColorOption searchFgColorOption;
+        private Color searchColor;
+        private Color searchFgColor;
+        private AttributeSet searchAttribs;
 
-        @Override
-        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
-            return tv.w_buffer.getHighlightSearchBlocks(startOffset,
-                                                        endOffset);
-        }
-
-        protected AttributeSet getAttribs() {
-            return attribs;
-        }
-        
         /** Creates a new instance of TextSearchHighlighter */
         public SearchResultsHighlighter(String name, JEditorPane ep) {
             super(name, ep);
 
-            // Determine the color
-            MimePath mimePath;
-            EditorKit kit = ep.getUI().getEditorKit(ep);
-            String mimeType = kit == null ? null : kit.getContentType();
-            mimePath = mimeType == null ? MimePath.EMPTY : MimePath.parse(mimeType);
-            FontColorSettings fcs = MimeLookup.getLookup(mimePath)
-                                        .lookup(FontColorSettings.class);
-            AttributeSet t;
-            t = fcs.getFontColors(FontColorNames.HIGHLIGHT_SEARCH_COLORING);
-            attribs = t == null ? SimpleAttributeSet.EMPTY : t;
+            searchColorOption
+                    = (ColorOption)Options.getOption(Options.searchColor);
+            searchFgColorOption
+                    = (ColorOption)Options.getOption(Options.searchFgColor);
 
             MyHl.putSearch(ep, this);
             if(dbgHL(this))
@@ -768,6 +756,34 @@ public class NbTextView extends TextView
             if(tv != null) {
                 tv.hookupHighlighter(name, this);
             }
+        }
+
+        @Override
+        protected int[] getBlocks(NbTextView tv, int startOffset, int endOffset) {
+            return tv.w_buffer.getHighlightSearchBlocks(startOffset,
+                                                        endOffset);
+        }
+
+        @Override
+        protected AttributeSet getAttribs() {
+            // NEEDSWORK: could listen to option change.
+            // NEEDSWORK: using "!=" in following instead of '.equals'
+            // to avoid messy 'null' handling (listener would fix that)
+            if(searchColorOption.getColor() != searchColor
+                    || searchFgColorOption.getColor() != searchFgColor) {
+                searchColor = searchColorOption.getColor();
+                searchFgColor = searchFgColorOption.getColor();
+                List<Object> l = new ArrayList<Object>();
+                l.add(StyleConstants.Background);
+                l.add(searchColor);
+                if(searchFgColor != null) {
+                    l.add(StyleConstants.Foreground);
+                    l.add(searchFgColor);
+                }
+                searchAttribs = AttributesUtilities.createImmutable(
+                        l.toArray());
+            }
+            return searchAttribs;
         }
         
         protected boolean isEnabled() {

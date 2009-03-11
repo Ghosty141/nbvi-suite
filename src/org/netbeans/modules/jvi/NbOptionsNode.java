@@ -1,287 +1,41 @@
+/*
+ * The contents of this file are subject to the Mozilla Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code is jvi - vi editor clone.
+ *
+ * The Initial Developer of the Original Code is Ernie Rael.
+ * Portions created by Ernie Rael are
+ * Copyright (C) 2000 Ernie Rael.  All Rights Reserved.
+ *
+ * Contributor(s): Ernie Rael <err@raelity.com>
+ */
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Options;
 import com.raelity.jvi.OptionsBean;
-import com.raelity.jvi.OptionsBeanBase;
 import com.raelity.jvi.ViManager;
-import com.raelity.jvi.swing.KeyBindingBean;
-import com.raelity.jvi.swing.KeypadBindingBean;
-import java.awt.Color;
+import com.raelity.jvi.swing.OptionsPanel;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
-import java.beans.PropertyEditor;
-import java.beans.PropertyEditorManager;
-import java.beans.PropertyVetoException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import org.openide.ErrorManager;
-import org.openide.nodes.BeanNode;
-import org.openide.nodes.Children;
-import org.openide.nodes.Node;
 
-public class NbOptionsNode extends BeanNode {
-    private static final String NODE_GENERAL = "General";
-    private static final String NODE_MODIFY = "Modify";
-    private static final String NODE_SEARCH = "Search";
-    private static final String NODE_CURSOR_WRAP = "CursorWrap";
-    private static final String NODE_EXTERNAL_PROCESS = "External Process";
-    private static final String NODE_KEY_BINDINGS = "KeyBindings";
-    private static final String NODE_KEYPAD_BINDINGS = "KeypadBindings";
-    private static final String NODE_DEBUG = "Debug";
-    
-    private static void putEx(PropertyVetoException pve) {
-        String msg = pve.getMessage();
-        RuntimeException iae = new IllegalArgumentException( msg); //NOI18N
-        ErrorManager.getDefault().annotate(iae,
-	        ErrorManager.USER, msg,
-	        msg, pve, new java.util.Date());
-        throw iae;
-    }
-    
-    public NbOptionsNode() throws IntrospectionException {
-        super(new MainOptionsBean(), new MainOptionsSubnodes());
+public class NbOptionsNode extends OptionsPanel {
+
+    public NbOptionsNode(ChangeNotify changeNotify)
+    {
+        super(changeNotify);
     }
 
-    static PropertyDescriptor createPropertyDescriptor(String optName,
-                                                            String methodName,
-                                                            Class clazz)
-    throws IntrospectionException {
-        PropertyDescriptor pd
-                = OptionsBeanBase.createPropertyDescriptor(
-                                        optName, methodName, clazz);
-        //
-        // tweak some things
-        //
-        if(optName.equals(Options.selectFgColor))
-            pd.setHidden(true);
-
-        // if(pd.getPropertyType() == Color.class) {
-        //     System.err.println("PROP: " + optName);
-        //     //pd.setValue("inplaceEditor", "no-such-class");
-        // }
-        return pd;
-    }
-    
-    /**
-     * The properties accessed from the root node of the options tree.
-     */
-    private static class MainOptionsBean extends OptionsBean.Platform {
-        @Override
-        protected void put(String name, int val) {
-            try {
-                super.put(name, val);
-            } catch (PropertyVetoException pve) {
-                putEx(pve);
-            }
-        }
-        @Override
-        protected void put(String name, String val) {
-            try {
-                super.put(name, val);
-            } catch (PropertyVetoException pve) {
-                putEx(pve);
-            }
-        }
-    }
-
-    private static class MainOptionsSubnodes extends Children.Keys {
-        @Override
-        protected Node[] createNodes(Object object) {
-            Node[] nodes = new Node[1];
-            try {
-                if(object.equals(NODE_KEY_BINDINGS)) {
-		    nodes[0] = new KeyBindingNode();
-                } else if(object.equals(NODE_KEYPAD_BINDINGS)) {
-		    nodes[0] = new KeypadBindingNode();
-                } else if(object.equals(NODE_GENERAL)) {
-		    nodes[0] = new GeneralNode();
-                } else if(object.equals(NODE_MODIFY)) {
-		    nodes[0] = new ModifyNode();
-                } else if(object.equals(NODE_SEARCH)) {
-		    nodes[0] = new SearchNode();
-                } else if(object.equals(NODE_CURSOR_WRAP)) {
-		    nodes[0] = new CursorWrapNode();
-                } else if(object.equals(NODE_EXTERNAL_PROCESS)) {
-		    nodes[0] = new ExternalProcessNode();
-                } else if(object.equals(NODE_DEBUG)) {
-		    nodes[0] = new DebugNode();
-                }
-            } catch (IntrospectionException ex) {
-                ErrorManager.getDefault().notify(ex);
-            }
-            return nodes;
-        }
-
-        @Override
-        protected void addNotify() {
-           Collection<String> c = new ArrayList<String>();
-           c.add(NODE_GENERAL);
-           c.add(NODE_MODIFY);
-           c.add(NODE_SEARCH);
-           c.add(NODE_CURSOR_WRAP);
-           c.add(NODE_EXTERNAL_PROCESS);
-           c.add(NODE_KEY_BINDINGS);
-           c.add(NODE_KEYPAD_BINDINGS);
-           c.add(NODE_DEBUG);
-           setKeys(c);
-        }
-
-        @Override
-        protected void removeNotify() {
-            setKeys(Collections.EMPTY_SET);
-        }
-    }
-    
-    private static class KeyBindingNode extends BeanNode {
-	public KeyBindingNode() throws IntrospectionException {
-	    super(new KeyBindingBean());
-	}    
-    }
-    
-    private static class KeypadBindingNode extends BeanNode {
-	public KeypadBindingNode() throws IntrospectionException {
-	    super(new KeypadBindingBean());
-	}    
-    }
-    
-    private static class GeneralNode extends BeanNode {
-	public GeneralNode() throws IntrospectionException {
-	    super(new OptionsBean.General() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
-    }
-    
-    private static class SearchNode extends BeanNode {
-	public SearchNode() throws IntrospectionException {
-	    super(new OptionsBean.Search() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
-    }
-    
-    private static class ModifyNode extends BeanNode {
-	public ModifyNode() throws IntrospectionException {
-	    super(new OptionsBean.Modify() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
-    }
-    
-    private static class CursorWrapNode extends BeanNode {
-	public CursorWrapNode() throws IntrospectionException {
-	    super(new OptionsBean.CursorWrap() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
-    }
-
-    private static class ExternalProcessNode extends BeanNode {
-	public ExternalProcessNode() throws IntrospectionException {
-	    super(new OptionsBean.ExternalProcess() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
-    }
-
-    private static class DebugNode extends BeanNode {
-	public DebugNode() throws IntrospectionException {
-	    super(new NbDebugOptions() {
-                @Override
-                protected void put(String name, int val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-                @Override
-                protected void put(String name, String val) {
-                    try {
-                        super.put(name, val);
-                    } catch (PropertyVetoException pve) {
-                        putEx(pve);
-                    }
-                }
-            });
-	}    
+    @Override
+    public BeanInfo createDebugBean() {
+        return new NbDebugOptions();
     }
     
     // the names for the getters/setters

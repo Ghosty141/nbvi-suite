@@ -62,18 +62,6 @@
         </folder>
     </folder>
 
-    <folder name="UI">
-        <folder name="Services">
-            <folder name="Editing">
-                <file name="NbOptions.instance">
-                    <attr name="instanceCreate" newvalue="org.netbeans.modules.jvi.NbOptionsNode"/>
-                    <attr name="instanceClass" stringvalue="org.openide.nodes.Node"/>
-                    <attr name="name" stringvalue="Vi Options"/>
-                </file>
-            </folder>
-        </folder>
-    </folder>
-
     <folder name="Editors">
         <folder name="Actions">
             <!-- cf Class InstanceDataObject -->

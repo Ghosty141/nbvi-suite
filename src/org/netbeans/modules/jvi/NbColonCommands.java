@@ -39,8 +39,13 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import org.openide.util.ContextAwareAction;
@@ -50,6 +55,8 @@ import org.openide.windows.TopComponentGroup;
 import org.openide.windows.WindowManager;
 
 public class NbColonCommands {
+    private static Logger LOG
+            = Logger.getLogger(NbColonCommands.class.getName());
 
     public static void init() {
         setupCommands();
@@ -370,74 +377,190 @@ public class NbColonCommands {
     //
     // :tog[gle] bo[ttom] | ou[tput] | de[bug]
     //
+    // This is one hack after another...
+    //
 
     private static AbbrevLookup toggles;
 
     private static final String M_OUT = "output";
     private static final String M_DBG = "debugger";
     private static ToggleStuff toggleOutput;
-    private static ToggleStuff toggleDebug;
 
     static void initToggleCommand() {
         if(toggles  != null)
             return;
         toggles = new AbbrevLookup();
 
-        toggleOutput = new ToggleMode(M_OUT);
-        //toggleDebug = new ToggleMode(M_DBG);
-        toggleDebug = new ToggleGroup(M_DBG);
+        toggleOutput = new ToggleOutput(M_OUT);
 
         toggles.add("ou", "output", toggleOutput);
-        toggles.add("de", "debug", toggleDebug);
         toggles.add("bo", "bottom", new ToggleBottom());
-
+        toggles.add("de", "debug", new ActionListener() {
+            public void actionPerformed(ActionEvent e)
+            {
+                ToggleGroup tg = new ToggleGroup(M_DBG);
+                if(tg.isOpen())
+                    tg.doClose();
+                else
+                    tg.doOpen();
+                ToggleStuff.focusEditor(e.getSource());
+            }
+        });
     }
 
     //private static class ToggleTC implements ActionListener {
     //}
 
-    /** Do both output and debugger */
+    /** Do both output and debugger
+     */
     private static class ToggleBottom implements ActionListener {
+        boolean didCloseDebug;
 
         public void actionPerformed(ActionEvent e) {
-            if(toggleDebug.isOpen() || toggleOutput.isOpen()) {
-                if(toggleDebug.isOpen())
+            ToggleGroup toggleDebug = new ToggleGroup(M_DBG);
+            boolean tOutputWindowFlag = toggleOutput.isOpen();
+            boolean tDebugWindowFlag = toggleDebug.isOpen();
+            if(tOutputWindowFlag || tDebugWindowFlag) {
+                if(tDebugWindowFlag) {
                     toggleDebug.doClose();
-                if(toggleOutput.isOpen())
+                    didCloseDebug = true;
+                }
+                if(tOutputWindowFlag)
                     toggleOutput.doClose();
             } else {
-                toggleDebug.doOpen();
+                // only open the debug window if we previously closed it
+                if(didCloseDebug) {
+                    toggleDebug.doOpen();
+                    didCloseDebug = false;
+                }
                 toggleOutput.doOpen();
             }
-            Object o = e.getSource();
-            if(o instanceof JEditorPane) {
-                JEditorPane ep = (JEditorPane) o;
-                ep.requestFocus();
-            }
+            ToggleStuff.focusEditor(e.getSource());
         }
     }
 
-    private abstract static class ToggleStuff {
+    static Object runMethod(TopComponentGroup tcg, String methodName)
+    {
+        Object o = null;
+        Exception ex1 = null;
 
+        try {
+            Class c = tcg.getClass();
+            Method getTopComponentsMethod = c.getMethod(methodName);
+            o = getTopComponentsMethod.invoke(tcg);
+        } catch (IllegalAccessException ex) {
+            ex1 = ex;
+        } catch (IllegalArgumentException ex) {
+            ex1 = ex;
+        } catch (InvocationTargetException ex) {
+            ex1 = ex;
+        } catch (NoSuchMethodException ex) {
+            ex1 = ex;
+        } catch (SecurityException ex) {
+            ex1 = ex;
+        }
+        if(ex1 != null)
+            LOG.log(Level.SEVERE, "Can't run method " + methodName, ex1);
+
+        return o;
+    }
+
+    /**
+     * @param tcg
+     * @return null if can't determine
+     */
+    static boolean isOpened(TopComponentGroup tcg)
+    {
+        return (Boolean) runMethod(tcg, "isOpened");
+    }
+
+    /**
+     * @param tcg
+     * @return null if can't determine
+     */
+    static Set<TopComponent> getTopComponents(TopComponentGroup tcg)
+    {
+        return (Set<TopComponent>) runMethod(tcg, "getTopComponents");
+    }
+
+    private abstract static class ToggleStuff
+    {
         abstract boolean isOpen();
 
         abstract void doOpen();
         abstract void doClose();
 
-        static void closeMode(String modeName,
-                              List<WeakReference<TopComponent>> closedList) {
-            closedList.clear();
-            Mode mode = WindowManager.getDefault().findMode(modeName);
-            for (TopComponent tc : mode.getTopComponents()) {
-                if(tc.isOpened()) {
-                    closedList.add(new WeakReference<TopComponent>(tc));
-                    tc.close();
-                }
+        static boolean isMainOutputWindow(TopComponent tc)
+        {
+            //String cName = tc.getClass().getName();
+            return tc.getName().equals("Output");
+            //   && (cName.equals("org.netbeans.core.io.ui"
+            //                    + ".IOWindow$IOWindowImpl")
+            //       || cName.equals("org.netbeans.core.output2.OutputWindow"));
+        }
+
+        static void focusEditor(Object o)
+        {
+            if(o instanceof JEditorPane) {
+                JEditorPane ep = (JEditorPane) o;
+                ep.requestFocus();
             }
         }
 
-        static void openMode(String modeName,
-                             List<WeakReference<TopComponent>> closedList) {
+        /** keep track of what has been closed */
+        //static void closeMode(String modeName,
+        //                      List<WeakReference<TopComponent>> closedList) {
+        //    closedList.clear();
+        //    Mode mode = WindowManager.getDefault().findMode(modeName);
+        //    for (TopComponent tc : mode.getTopComponents()) {
+        //        if(tc.isOpened()) {
+        //            closedList.add(new WeakReference<TopComponent>(tc));
+        //            tc.close();
+        //        }
+        //    }
+        //}
+
+        //static void openMode(String modeName,
+        //                     List<WeakReference<TopComponent>> closedList) {
+        //    for (WeakReference<TopComponent> wr : closedList) {
+        //        TopComponent tc = wr.get();
+        //        if(tc != null)
+        //            tc.open();
+        //    }
+        //    closedList.clear();
+        //}
+        
+        // static boolean isOpenMode(String modeName) {
+        //     boolean open = false;
+        //     Mode mode = WindowManager.getDefault().findMode(modeName);
+        //     if(mode != null) {
+        //         for (TopComponent tc : mode.getTopComponents()) {
+        //             if(tc.isOpened()) {
+        //                 open = true;
+        //                 break;
+        //             }
+        //         }
+        //     }
+        //     return open;
+        // }
+    }
+    
+    private static class ToggleOutput extends ToggleStuff
+                                    implements ActionListener {
+        String modeName;
+        List<WeakReference<TopComponent>> closedList;
+
+        public ToggleOutput(String modeName) {
+            this.modeName = modeName;
+            closedList = new ArrayList<WeakReference<TopComponent>>();
+        }
+
+        boolean isOpen() {
+            return closedList.isEmpty() && isOpenOutput();
+        }
+
+        @Override
+        void doOpen() {
             for (WeakReference<TopComponent> wr : closedList) {
                 TopComponent tc = wr.get();
                 if(tc != null)
@@ -445,12 +568,36 @@ public class NbColonCommands {
             }
             closedList.clear();
         }
-        
-        static boolean isOpenMode(String modeName) {
+
+        @Override
+        void doClose() {
+            // Close output stuff while keeping track of what is closed.
+            // But do NOT close if it is part of the debugger.
+            // Except close main output window even though part fo debug stuff.
+            ToggleGroup tg = new ToggleGroup(M_DBG);
+            Set<TopComponent> dbgSet = getTopComponents(tg.tcg);
+            closedList.clear();
+            Mode mode = WindowManager.getDefault().findMode(modeName);
+            for (TopComponent tc : mode.getTopComponents()) {
+                if(dbgSet.contains(tc) && !isMainOutputWindow(tc))
+                    continue;
+                if(tc.isOpened()) {
+                    closedList.add(new WeakReference<TopComponent>(tc));
+                    tc.close();
+                }
+            }
+        }
+
+        private boolean isOpenOutput() {
             boolean open = false;
             Mode mode = WindowManager.getDefault().findMode(modeName);
             if(mode != null) {
+                ToggleGroup tg = new ToggleGroup(M_DBG);
+                Set<TopComponent> dbgSet = getTopComponents(tg.tcg);
+
                 for (TopComponent tc : mode.getTopComponents()) {
+                    if(dbgSet.contains(tc) && !isMainOutputWindow(tc))
+                        continue;
                     if(tc.isOpened()) {
                         open = true;
                         break;
@@ -459,31 +606,6 @@ public class NbColonCommands {
             }
             return open;
         }
-    }
-    
-    private static class ToggleMode extends ToggleStuff
-                                    implements ActionListener {
-        String modeName;
-        List<WeakReference<TopComponent>> closedList;
-
-        public ToggleMode(String modeName) {
-            this.modeName = modeName;
-            closedList = new ArrayList<WeakReference<TopComponent>>();
-        }
-
-        boolean isOpen() {
-            return isOpenMode(modeName) && closedList.isEmpty();
-        }
-
-        @Override
-        void doOpen() {
-            openMode(modeName, closedList);
-        }
-
-        @Override
-        void doClose() {
-            closeMode(modeName, closedList);
-        }
 
         public void actionPerformed(ActionEvent e) {
             if(isOpen()) {
@@ -491,57 +613,53 @@ public class NbColonCommands {
             } else {
                 doOpen();
             }
-            Object o = e.getSource();
-            if(o instanceof JEditorPane) {
-                JEditorPane ep = (JEditorPane) o;
-                ep.requestFocus();
-            }
+            focusEditor(e.getSource());
         }
     }
     
-    private static class ToggleGroup extends ToggleStuff
-                                     implements ActionListener {
+    /**
+     * Create this on demand, do not keep it around; it holds references
+     * to all the top components in the group.
+     */
+    private static class ToggleGroup extends ToggleStuff {
         String groupName;
-        String modeName;
+        TopComponentGroup tcg;
         
         ToggleGroup(String groupName) {
             this.groupName = groupName;
-            this.modeName = groupName;
+            tcg = findGroup(groupName);
         }
 
         @Override
         boolean isOpen() {
-            return isOpenMode(modeName);
+            return tcg != null ? isOpened(tcg) : false;
         }
 
         @Override
         void doOpen() {
-            TopComponentGroup tcg = findGroup();
             if(tcg != null)
                 tcg.open();
         }
 
         @Override
         void doClose() {
-            TopComponentGroup tcg = findGroup();
             if(tcg != null)
                 tcg.close();
         }
 
-        private TopComponentGroup findGroup() {
-            TopComponentGroup tcg
-                = WindowManager.getDefault().findTopComponentGroup(groupName);
-            if(tcg == null)
-                ViManager.dumpStack("Unknown TCGroup: " + groupName);
-            return tcg;
-        }
-        
-        public void actionPerformed(ActionEvent e) {
-            if(isOpen()) {
-                doClose();
-            } else {
-                doOpen();
-            }
+        /**
+         * Find the group. Also get the list of TopComponents in the group.
+         * @return the group
+         */
+        private TopComponentGroup findGroup(String name)
+        {
+            TopComponentGroup t
+                = WindowManager.getDefault().findTopComponentGroup(name);
+
+            if(t == null)
+                ViManager.dumpStack("Unknown TCGroup: " + name);
+
+            return t;
         }
     }
     

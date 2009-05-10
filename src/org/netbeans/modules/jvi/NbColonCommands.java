@@ -83,10 +83,12 @@ public class NbColonCommands {
         // next previous in current list
         delegate("cn","cnext", FsAct.JUMP_NEXT);
         delegate("cp","cprevious", FsAct.JUMP_PREV);
+        delegate("cN","cNext", FsAct.JUMP_PREV);
 
         // NEEDSWORK: when available, use this for local syntax errors
         delegate("ln","lnext", FsAct.JUMP_NEXT);
         delegate("lp","lprevious", FsAct.JUMP_PREV);
+        delegate("lN","lNext", FsAct.JUMP_PREV);
         
         ColonCommands.register("gr","grep", ACTION_fu);
 

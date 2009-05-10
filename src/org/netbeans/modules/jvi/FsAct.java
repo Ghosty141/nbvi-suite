@@ -60,27 +60,43 @@ public class FsAct {
     // refactoring
     //
     public static final String RF_RENAME
-        = "Menu/Refactoring/RenameAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-api-ui-RenameAction.instance";
+//      = "Menu/Refactoring/RenameAction.instance";
     public static final String RF_MOVE
-        = "Menu/Refactoring/MoveAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-api-ui-MoveAction.instance";
+//      = "Menu/Refactoring/MoveAction.instance";
     public static final String RF_COPY
-        = "Menu/Refactoring/CopyAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-api-ui-CopyAction.instance";
+//      = "Menu/Refactoring/CopyAction.instance";
     public static final String RF_SAFE_DELETE
-        = "Menu/Refactoring/SafeDeleteAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-api-ui-SafeDeleteAction.instance";
+//      = "Menu/Refactoring/SafeDeleteAction.instance";
     //
     public static final String RF_CHANGE_PARAMETERS
-        = "Menu/Refactoring/"
-        + "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance";
+//      = "Menu/Refactoring/"
+//      + "org-netbeans-modules-refactoring-java-api-ui-ChangeParametersAction.instance";
     public static final String RF_ENCAPSULATE_FIELD
-        = "Menu/Refactoring/"
-        + "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance";
+//      = "Menu/Refactoring/"
+//      + "org-netbeans-modules-refactoring-java-api-ui-EncapsulateFieldAction.instance";
     //
     public static final String RF_PULL_UP
-        = "Menu/Refactoring/"
-        + "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance";
+//      = "Menu/Refactoring/"
+//      + "org-netbeans-modules-refactoring-java-api-ui-PullUpAction.instance";
     public static final String RF_PUSH_DOWN
-        = "Menu/Refactoring/"
-        + "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance";
+        = "Actions/Refactoring/"
+          + "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance";
+//      = "Menu/Refactoring/"
+//      + "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance";
     //
     public static final String RF_INTRODUCE_VARIABLE
         = "Actions/Refactoring/"

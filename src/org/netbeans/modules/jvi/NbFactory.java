@@ -24,8 +24,6 @@ import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
 
 import java.awt.Container;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -274,30 +272,7 @@ final public class NbFactory extends DefaultViFactory {
             // Set mime type to connect with code completion provider
             jtc.getDocument().putProperty("mimeType", "text/x-vicommand");
 
-            // register combo's editor with infrastructure, see Issue 110237
-            boolean done = false;
-            Exception ex1 = null;
-            try {
-                Class c = ((ClassLoader)(Lookup.getDefault()
-                            .lookup(ClassLoader.class))).loadClass(
-                                "org.netbeans.modules.editor.lib2"
-                                + ".EditorApiPackageAccessor");
-                Method get = c.getMethod("get");
-                Object o = get.invoke(null);
-                Method register = c.getMethod("register", JTextComponent.class);
-                register.invoke(o, jtc);
-                done = true;
-            } catch(ClassNotFoundException ex) {
-                ex1 = ex;
-            } catch(InvocationTargetException ex) {
-                ex1 = ex;
-            } catch(NoSuchMethodException ex) {
-                ex1 = ex;
-            } catch(IllegalAccessException ex) {
-                ex1 = ex;
-            }
-            if(ex1 != null)
-                LOG.log(Level.SEVERE, null, ex1);
+            Module.EditorRegistryRegister(jtc);
         }
 
         return ce;

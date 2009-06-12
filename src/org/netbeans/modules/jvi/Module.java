@@ -27,10 +27,12 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.InputEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +64,7 @@ import javax.swing.text.TextAction;
 import javax.swing.UIManager;
 
 import javax.swing.text.EditorKit;
+import javax.swing.text.Keymap;
 import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
@@ -78,7 +81,6 @@ import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.ErrorManager;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
@@ -129,6 +131,8 @@ public class Module extends ModuleInstall
     static BooleanOption dbgNb;
     static BooleanOption dbgAct;
     static BooleanOption dbgHL;
+
+    public static final String HACK_CC = "NB6.7 Code Completion";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static KeybindingsInjector KB_INJECTOR = null;
@@ -193,7 +197,6 @@ public class Module extends ModuleInstall
             System.err.println(MOD + "***** restored *****");
         }
 
-        if(false) {
         for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
             if (mi.getCodeNameBase().equals(
                     "org.netbeans.modules.editor.codetemplates")) {
@@ -202,9 +205,15 @@ public class Module extends ModuleInstall
                     ViManager.HackMap.put(
                             "NB-codetemplatesHang", Boolean.TRUE);
                 }
-                break;
+            } else if (mi.getCodeNameBase().equals(
+                    "org.netbeans.modules.editor.lib2")) {
+                System.err.println("LIB2 VERSION: "
+                        + mi.getSpecificationVersion());
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("1.11.1.2")) >= 0) {
+                    ViManager.HackMap.put(HACK_CC, Boolean.TRUE);
+                }
             }
-        }
         }
 
         earlyInit();
@@ -1205,9 +1214,80 @@ if(false) {
     // :e# file name completion based on NB code completion
     //
 
+    static boolean EditorRegistryRegister(JTextComponent jtc) {
+        boolean done = false;
+        Exception ex1 = null;
+
+        try {
+            Class c = ((ClassLoader)(Lookup.getDefault()
+                        .lookup(ClassLoader.class))).loadClass(
+                            "org.netbeans.modules.editor.lib2"
+                            + ".EditorApiPackageAccessor");
+            Method get = c.getMethod("get");
+            Object o = get.invoke(null);
+            Method register = c.getMethod("register", JTextComponent.class);
+            register.invoke(o, jtc);
+
+/*
+            Boolean b = (Boolean) ViManager.HackMap.get(HACK_CC);
+            if(b != null && b) {
+                c = ((ClassLoader)(Lookup.getDefault()
+                            .lookup(ClassLoader.class))).loadClass(
+                                "org.netbeans.api.editor"
+                                + ".EditorRegistry$Item");
+                o = jtc.getClientProperty(c);
+                if(o != null) {
+                    Field field = c.getDeclaredField("ignoreAncestorChange");
+                    field.setAccessible(true);
+                    field.setBoolean(o, true);
+                }
+            }
+*/
+            done = true;
+        } catch(ClassNotFoundException ex) {
+            ex1 = ex;
+        } catch(InvocationTargetException ex) {
+            ex1 = ex;
+        } catch(NoSuchMethodException ex) {
+            ex1 = ex;
+        } catch(IllegalAccessException ex) {
+            ex1 = ex;
+//      } catch (NoSuchFieldException ex) {
+//          ex1 = ex;
+        }
+        if(ex1 != null)
+            LOG.log(Level.SEVERE, null, ex1);
+
+        return done;
+    }
+
     private static DocumentListener ceDocListen;
     private static boolean ceInSubstitute;
     private static BooleanOption dbgCompl;
+
+    private static void fixupCodeCompletionTextComponent(JTextComponent jtc)
+    {
+        Boolean doHack = (Boolean)ViManager.HackMap.get(HACK_CC);
+        if(doHack == null || !doHack)
+            return;
+
+        Module.EditorRegistryRegister(jtc);
+        // Add Ctrl-space binding
+        Keymap km = JTextComponent.getKeymap(CommandLine.COMMAND_LINE_KEYMAP);
+        if(km != null) {
+            KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
+                                                InputEvent.CTRL_MASK);
+            if(km.getAction(ks) == null) {
+                km.addActionForKeyStroke(ks,
+                        new TextAction("vi-command-code-completion") {
+                            public void actionPerformed(ActionEvent e) {
+                                Completion.get().showCompletion();
+                            }
+                        }
+                );
+            }
+        }
+    }
 
     static void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable) {
         if(dbgCompl == null)
@@ -1221,6 +1301,8 @@ if(false) {
             ceDocListen = null;
             return;
         }
+
+        fixupCodeCompletionTextComponent(ceText);
 
         if(!Options.getOption(Options.autoPopupFN).getBoolean())
             return;

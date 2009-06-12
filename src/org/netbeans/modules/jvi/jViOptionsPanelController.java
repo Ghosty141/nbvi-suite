@@ -24,9 +24,11 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.swing.OptionsPanel;
+import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
@@ -35,7 +37,8 @@ public final class jViOptionsPanelController extends OptionsPanelController
 {
 
     //private jViConfigPanel panel;
-    private OptionsPanel panel;
+    private JPanel panel;
+    private OptionsPanel optionsPanel;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
@@ -74,7 +77,7 @@ public final class jViOptionsPanelController extends OptionsPanelController
 
     public JComponent getComponent(Lookup masterLookup)
     {
-        return getPanel();
+        return getDisplayPanel();
     }
 
     public void addPropertyChangeListener(PropertyChangeListener l)
@@ -87,18 +90,30 @@ public final class jViOptionsPanelController extends OptionsPanelController
         pcs.removePropertyChangeListener(l);
     }
 
+    private JPanel getDisplayPanel()
+    {
+        getPanel();
+        return panel;
+    }
+
     private OptionsPanel getPanel()
     {
-        if (panel == null) {
+        if (optionsPanel == null) {
             //panel = new jViConfigPanel(this);
-            panel = new NbOptionsNode(new OptionsPanel.ChangeNotify() {
+            optionsPanel = new NbOptionsNode(new OptionsPanel.ChangeNotify() {
                 public void change()
                 {
                     changed();
                 }
             });
+            // Let the options float in the middle of the dialog's area
+            // instead of stretching the property sheet left/right.
+            //panel = new JPanel(new BorderLayout());
+            //panel.add(optionsPanel, BorderLayout.EAST);
+            panel = new JPanel();
+            panel.add(optionsPanel);
         }
-        return panel;
+        return optionsPanel;
     }
 
     void changed()

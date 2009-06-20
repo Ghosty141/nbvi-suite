@@ -54,6 +54,27 @@
             <attr name="title" bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Title_jViConfig"/>
         </file>
     </folder>
+
+    <folder name="OptionsExport">
+        <folder name="jVi">
+            <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
+            <attr name="position" intvalue="1000"/>
+            <file name="jVi">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi.*"/>
+            </file>
+        </folder>
+    </folder>
+    <!-- see Issue 167412 "OptionsExport registration requires sub-folder"
+    <folder name="OptionsExport">
+        <file name="jVi">
+            <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
+            <attr name="position" intvalue="1000"/>
+            <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi.*"/>
+        </file>
+    </folder>
+    -->
+
     <folder name="Services">
         <folder name="JavaHelp">
             <file name="jvi-helpset.xml" url="jvi-helpset.xml">

@@ -37,6 +37,14 @@ public class NbOptionsNode extends OptionsPanel {
     public BeanInfo createDebugBean() {
         return new NbDebugOptions();
     }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        setMaximumSize(getPreferredSize());
+    }
+
+
     
     // the names for the getters/setters
     private static final String GETSET_DBG_MODULE = "DebugModule";

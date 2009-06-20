@@ -106,12 +106,13 @@ public final class jViOptionsPanelController extends OptionsPanelController
                     changed();
                 }
             });
+            // Put the options panel on the right side
+            panel = new JPanel(new BorderLayout());
+            panel.add(optionsPanel, BorderLayout.EAST);
             // Let the options float in the middle of the dialog's area
             // instead of stretching the property sheet left/right.
-            //panel = new JPanel(new BorderLayout());
-            //panel.add(optionsPanel, BorderLayout.EAST);
-            panel = new JPanel();
-            panel.add(optionsPanel);
+            //panel = new JPanel();
+            //panel.add(optionsPanel);
         }
         return optionsPanel;
     }

@@ -103,7 +103,9 @@ final public class NbFactory extends DefaultViFactory {
         if(prefs == null) {
             Preferences jdkPrefs
                         = Preferences.userRoot().node(ViManager.PREFS_ROOT);
-            if(!jdkPrefs.getBoolean(Options.platformPreferences, false)) {
+            // ALWAYS USE PLATFORM PREFS so import/export options works
+            //if(!jdkPrefs.getBoolean(Options.platformPreferences, false))
+            if(false) {
                 // Use the jdk's Preferences implementation
                 prefs = jdkPrefs;
             } else {
@@ -125,6 +127,9 @@ final public class NbFactory extends DefaultViFactory {
                         platformPrefs.putBoolean(
                             Options.platformPreferences, true);
                     }
+
+                    // ALWAYS USE PLATFORM PREFS
+                    platformPrefs.putBoolean(Options.platformPreferences, true);
 
                     // Default doesn't matter in following, since this
                     // must have a value.

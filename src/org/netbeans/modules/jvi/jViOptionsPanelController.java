@@ -23,11 +23,13 @@
  */
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.OptionsPanel;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
@@ -39,6 +41,7 @@ public final class jViOptionsPanelController extends OptionsPanelController
     //private jViConfigPanel panel;
     private JPanel panel;
     private OptionsPanel optionsPanel;
+    private JComponent hack;
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
@@ -106,13 +109,22 @@ public final class jViOptionsPanelController extends OptionsPanelController
                     changed();
                 }
             });
-            // Put the options panel on the right side
-            panel = new JPanel(new BorderLayout());
-            panel.add(optionsPanel, BorderLayout.EAST);
-            // Let the options float in the middle of the dialog's area
-            // instead of stretching the property sheet left/right.
-            //panel = new JPanel();
-            //panel.add(optionsPanel);
+            if(ViManager.getOsVersion().isMac()) {
+                // bug  2808635 "Unable to edit preferences on Mac OS X"
+                // let it stretch out
+                panel = optionsPanel;
+            } else {
+                // Put the options panel on the right side
+                panel = new JPanel(new BorderLayout());
+                panel.add(optionsPanel, BorderLayout.EAST);
+                hack = new JLabel();
+                panel.add(hack, BorderLayout.CENTER);
+
+                // Let the options float in the middle of the dialog's area
+                // instead of stretching the property sheet left/right.
+                //panel = new JPanel();
+                //panel.add(optionsPanel);
+            }
         }
         return optionsPanel;
     }

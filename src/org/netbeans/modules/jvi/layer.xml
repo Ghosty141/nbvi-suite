@@ -191,6 +191,11 @@
                 <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
                 <attr name="action-name" stringvalue="ViCommaOpenAngleKey"/>
             </file>
+            <file name="ViCtrl-@Key.instance">
+                <attr name="instanceOf" stringvalue="javax.swing.Action"/>
+                <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>
+                <attr name="action-name" stringvalue="ViCtrl-@Key"/>
+            </file>
             <file name="ViCtrl-AKey.instance">
                 <attr name="instanceOf" stringvalue="javax.swing.Action"/>
                 <attr name="instanceCreate" methodvalue="org.netbeans.modules.jvi.Module.createKBA"/>

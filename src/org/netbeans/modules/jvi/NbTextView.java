@@ -152,6 +152,16 @@ public class NbTextView extends TextView
     protected void createOps() {
         ops = new NbOps(this);
     }
+
+    @Override
+    public int getRequiredDisplayLines()
+    {
+        Boolean doHack = (Boolean)ViManager.HackMap.get(Module.HACK_SCROLL);
+        int nLines = getViewLines();
+        if(doHack != null && doHack)
+            nLines = nLines / 2;
+        return nLines;
+    }
     
     /**
      * open_line: Add a new line within, below or above the current line.

@@ -133,6 +133,7 @@ public class Module extends ModuleInstall
     static BooleanOption dbgHL;
 
     public static final String HACK_CC = "NB6.7 Code Completion";
+    public static final String HACK_SCROLL = "NB6.7 Text Scroll";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static KeybindingsInjector KB_INJECTOR = null;
@@ -207,11 +208,12 @@ public class Module extends ModuleInstall
                 }
             } else if (mi.getCodeNameBase().equals(
                     "org.netbeans.modules.editor.lib2")) {
-                System.err.println("LIB2 VERSION: "
-                        + mi.getSpecificationVersion());
+                //System.err.println("LIB2 VERSION: "
+                //        + mi.getSpecificationVersion());
                 if (mi.getSpecificationVersion().compareTo(
                         new SpecificationVersion("1.11.1.2")) >= 0) {
                     ViManager.HackMap.put(HACK_CC, Boolean.TRUE);
+                    ViManager.HackMap.put(HACK_SCROLL, Boolean.TRUE);
                 }
             }
         }

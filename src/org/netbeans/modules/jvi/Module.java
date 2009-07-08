@@ -121,7 +121,7 @@ public class Module extends ModuleInstall
             = "Module-" + Integer.toHexString(System.identityHashCode(
                             Module.class.getClassLoader())) + ": ";
     
-    private static final String PROP_JEP = "ViJEditorPane";
+    static final String PROP_JEP = "ViJEditorPane";
     private static final String PREF_ENABLED = "viEnabled";
     
     // The persistent option names and their variables

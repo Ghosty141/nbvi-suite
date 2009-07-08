@@ -22,6 +22,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
@@ -469,15 +470,74 @@ public class NbTextView extends TextView
     public void win_goto(int n) {
         super.win_goto(n);
     }
+
+    /**
+     * Return a two element array of objects.
+     * First element is list of visible editor top component
+     * Second element is index of currently active top component, or -1.
+     * list of editors ordered as from getTextBuffer.
+     */
+    private Object[] getEditors(boolean visibleOnly) {
+        List<TopComponent> l = new ArrayList();
+        int idx = -1;
+        for(int i = 1; ; i++) {
+            TopComponent tc = (TopComponent) ViManager.getTextBuffer(i);
+            if(tc == null)
+                break;
+            if(!visibleOnly || tc.isShowing()) {
+                l.add(tc);
+                Set<JEditorPane> s = (Set<JEditorPane>)
+                        tc.getClientProperty(Module.PROP_JEP);
+                if(s != null) {
+                    for (JEditorPane ep : s) {
+                        if(ep == getEditorComponent())
+                            idx = l.size() - 1; // the current/active window
+                    }
+                }
+            }
+        }
+
+        Object[] o = new Object[] {l, idx};
+        return o;
+    }
     
     @Override
     public void win_cycle(int n) {
-        super.win_cycle(n);
+        if(n == 0)
+            n = 1;
+
+        Object[] o = getEditors(true);
+        List<TopComponent> l = (List<TopComponent>) o[0];
+        int idx = (Integer)o[1];
+
+        if(l.size() <= 1 || idx < 0)
+            return;
+
+        // get the window after/before the current window and activate it
+        // Need to check the geometric relationship of the showing windows
+        // and implement the down/left traversal algorithm.
+        // For now just pick the next one in the list.
+        idx += n;
+        if(idx >= l.size())
+            idx = 0;
+        l.get(idx).requestActive();
     }
     
     @Override
     public void win_close_others(boolean forceit) {
-        super.win_close_others(forceit);
+        //super.win_close_others(forceit);
+        Object[] o = getEditors(false);
+        List<TopComponent> l = (List<TopComponent>) o[0];
+        int idx = (Integer)o[1];
+
+        if(l.size() <= 1 || idx < 0)
+            return;
+
+        for (int i = 0; i < l.size(); i++) {
+            TopComponent tc = l.get(i);
+            if(i != idx)
+                tc.close();
+        }
     }
     
     @Override

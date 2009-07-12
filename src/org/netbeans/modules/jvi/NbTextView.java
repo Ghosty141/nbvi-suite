@@ -477,14 +477,14 @@ public class NbTextView extends TextView
      * Second element is index of currently active top component, or -1.
      * list of editors ordered as from getTextBuffer.
      */
-    private Object[] getEditors(boolean visibleOnly) {
+    private Object[] getEditors(boolean showingOnly) {
         List<TopComponent> l = new ArrayList();
         int idx = -1;
         for(int i = 1; ; i++) {
             TopComponent tc = (TopComponent) ViManager.getTextBuffer(i);
             if(tc == null)
                 break;
-            if(!visibleOnly || tc.isShowing()) {
+            if(!showingOnly || tc.isShowing()) {
                 l.add(tc);
                 Set<JEditorPane> s = (Set<JEditorPane>)
                         tc.getClientProperty(Module.PROP_JEP);

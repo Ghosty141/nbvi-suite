@@ -1,22 +1,33 @@
 /*
- * NbStatusDisplay.java
+ * The contents of this file are subject to the Mozilla Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.mozilla.org/MPL/
  *
- * Created on December 31, 2006, 6:39 PM
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
+ * The Original Code is jvi - vi editor clone.
+ *
+ * The Initial Developer of the Original Code is Ernie Rael.
+ * Portions created by Ernie Rael are
+ * Copyright (C) 2000 Ernie Rael.  All Rights Reserved.
+ *
+ * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
+import com.raelity.jvi.Util;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.JEditorPane;
-import javax.swing.JLabel;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
@@ -25,14 +36,12 @@ import org.openide.awt.StatusDisplayer;
 
 /**
  * This status display displays status messages in the EditorUI's StatusBar.
- * A few fields are added to the status bar dependign on useMyCells constant.
+ * In some cases the Editor's StatusBar is not available, so use the
+ * common StatusDisplayer.
  *
  * @author erra
  */
 public final class NbStatusDisplay implements ViStatusDisplay {
-    // don't/do share pre-defined cell in StatusBar
-    private static final boolean useMyCells = false;
-    
     private ViTextView textView;
     private String lastMode = "";
     private String lastMsg = "";
@@ -40,15 +49,17 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     private Coloring lastMsgColoring = null;
     private String mode = "";
     private boolean fFrozen;
+    private StatusDisplayer.Message sdMsg;
 
     // a few things for working with the netbeans status bar.
-    public static final String CELL_STATUS = "vi-status";
-    public static final String CELL_COMMAND = "vi-command";
     private static Coloring red = new Coloring(null, Color.red, null);
     private static Coloring green = new Coloring(new Font(null, Font.BOLD, 0),
                                                  Coloring.FONT_MODE_APPLY_STYLE,
                                                  Color.green.darker().darker(),
                                                  null);
+
+    // NEEDSWORK: it looks like in NB6.7 a JEditorPane always has
+    //            a StatusBar, though it may delegate to StatusDisplayer
     
     /** Creates a new instance of NbStatusDisplay */
     public NbStatusDisplay(ViTextView textView) {
@@ -73,7 +84,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         else
             this.mode = "";
         lastMsg = "";       // clear lastMsg when mode is set
-	setText(CELL_STATUS, modeString());
+	setText(StatusBar.CELL_MAIN, modeString());
         
         //
         // Do that 3 char label in NetBeans' StatusBar
@@ -96,7 +107,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
                     tip = "Visual Select Mode";
                 } else {
                     // It may be "VISUAL, "VISUAL BLOCK" or "VISUAl LINE"
-                    if (G.VIsual_mode == (0x1f & (int)('V'))) { // Ctrl('V')
+                    if (G.VIsual_mode == (Util.ctrl('V'))) {
                         nbMode = "VIB";
                         tip = "Visual Block Mode";
                     } else if (G.VIsual_mode == 'V') {
@@ -117,27 +128,26 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 	if(!jviOnlyMode) {
 	    setText(StatusBar.CELL_TYPING_MODE, nbMode);
 	} else {
-	    StatusBar sb = getStatusBar();
-	    if(sb != null) {
-		JLabel cell = sb.getCellByName(StatusBar.CELL_TYPING_MODE);
-		cell.setText(nbMode);
-		cell.setToolTipText(tip);
-	    }
+	    setText(StatusBar.CELL_TYPING_MODE, nbMode);
+
+            // Forget the tooltip for both 6.5 and 6.7
+	    // StatusBar sb = getStatusBar();
+	    // if(sb != null) {
+	    //     JLabel cell = sb.getCellByName(StatusBar.CELL_TYPING_MODE);
+	    //     cell.setText(nbMode);
+	    //     cell.setToolTipText(tip);
+	    // }
 	}
     }
 
     public void displayCommand(String text) {
-        if(useMyCells)
-            setText(CELL_COMMAND, text);
-        else {
-            text = text.trim();
-            if(text.length() != 0)
-                lastMsgColoring = null;
-            if(text.length() != 0)
-                text = " [ " + text + " ]";
-            lastCmd = text;
-            refresh();
-        }
+        text = text.trim();
+        if(text.length() != 0)
+            lastMsgColoring = null;
+        if(text.length() != 0)
+            text = " [ " + text + " ]";
+        lastCmd = text;
+        refresh();
     }
 
     public void displayStatusMessage(String text) {
@@ -149,14 +159,14 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         fFrozen = false;
         lastMsg = text;
         lastMsgColoring = red;
-	setText(CELL_STATUS, modeString() + text, lastMsgColoring);
+	setText(StatusBar.CELL_MAIN, modeString() + text, lastMsgColoring);
     }
 
     public void displayWarningMessage(String text) {
         fFrozen = false;
         lastMsg = text;
         lastMsgColoring = red;
-	setText(CELL_STATUS, modeString() + text, lastMsgColoring);
+	setText(StatusBar.CELL_MAIN, modeString() + text, lastMsgColoring);
     }
 
     public void displayFrozenMessage(String text) {
@@ -171,16 +181,13 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     }
 
     public void refresh() {
-        // NetBeans insertDefaultKeyAction clears the status bar after every
-        // document addition. But we need to keep the "-- INSERT --" visible.
-        if(!useMyCells)
-            setText(CELL_STATUS, modeString() + lastMsg + lastCmd, lastMsgColoring);
+        setText(StatusBar.CELL_MAIN, modeString() + lastMsg + lastCmd, lastMsgColoring);
     }
 
     private void setMessageText(String text) {
         lastMsg = text;
         lastMsgColoring = null;
-	setText(CELL_STATUS, modeString() + text);
+	setText(StatusBar.CELL_MAIN, modeString() + text);
     }
 
     private void setText(String cellName, String text) {
@@ -188,26 +195,34 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     }
 
     private void setText(String cellName, String text, Coloring coloring) {
-        if(!useMyCells) {
-            // direct CELL_STATUS messsages to the pre-defined location
-            if(cellName.equals(CELL_STATUS))
-                cellName = StatusBar.CELL_MAIN;
-         }
 	StatusBar sb = getStatusBar();
-	if(sb != null) {
-	    sb.setText(cellName, text, coloring);
-            if(!sb.getPanel().isShowing()) {
-                boolean allBlank = true;
-                for(int i = 0; i < text.length(); i++) {
-                    if(text.charAt(i) != ' ') {
-                        allBlank = false;
-                        break;
-                    }
+        if(sb != null) {
+            // Only use alternate for CELL_MAIN and when sb not visible
+            boolean useAlternate = false;
+            if(StatusBar.CELL_MAIN.equals(cellName)
+                    && !sb.isVisible())
+                useAlternate = true;
+            boolean allBlank = true;
+            for(int i = 0; i < text.length(); i++) {
+                if(text.charAt(i) != ' ') {
+                    allBlank = false;
+                    break;
                 }
-                if(!allBlank)
-                    StatusDisplayer.getDefault().setStatusText(text);
             }
-	}
+            if(sdMsg != null) {
+                // clear a previous message
+                sdMsg.clear(0);
+                sdMsg = null;
+            }
+            if(useAlternate) {
+                // message was just cleared, so nothing to do if new msg blank
+                if(!allBlank) {
+                    sdMsg = StatusDisplayer.getDefault().setStatusText(text, 1);
+                }
+            } else {
+                sb.setText(cellName, text, coloring);
+            }
+        }
     }
 
     private StatusBar getStatusBar() {
@@ -217,16 +232,6 @@ public final class NbStatusDisplay implements ViStatusDisplay {
             EditorUI ui = Utilities.getEditorUI(ep);
             if(ui != null) {
                 sb = ui.getStatusBar();
-                if(useMyCells) {
-                    // If the StatusBar does not have nbvi stuff, then add it
-                    if(sb != null && sb.getCellByName(CELL_COMMAND) == null) {
-                        // after StatusBar.CELL_TYPING_MODE
-                        sb.addCell(2, CELL_COMMAND, new String[] {"123yy'adff"});
-                        // after CELL_COMMAND
-                        sb.addCell(3, CELL_STATUS,new String[] { "             "
-                           + "                                               "});
-                    }
-                }
             }
         }
 	return sb;

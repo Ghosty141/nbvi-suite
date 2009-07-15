@@ -27,22 +27,16 @@ import java.util.WeakHashMap;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
-import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.Document;
-import javax.swing.text.EditorKit;
-import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.fold.Fold;
 import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldUtilities;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
-import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.AttributesUtilities;
-import org.netbeans.api.editor.settings.FontColorNames;
-import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.NbEditorKit;
@@ -132,10 +126,12 @@ public class NbTextView extends TextView
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
 
-        TopComponent ancestor = (TopComponent)SwingUtilities
-                .getAncestorOfClass(TopComponent.class, getEditorComponent());
-        isNomadic = ancestor == null;
-    
+        Document doc = getBuffer().getDocument();
+        if(doc == null || NbEditorUtilities.getFileObject(doc) == null)
+            isNomadic = true;
+        else
+            isNomadic = false;
+
         if(isNomadic && G.dbgEditorActivation.getBoolean())
             System.err.println("ACTIVATING OPTIONS FOR NOMAD");
     }

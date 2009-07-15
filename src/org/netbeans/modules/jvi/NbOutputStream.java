@@ -1,10 +1,21 @@
 /*
- * NbOutputStream.java
+ * The contents of this file are subject to the Mozilla Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.mozilla.org/MPL/
  *
- * Created on January 28, 2007, 1:16 AM
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
+ * The Original Code is jvi - vi editor clone.
+ *
+ * The Initial Developer of the Original Code is Ernie Rael.
+ * Portions created by Ernie Rael are
+ * Copyright (C) 2000 Ernie Rael.  All Rights Reserved.
+ *
+ * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
 package org.netbeans.modules.jvi;
@@ -13,10 +24,13 @@ import com.raelity.jvi.OutputStreamAdaptor;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.Segment;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.openide.awt.HtmlBrowser;
 import org.openide.text.Line;
 import org.openide.windows.IOProvider;
 import org.openide.windows.InputOutput;
@@ -121,6 +135,15 @@ public class NbOutputStream extends OutputStreamAdaptor {
     }
 
     @Override
+    public void printlnLink(String link, String text) {
+        try {
+            ow.println(text, new BrowserHook(link));
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
     public void close() {
         ow.close();
         ow = null;
@@ -162,4 +185,28 @@ public class NbOutputStream extends OutputStreamAdaptor {
         }
     }
 
+    private static class BrowserHook implements OutputListener {
+        private String link;
+
+        BrowserHook(String link) {
+            this.link = link;
+        }
+
+        public void outputLineAction(OutputEvent ev) {
+            // invoke a browser on the link
+            URL url;
+            try {
+                url = new URL(link);
+                HtmlBrowser.URLDisplayer.getDefault().showURL(url);
+            } catch (MalformedURLException ex) {
+                LOG.log(Level.SEVERE, null, ex);
+            }
+        }
+
+        public void outputLineCleared(OutputEvent ev) {
+        }
+
+        public void outputLineSelected(OutputEvent ev) {
+        }
+    }
 }

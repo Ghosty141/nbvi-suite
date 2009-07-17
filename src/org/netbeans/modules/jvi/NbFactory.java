@@ -178,7 +178,8 @@ final public class NbFactory extends DefaultViFactory {
         } else
             ViManager.log("createViTextView: not isBuffer");
         
-        return new NbTextView(editorPane);
+        ViTextView tv = new NbTextView(editorPane);
+        return tv;
     }
     
     @Override
@@ -212,6 +213,17 @@ final public class NbFactory extends DefaultViFactory {
         }
         newCaret.setBlinkRate(blinkRate);
     }
+
+    @Override
+    public boolean isNomadic(JEditorPane ep, Object appHandle) {
+        boolean isNomadic;
+        Document doc = ep.getDocument();
+        if(doc == null || NbEditorUtilities.getFileObject(doc) == null)
+            isNomadic = true;
+        else
+            isNomadic = false;
+        return isNomadic;
+    }
   
     @Override
     public boolean isVisible(ViTextView tv) {
@@ -227,10 +239,10 @@ final public class NbFactory extends DefaultViFactory {
         if(appHandle instanceof Document) {
             Document doc = (Document) appHandle;
             FileObject fo = NbEditorUtilities.getFileObject(doc);
-            return fo.getNameExt();
+            return fo != null ? fo.getNameExt() : "null-FileObject";
         }
         if(appHandle == null)
-            return "(null)";
+            return "null-appHandle";
         return "";
     }
 

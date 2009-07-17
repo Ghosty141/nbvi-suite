@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,12 +61,11 @@ import static com.raelity.jvi.Constants.*;
  */
 public class NbTextView extends TextView
 {
-    private boolean isNomadic;
 
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
-        
+
         // since NB insists that this is a shared variable
         // set the common value
         w_p_nu = showLineNumbers;
@@ -96,8 +96,8 @@ public class NbTextView extends TextView
         }
     }
 
-    boolean isNomadic() {
-        return isNomadic;
+    private boolean isNomadic() {
+        return ViManager.getViFactory().isNomadic(editorPane, null);
     }
     
     //
@@ -126,13 +126,7 @@ public class NbTextView extends TextView
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
 
-        Document doc = getBuffer().getDocument();
-        if(doc == null || NbEditorUtilities.getFileObject(doc) == null)
-            isNomadic = true;
-        else
-            isNomadic = false;
-
-        if(isNomadic && G.dbgEditorActivation.getBoolean())
+        if(G.dbgEditorActivation.getBoolean() && isNomadic())
             System.err.println("ACTIVATING OPTIONS FOR NOMAD");
     }
     
@@ -473,13 +467,13 @@ public class NbTextView extends TextView
      * Second element is index of currently active top component, or -1.
      * list of editors ordered as from getTextBuffer.
      */
-    private Object[] getEditors(boolean showingOnly) {
+    private Object[] getEditors(Iterator iter, boolean showingOnly) {
         List<TopComponent> l = new ArrayList();
         int idx = -1;
-        for(int i = 1; ; i++) {
-            TopComponent tc = (TopComponent) ViManager.getTextBuffer(i);
+        while(iter.hasNext()) {
+            TopComponent tc = (TopComponent) iter.next();
             if(tc == null)
-                break;
+                continue;
             if(!showingOnly || tc.isShowing()) {
                 l.add(tc);
                 Set<JEditorPane> s = (Set<JEditorPane>)
@@ -502,11 +496,51 @@ public class NbTextView extends TextView
         if(n == 0)
             n = 1;
 
-        Object[] o = getEditors(true);
+        Object[] o = getEditors(ViManager.getTextBufferIterator(),true);
         List<TopComponent> l = (List<TopComponent>) o[0];
         int idx = (Integer)o[1];
+        if(l.size() == 0) {
+            Util.vim_beep();
+            return;
+        }
 
-        if(l.size() <= 1 || idx < 0)
+        // idx may be < 0, if the current textView is not in the list
+        // that is ok for ^W^W (but not for close others)
+        boolean foundInList = idx >= 0;
+        if(idx < 0)
+            idx = l.size() - 1;
+        if(foundInList && l.size() <= 1)
+            return;
+
+        // get the window after/before the current window and activate it
+        // Need to check the geometric relationship of the showing windows
+        // and implement the down/left traversal algorithm.
+        // For now just pick the next one in the list.
+        idx += n;
+        if(idx >= l.size())
+            idx = 0;
+        l.get(idx).requestActive();
+    }
+
+    @Override
+    public void win_cycle_nomad(int n) {
+        if(n == 0)
+            n = 1;
+
+        Object[] o = getEditors(ViManager.getNomadBufferIterator(),true);
+        List<TopComponent> l = (List<TopComponent>) o[0];
+        int idx = (Integer)o[1];
+        if(l.size() == 0) {
+            Util.vim_beep();
+            return;
+        }
+
+        // idx may be < 0, if the current textView is not in the list
+        // that is ok for ^W^W (but not for close others)
+        boolean foundInList = idx >= 0;
+        if(idx < 0)
+            idx = l.size() - 1;
+        if(foundInList && l.size() <= 1)
             return;
 
         // get the window after/before the current window and activate it
@@ -521,8 +555,7 @@ public class NbTextView extends TextView
     
     @Override
     public void win_close_others(boolean forceit) {
-        //super.win_close_others(forceit);
-        Object[] o = getEditors(false);
+        Object[] o = getEditors(ViManager.getTextBufferIterator(),true);
         List<TopComponent> l = (List<TopComponent>) o[0];
         int idx = (Integer)o[1];
 

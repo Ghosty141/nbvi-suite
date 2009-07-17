@@ -113,7 +113,9 @@ public class NbFS implements ViFS
     }
 
     public void edit(ViTextView tv, boolean force, int i) {
-	TopComponent tc = (TopComponent)ViManager.getTextBuffer(i);
+	TopComponent tc = i >= 0
+                ? (TopComponent)ViManager.getTextBuffer(i)
+                : (TopComponent)ViManager.getMruBuffer(-i);
 	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
 	  return;

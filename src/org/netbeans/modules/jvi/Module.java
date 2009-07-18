@@ -134,6 +134,7 @@ public class Module extends ModuleInstall
 
     public static final String HACK_CC = "NB6.7 Code Completion";
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
+    public static final String HACK_SB = "NB6.7 Status Bar";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static KeybindingsInjector KB_INJECTOR = null;
@@ -203,7 +204,7 @@ public class Module extends ModuleInstall
                     "org.netbeans.modules.editor.codetemplates")) {
                 if (mi.getSpecificationVersion().compareTo(
                         new SpecificationVersion("1.8.0")) < 0) {
-                    ViManager.HackMap.put(
+                    ViManager.putHackMap(
                             "NB-codetemplatesHang", Boolean.TRUE);
                 }
             } else if (mi.getCodeNameBase().equals(
@@ -212,8 +213,9 @@ public class Module extends ModuleInstall
                 //        + mi.getSpecificationVersion());
                 if (mi.getSpecificationVersion().compareTo(
                         new SpecificationVersion("1.11.1.2")) >= 0) {
-                    ViManager.HackMap.put(HACK_CC, Boolean.TRUE);
-                    ViManager.HackMap.put(HACK_SCROLL, Boolean.TRUE);
+                    ViManager.putHackMap(HACK_CC, Boolean.TRUE);
+                    ViManager.putHackMap(HACK_SCROLL, Boolean.TRUE);
+                    ViManager.putHackMap(HACK_SB, Boolean.TRUE);
                 }
             }
         }
@@ -534,10 +536,11 @@ if(false) {
         }
         //FileObject fo = FileUtil.getConfigFile(path);
         FileObject fo = Repository.getDefault().getDefaultFileSystem()
-                                                .getRoot().getFileObject(path);
+                                               .findResource(path);
+//                                              .getRoot().getFileObject(path);
         if(fo == null)
             return null;
-        
+
         InstanceCookie ck = null;
         Action act = null;
         try {
@@ -1269,8 +1272,7 @@ if(false) {
 
     private static void fixupCodeCompletionTextComponent(JTextComponent jtc)
     {
-        Boolean doHack = (Boolean)ViManager.HackMap.get(HACK_CC);
-        if(doHack == null || !doHack)
+        if(!ViManager.getHackFlag(HACK_CC))
             return;
 
         Module.EditorRegistryRegister(jtc);

@@ -147,9 +147,8 @@ public class NbTextView extends TextView
     @Override
     public int getRequiredDisplayLines()
     {
-        Boolean doHack = (Boolean)ViManager.HackMap.get(Module.HACK_SCROLL);
         int nLines = getViewLines();
-        if(doHack != null && doHack)
+        if(ViManager.getHackFlag(Module.HACK_SCROLL))
             nLines = nLines / 2;
         return nLines;
     }

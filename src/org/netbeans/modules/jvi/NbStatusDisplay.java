@@ -23,6 +23,7 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Util;
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import java.awt.Color;
@@ -49,6 +50,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     private Coloring lastMsgColoring = null;
     private String mode = "";
     private boolean fFrozen;
+    // NOTE: StatusDisplayer.Message only on 6.7
     private StatusDisplayer.Message sdMsg;
 
     // a few things for working with the netbeans status bar.
@@ -199,9 +201,16 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         if(sb != null) {
             // Only use alternate for CELL_MAIN and when sb not visible
             boolean useAlternate = false;
-            if(StatusBar.CELL_MAIN.equals(cellName)
-                    && !sb.isVisible())
-                useAlternate = true;
+            boolean sb6dot7 = ViManager.getHackFlag(Module.HACK_SB);
+            if(sb6dot7) {
+                if(StatusBar.CELL_MAIN.equals(cellName)
+                        && !sb.isVisible())
+                    useAlternate = true;
+            } else {
+                if(!sb.getPanel().isShowing())
+                    useAlternate = true;
+            }
+
             boolean allBlank = true;
             for(int i = 0; i < text.length(); i++) {
                 if(text.charAt(i) != ' ') {
@@ -215,9 +224,14 @@ public final class NbStatusDisplay implements ViStatusDisplay {
                 sdMsg = null;
             }
             if(useAlternate) {
-                // message was just cleared, so nothing to do if new msg blank
-                if(!allBlank) {
-                    sdMsg = StatusDisplayer.getDefault().setStatusText(text, 1);
+                if(sb6dot7) {
+                    // message was just cleared, so nothing to do if new msg blank
+                    if(!allBlank) {
+                        sdMsg = StatusDisplayer.getDefault()
+                                .setStatusText(text, 1);
+                    }
+                } else {
+                    StatusDisplayer.getDefault().setStatusText(text);
                 }
             } else {
                 sb.setText(cellName, text, coloring);

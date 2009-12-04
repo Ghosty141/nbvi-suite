@@ -25,20 +25,33 @@
         <folder name="Tools">
             <file name="JViSeparator.instance">
 		<attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-	        <attr name="position" intvalue="3078"/>
+	        <attr name="position" intvalue="3077"/>
             </file>
-            <file name="JViEnableAction.instance">
-                <attr name="instanceClass" stringvalue="org.netbeans.modules.jvi.Module$JViEnableAction"/>
+            <file name="o-n-m-jvi-enable.shadow">
+                <attr name="originalFile"
+                      stringvalue="Actions/Tools/o-n-m-jvi-enable.instance"/>
                 <attr name="position" intvalue="3079"/>
             </file>
         </folder>
     </folder>
 
-    <!-- register into action pool to allow user to define shortcut, put it on toolbar etc. -->
+    <!-- register into action pool to allow user to define shortcut,
+         put it on toolbar etc.
+    -->
     <folder name="Actions">
         <folder name="Tools">
-            <file name="JViEnableAction.shadow">
-                <attr name="originalFile" stringvalue="Menu/Tools/JViEnableAction.instance"/>
+            <file name="o-n-m-jvi-enable.instance">
+                <attr name="preferencesNode"
+                      stringvalue="/org/netbeans/modules/jvi/module" />
+                <attr name="preferencesKey" stringvalue="viEnabled"/>
+                <attr name="instanceCreate"
+                      methodvalue="org.openide.awt.Actions.checkbox"/>
+                <attr name="displayName" stringvalue="jVi"/>
+                <!--<attr name="displayName" bundlevalue="your.pkg.Bundle#key"/>-->
+                <attr name="iconBase"
+                      stringvalue="org/netbeans/modules/jvi/jViLogoSimple.png"/>
+                <attr name="noIconInMenu" boolvalue="true"/>
+                <attr name="asynchronous" boolvalue="false"/>
             </file>
         </folder>
     </folder>

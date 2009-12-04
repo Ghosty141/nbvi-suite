@@ -57,6 +57,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
     String fnTag;
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
+    NewOutputListenerImpl outputListener;
 
     static int nOpen;
     static boolean checkOpenClose = true;
@@ -107,7 +108,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
     }
 
     @Override
-    public void println(int line, int offset, int length) {
+    public void println(int line, int col, int length) {
         if(type.equals(ViOutputStream.OUTPUT))
             return;
         Segment seg = tv.getBuffer().getLineSegment(line);
@@ -116,11 +117,8 @@ public class NbOutputStream extends OutputStreamAdaptor {
             .append(seg.array, seg.offset, seg.count - 1);
         try {
             if(fHyperlink) {
-                Line nbLine = NbEditorUtilities.getLine(
-                        tv.getEditorComponent().getDocument(),
-                        tv.getBuffer().getLineStartOffset(line),
-                        false);
-                ow.println(sb.toString(), new OutList(nbLine, offset));
+                ow.println(sb.toString(),
+                           getOutputListener(tv, line, col, length));
             } else {
                 ow.println(sb.toString());
             }
@@ -148,6 +146,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
         ow.close();
         ow = null;
         tv = null;
+        outputListener = null;
         checkClose();
     }
 
@@ -162,20 +161,69 @@ public class NbOutputStream extends OutputStreamAdaptor {
     private synchronized static void checkClose() {
         nOpen--;
     }
-    
-    private static class OutList implements OutputListener {
+
+    private OutputListener getOutputListener(
+            ViTextView tv, int line, int col, int length) {
+        Line nbLine = NbEditorUtilities.getLine(
+                tv.getEditorComponent().getDocument(),
+                tv.getBuffer().getLineStartOffset(line),
+                false);
+        return new OutputListenerImpl(nbLine, col);
+    }
+
+    private static class OutputListenerImpl implements OutputListener {
         Line nbLine;
-        int offset;
-        
-        OutList(Line nbLine, int offset) {
+        int col;
+
+        OutputListenerImpl(Line nbLine, int col) {
             this.nbLine = nbLine;
-            this.offset = offset;
+            this.col = col;
         }
 
         public void outputLineAction(OutputEvent outputEvent) {
             nbLine.show(Line.ShowOpenType.OPEN,
                         Line.ShowVisibilityType.FRONT,
-                        offset);
+                        col);
+        }
+
+        public void outputLineCleared(OutputEvent outputEvent) {
+        }
+
+        public void outputLineSelected(OutputEvent outputEvent) {
+        }
+    }
+
+    private OutputListener getNewOutputListener(
+            ViTextView tv, int line, int col, int length) {
+        if(outputListener == null || outputListener.tv != tv) {
+            outputListener = new NewOutputListenerImpl(tv);
+        }
+        return outputListener;
+    }
+    
+    //
+    // current way, with one listener per line, allows the hyperlink to
+    // position you directly on the matched string, the col within the line.
+    //
+    private static class NewOutputListenerImpl implements OutputListener {
+        ViTextView tv;
+        //int col;
+        
+        NewOutputListenerImpl(ViTextView tv/*, int col*/) {
+            this.tv = tv;
+        }
+
+        public void outputLineAction(OutputEvent outputEvent) {
+            int line = 0;
+            // line = parse outputEvent.getLine();
+            Line nbLine = NbEditorUtilities.getLine(
+                    tv.getEditorComponent().getDocument(),
+                    tv.getBuffer().getLineStartOffset(line),
+                    false);
+            nbLine.show(Line.ShowOpenType.OPEN,
+                        Line.ShowVisibilityType.FRONT,
+                        0);
+            // Adjust to first non-blank on line
         }
 
         public void outputLineCleared(OutputEvent outputEvent) {

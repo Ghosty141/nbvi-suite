@@ -1049,7 +1049,7 @@ public class NbTextView extends TextView
                         bag.setHighlights(newBag);
                     } else {
                         //  Issue 114642
-                        int bug = -1;
+                        int bug = 0; //-1;
                         if(startOffset == endOffset)
                             bug = 0;
                         bag.removeHighlights(startOffset, endOffset+bug, false);

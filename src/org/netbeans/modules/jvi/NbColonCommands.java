@@ -301,10 +301,10 @@ public class NbColonCommands {
             int mkOp = MK_NONE;
 
             if(ce.getNArg() > 0) {
-                int mkThing01 = MK_NONE;
-                int mkOp01 = MK_NONE;
                 for(int i = 1; i <= ce.getNArg(); i++) {
                     String a = ce.getArg(i);
+                    int mkThing01 = MK_NONE;
+                    int mkOp01 = MK_NONE;
                     //
                     // NOTE: debug and run are after doc and rebuild,
                     //       so they require two character match

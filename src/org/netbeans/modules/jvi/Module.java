@@ -46,6 +46,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
 import javax.swing.Action;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -81,7 +83,7 @@ import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.ErrorManager;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.Repository;
+import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInfo;
@@ -222,16 +224,33 @@ public class Module extends ModuleInstall
 
         earlyInit();
 
-        JViEnableAction jvi = SystemAction.get(JViEnableAction.class);
+        // in layer.xml Actions/Tools: <file name="o-n-m-jvi-enable.instance">
+        // produces the checkbox linked to preferences.
+        Preferences prefNode = getModulePreferences();
+        if(prefNode.get(PREF_ENABLED, "").equals("")) {
+            // Not set, so set it to true
+            prefNode.putBoolean(PREF_ENABLED, true);
+        }
 
         if (isModuleEnabled()) {
-            jvi.setSelected(true);
             runInDispatch(true, new RunJViEnable());
-        } else {
-            jvi.setSelected(false);
         }
+
+        prefNode.addPreferenceChangeListener(new PreferenceChangeListener() {
+            public void preferenceChange(PreferenceChangeEvent evt) {
+                System.err.println("PREF CHANGE: " + evt);
+                if(evt.getKey().equals(PREF_ENABLED)) {
+                    System.err.println("PREF CHANGE TO: " + evt.getNewValue());
+                    boolean enabled = getModulePreferences()
+                            .getBoolean(PREF_ENABLED, true);
+                    EventQueue.invokeLater(enabled
+                                           ? new RunJViEnable()
+                                           : new RunJViDisable());
+                }
+            }
+        });
     }
-    
+
     private static class RunJViEnable implements Runnable {
         public void run() {
             if(jViEnabled)
@@ -534,10 +553,7 @@ if(false) {
         if(!FsAct.getFsActList().contains(path)) {
             ViManager.dumpStack("unlisted action");
         }
-        //FileObject fo = FileUtil.getConfigFile(path);
-        FileObject fo = Repository.getDefault().getDefaultFileSystem()
-                                               .findResource(path);
-//                                              .getRoot().getFileObject(path);
+        FileObject fo = FileUtil.getConfigFile(path);
         if(fo == null)
             return null;
 
@@ -1112,106 +1128,6 @@ if(false) {
             if(ex1 != null)
                 LOG.log(Level.SEVERE, null, ex1);
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    //
-    // Tools > jVi menu enable checkbox
-    //
-    
-    /** The action used for the NB system.
-     * NEEDSWORK: want to plug the action into the checkbox
-     *            but see icon comment in constructor.
-     */
-    private static class JViEnableAction extends CallableSystemAction {
-        protected static final String DISPLAY_NAME="jVi";
-        private JCheckBoxMenuItem cb;
-
-        private static class MyBox extends JCheckBoxMenuItem {
-            MyBox() { super(DISPLAY_NAME); }
-            @Override
-            public void addNotify() {
-                super.addNotify();
-                setSelected(jViEnabled);
-            }
-        }
-        
-        JViEnableAction() {
-            super();
-            putValue("noIconInMenu", Boolean.TRUE); // NOI18N
-
-            cb = new MyBox();
-
-            // Note if "this" is added with setAction, then icon
-            cb.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    doAction(cb.isSelected());
-                }
-            });
-            /*cb.setSelected(true);*/
-        }
-        
-        @Override
-        public boolean isEnabled() {
-            return true;
-        }
-        
-        @Override
-        public JMenuItem getMenuPresenter() {
-            return cb;
-        }
-        
-        boolean isSelected() {
-            return cb.isSelected();
-        }
-        
-        /** This is only to change the state of the checkbox,
-         * there should be no other behavior here
-         */
-        void setSelected(boolean b) {
-            cb.setSelected(b);
-        }
-
-        @Override
-        public void performAction() {
-            actionPerformed(null);
-        }
-
-        /** the system action toggles the current state */
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            boolean enable = !isSelected();
-            setSelected(enable);
-            doAction(enable);
-        }
-        
-        protected void doAction(final boolean enabled) {
-            runInDispatch(false, new Runnable() {
-                public void run() {
-                    if(enabled)
-                        new RunJViEnable().run();
-                    else
-                        new RunJViDisable().run();
-                }
-            });
-            setModuleEnabled(enabled);
-        }
-        
-        @Override
-        public HelpCtx getHelpCtx() {
-            return HelpCtx.DEFAULT_HELP;
-        }
-
-        @Override
-        public String getName() {
-            return DISPLAY_NAME;
-        }
-
-        @Override
-        protected String iconResource() {
-            return "/com/raelity/jvi/resources/jViLogo.png";
-        }
-        
     }
 
     //////////////////////////////////////////////////////////////////////

@@ -52,9 +52,7 @@ import javax.swing.Action;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JEditorPane;
-import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -89,9 +87,7 @@ import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
-import org.openide.util.actions.CallableSystemAction;
 import org.openide.util.actions.SystemAction;
-import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -1140,8 +1136,7 @@ if(false) {
         Exception ex1 = null;
 
         try {
-            Class c = ((ClassLoader)(Lookup.getDefault()
-                        .lookup(ClassLoader.class))).loadClass(
+            Class c = Lookup.getDefault().lookup(ClassLoader.class).loadClass(
                             "org.netbeans.modules.editor.lib2"
                             + ".EditorApiPackageAccessor");
             Method get = c.getMethod("get");

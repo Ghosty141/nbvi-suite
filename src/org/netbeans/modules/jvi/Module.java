@@ -146,6 +146,8 @@ public class Module extends ModuleInstall
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
 
+    private static Runnable shutdownHook;
+
     static {
         try {
             Lookup.getDefault().lookup(ClassLoader.class)
@@ -245,6 +247,16 @@ public class Module extends ModuleInstall
                 }
             }
         });
+    }
+
+    static void setShutdownHook(Runnable hook) {
+        shutdownHook = hook;
+    }
+
+    @Override
+    public void close() {
+        if(shutdownHook != null)
+            shutdownHook.run();
     }
 
     private static class RunJViEnable implements Runnable {

@@ -72,8 +72,7 @@ final public class NbFactory extends DefaultViFactory {
 
     @Override
     public Class loadClass(String name) throws ClassNotFoundException {
-        return ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
-            .loadClass(name);
+        return Lookup.getDefault().lookup(ClassLoader.class).loadClass(name);
     }
 
     @Override
@@ -84,6 +83,11 @@ final public class NbFactory extends DefaultViFactory {
     @Override
     public ViFS getFS() {
         return fs;
+    }
+
+    @Override
+    public void setShutdownHook(Runnable hook) {
+        Module.setShutdownHook(hook);
     }
     
     @Override

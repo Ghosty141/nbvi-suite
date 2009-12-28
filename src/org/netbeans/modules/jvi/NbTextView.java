@@ -256,21 +256,7 @@ public class NbTextView extends TextView
      */
     @Override
     public void findMatch() {
-        if(NbCaret.goodGotoMatchBehavior()) {
-            ops.xact(NbEditorKit.matchBraceAction);
-        } else {
-            // NB's match brace action uses the character before the cursor
-            int startingOffset = w_cursor.getOffset();
-            w_cursor.set(startingOffset + 1);
-            ops.xact(NbEditorKit.matchBraceAction);
-            if(w_cursor.getOffset() != startingOffset + 1) {
-                // it moved, success match, need to backup
-                w_cursor.set(w_cursor.getOffset()-1);
-            } else {
-                // match failed, back to original position (is this needed?)
-                w_cursor.set(startingOffset);
-            }
-        }
+        ops.xact(NbEditorKit.matchBraceAction);
     }
     
     /**

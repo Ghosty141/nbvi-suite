@@ -280,7 +280,7 @@ public class NbBuffer extends DefaultBuffer {
             Util.vim_beep();
             return;
         }
-        if(isInUndo()||isInInsertUndo()) {
+        if(Misc.isInAnyUndo()) {
             ViManager.dumpStack(tag + " while in begin/endUndo");
             return;
         }
@@ -312,12 +312,35 @@ public class NbBuffer extends DefaultBuffer {
     //
     // With NB, the atomic lock on the document groups undo
     // so we can always do that for progromatic undo/redo, eg. "3dd".
-    // But for insert mode locking the file has problems, so we
-    // continue to use the classic undow flag
+    // But for insert mode can not lock file (user interactions), so we
+    // continue to use the classic undo flag
     //
+
+    @Override
+    protected void do_runUndoable(final Runnable r) {
+        final Document doc = getDoc();
+        if(doc instanceof BaseDocument) {
+            r.run();
+
+            // maybe someday
+            // ((BaseDocument)doc).runAtomicAsUser(new Runnable() {
+            //     public void run() {
+            //         try {
+            //             r.run();
+            //         } finally {
+            //             if(isAnyExecption()) {
+            //                 ((BaseDocument)doc).breakAtomicLock();
+            //             }
+            //         }
+            //     }
+            // });
+        } else {
+            r.run();
+        }
+    }
     
     @Override
-    protected void beginUndoOperation() {
+    public void do_beginUndo() {
         clearExceptions();
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
@@ -326,7 +349,7 @@ public class NbBuffer extends DefaultBuffer {
     }
     
     @Override
-    protected void endUndoOperation() {
+    public void do_endUndo() {
         Document doc = getDoc();
         if(doc instanceof BaseDocument) {
             if(isAnyExecption()) {
@@ -335,7 +358,7 @@ public class NbBuffer extends DefaultBuffer {
             }
             
             ((BaseDocument)doc).atomicUnlock();
-            
+
             if(isAnyExecption()) {
                 final ViTextView tv = ViManager.getCurrentTextView();
                 // This must come *after* atomicUnlock, otherwise it gets
@@ -359,7 +382,7 @@ public class NbBuffer extends DefaultBuffer {
     }
 
     @Override
-    protected void beginInsertUndoOperation() {
+    public void do_beginInsertUndo() {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
@@ -373,7 +396,7 @@ public class NbBuffer extends DefaultBuffer {
     }
 
     @Override
-    protected void endInsertUndoOperation() {
+    public void do_endInsertUndo() {
         if(G.isClassicUndo.getBoolean()) {
             if(endUndo != null && undoRedo != null) {
                 try {

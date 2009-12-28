@@ -8,11 +8,8 @@ import com.raelity.jvi.swing.ViCaret;
 import com.raelity.jvi.swing.ViCaretDelegate;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import javax.swing.text.JTextComponent;
 import org.netbeans.editor.ext.ExtCaret;
-import org.openide.util.Lookup;
 
 
 /**
@@ -38,80 +35,46 @@ public class NbCaret extends ExtCaret implements ViCaret {
                     = "nbeditor-bracesMatching-maxForwardLookahead"; //NOI18N
   
   ViCaretDelegate viDelegate;
-  static Method setMatchBraceOffset;
-  static boolean matcher6;
 
   public NbCaret() {
     super();
     viDelegate = new com.raelity.jvi.swing.ViCaretDelegate(this);
-    if(!goodGotoMatchBehavior()) {
-      try {
-        ((ClassLoader)(Lookup.getDefault().lookup(ClassLoader.class)))
-            .loadClass("org.netbeans.spi.editor.bracesmatching.BracesMatcher");
-        // java.lang.Class.forName("org.netbeans.spi.editor.bracesmatching.BracesMatcher");
-        matcher6 = true;
-        ViManager.setPlatformFindMatch(true);
-      }catch(ClassNotFoundException ex) { }
-      try {
-        setMatchBraceOffset = getClass().getSuperclass()
-                .getMethod("setMatchBraceOffset", int.class);
-      } catch(java.lang.NoSuchMethodException ex) { }
-    }
-  }
-  
-  public static boolean goodGotoMatchBehavior() {
-      return matcher6 || setMatchBraceOffset != null;
+    ViManager.setPlatformFindMatch(true);
   }
 
   public void setCursor(ViCursor cursor) {
     viDelegate.setCursor(cursor);
     
-    // NEDSWORK: when development on NB6, can use a boolean to check
-    //           if method is available and ifso invoke directly.
-    
-    //setMatchBraceOffset(cursor.getMatchBraceOffset());
     int offset = cursor.getMatchBraceOffset();
-    if(matcher6) {
-      if(G.p_pbm.getBoolean()) {
-        if(offset == 0) { // command mode
-          getTextComponent().putClientProperty(PROP_CARET_BIAS,
-                  B_FORWARD);
-        } else {
-          getTextComponent().putClientProperty(PROP_CARET_BIAS,
-                  B_BACKWARD);
-        }
-        getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
-                D_FORWARD);
-        getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
-                new Integer(250));
-        getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
-                new Integer(250));
-        
+    if(G.p_pbm.getBoolean()) {
+      if(offset == 0) { // command mode
+        getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                B_FORWARD);
       } else {
-        if(offset == 0) { // command mode
-          getTextComponent().putClientProperty(PROP_CARET_BIAS,
-                  B_FORWARD);
-        } else {
-          getTextComponent().putClientProperty(PROP_CARET_BIAS,
-                  B_BACKWARD);
-        }
-        getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
-                D_FORWARD);
-        getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
-                new Integer(0));
-        getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
-                new Integer(0));
+        getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                B_BACKWARD);
       }
-    }
-    else if(setMatchBraceOffset != null) {
-      try {
-        if(offset == -1) {
-          offset = java.lang.Integer.MAX_VALUE;
-        }
-        setMatchBraceOffset.invoke(this, offset);
-      } catch (InvocationTargetException ex) {
-      } catch (IllegalAccessException ex) {
+      getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
+              D_FORWARD);
+      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
+              new Integer(250));
+      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
+              new Integer(250));
+
+    } else {
+      if(offset == 0) { // command mode
+        getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                B_FORWARD);
+      } else {
+        getTextComponent().putClientProperty(PROP_CARET_BIAS,
+                B_BACKWARD);
       }
+      getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
+              D_FORWARD);
+      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
+              new Integer(0));
+      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
+              new Integer(0));
     }
   }
 
@@ -147,21 +110,6 @@ public class NbCaret extends ExtCaret implements ViCaret {
   public JTextComponent getTextComponent() {
     return component; // from super
   }
-
-  /**
-   * Tries to set the position of the caret from
-   * the coordinates of a mouse event, using viewToModel().
-   * Notifies vi that the most has been clicked in window
-   * and give vi a chance to adjust the position.
-   *
-   * @param e the mouse event
-   */
-  /* NEEDSWORK: positionCaret FUNCTIONALITY NOT AVAILABLE IN NETBEANS
-  protected void positionCaret(MouseEvent e) {
-    viDelegate.positionCaret(e);
-  }
-   */
-
 
     @Override
     public void setDot(int i) {

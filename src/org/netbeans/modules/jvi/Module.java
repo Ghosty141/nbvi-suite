@@ -179,6 +179,10 @@ public class Module extends ModuleInstall
         return jViEnabled;
     }
 
+    static boolean isDbgNb() {
+        return dbgNb != null && dbgNb.getBoolean();
+    }
+
     /** @return the module specific preferences.
      */
     private static Preferences getModulePreferences() {
@@ -195,7 +199,7 @@ public class Module extends ModuleInstall
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
-        if (dbgNb != null && dbgNb.getBoolean()) {
+        if (isDbgNb()) {
             System.err.println(MOD + "***** restored *****");
         }
 
@@ -264,7 +268,7 @@ public class Module extends ModuleInstall
             if(jViEnabled)
                 return;
             
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println(MOD + " runJViEnable");
             
             jViEnabled = true;
@@ -297,7 +301,7 @@ if(false) {
             // NEEDSWORK: use this to grab editors
             // EditorRegistry.componentList()
             for(JTextComponent jtc : EditorRegistry.componentList()) {
-                if(dbgNb.getBoolean())
+                if(isDbgNb())
                     System.err.println(MOD+"init EditorRegistry " + cid(jtc));
                 if(jtc instanceof JEditorPane) {
                     TopComponent tc = NbEditorUtilities.getTopComponent(jtc);
@@ -306,16 +310,16 @@ if(false) {
                     if(tc != null) {
                         activateTC(ep, tc, "JVI-ENABLE");
                     }
-                    else if(dbgNb.getBoolean())
+                    else if(isDbgNb())
                         System.err.println(MOD+"initNomad" + cid(ep));
                 }
-                else if(dbgNb.getBoolean())
+                else if(isDbgNb())
                     System.err.println(MOD+"init not a JEP " + cid(jtc));
             }
             for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
                 JEditorPane ep = getTCEditor(tc);
                 if(ep != null) {
-                    if(dbgNb.getBoolean())
+                    if(isDbgNb())
                         System.err.println(MOD
                                 + "init TCRegistry editor " + cid(ep));
                 }
@@ -352,7 +356,7 @@ if(false) {
             // XXX NbOptions.disable();
             // XXX didOptionsInit = false;
             
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println(MOD + "runJViDisable");
             
             if(topComponentRegistryListener != null) {
@@ -372,7 +376,7 @@ if(false) {
                     if(c01 != null) {
                         if(ep.getCaret() instanceof NbCaret) {
                             NbFactory.installCaret(ep, c01);
-                            if(dbgNb.getBoolean()) {
+                            if(isDbgNb()) {
                                 System.err.println(MOD + "restore caret: "
                                                 + tc.getDisplayName());
                             }
@@ -393,7 +397,7 @@ if(false) {
                     if(c01 != null)
                         NbFactory.installCaret(ep, c01);
                 }
-                if(dbgNb.getBoolean())
+                if(isDbgNb())
                     System.err.println(MOD + "shutdown nomad"
                             + (c01 != null ? " restore caret" : ""));
                 ViManager.closeAppEditor(ep, null);
@@ -408,7 +412,7 @@ if(false) {
                 ep.putClientProperty(NbFactory.PROP_VITV, null);
             }
             
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 ViManager.dump(System.err);
             
             JViOptionWarning.clear();
@@ -598,7 +602,7 @@ if(false) {
     
     private static void updateKeymap() {
         if (KB_INJECTOR != null) {
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println("Injector: updateKeymap: ");
             KB_INJECTOR.forceKeymapRefresh();
         } // else no keymap has been loaded yet
@@ -620,7 +624,7 @@ if(false) {
         for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
             JEditorPane ep = getTCEditor(tc);
             if(ep != null) {
-                if(dbgNb.getBoolean()) {
+                if(isDbgNb()) {
                     System.err.println("HACK CAPTURE CHECK: "
                             + cid(ep)
                             + ", Action: " + ep.getKeymap().getDefaultAction());
@@ -666,12 +670,12 @@ if(false) {
             KB_INJECTOR = this;
             earlyInit();
             KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println("~~~ KeybindingsInjector: " + this);
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println("Injector: change: "+evt.getPropertyName());
             if(evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS)) {
                 // the bindings have changed
@@ -680,7 +684,7 @@ if(false) {
         }
 
         void forceKeymapRefresh() {
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println("Injector: forceKeymapRefresh: ");
             synchronized(mapJvi) {
                 mapJvi.clear();
@@ -762,13 +766,13 @@ if(false) {
                     // NEEDSWORK: cleanup
                     mapJvi.put(KP_UP.getKeyStrokeList(), KP_UP);
                     mapJvi.put(KP_DOWN.getKeyStrokeList(), KP_DOWN);
-                    if(dbgNb.getBoolean())
+                    if(isDbgNb())
                         checkBinding("mapJvi", mapJvi);
-                    if(dbgNb.getBoolean())
+                    if(isDbgNb())
                         System.err.println("Injector: build jVi map. size "
                                 + mapJvi.size());
                 }
-                if(dbgNb.getBoolean())
+                if(isDbgNb())
                     checkBinding("mapOrig", map);
 
                 // Check each NB keybinding, if the first key
@@ -789,7 +793,7 @@ if(false) {
                     }
                 }
 
-                if(dbgNb.getBoolean())
+                if(isDbgNb())
                     System.err.println("Injector: afterLoad: "
                             +"mimePath '"+mimePath
                             +"' profile '"+profile
@@ -832,7 +836,7 @@ if(false) {
             if(mapOrig != null)
                 map.putAll(mapOrig);
 
-            if(dbgNb.getBoolean())
+            if(isDbgNb())
                 System.err.println("Injector: beforeSave: "
                         +"mimePath '"+mimePath
                         +"' profile '"+profile
@@ -855,7 +859,7 @@ if(false) {
             if(!jViEnabled())
                 return;
             JEditorPane ep = (JEditorPane)e.getSource();
-            if(dbgNb.getBoolean()) {
+            if(isDbgNb()) {
                 System.err.println(MOD + "kit installed: "
                                 + ep.getEditorKit().getClass().getSimpleName());
             }
@@ -875,6 +879,12 @@ if(false) {
     private static void captureDefaultKeyTypedActionAndEtc(JEditorPane ep) {
         JViOptionWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
+        if(epToDefaultKeyAction.containsKey(ep)) {
+            if(isDbgNb()) {
+                System.err.println(MOD + ": ALREADY CAPTURED: "
+                        + cid(ep));
+            }
+        }
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
             epToDefaultKeyAction.put(ep, a);
 
@@ -889,13 +899,13 @@ if(false) {
                     ViManager.getViFactory().createCharAction(
                     DefaultEditorKit.defaultKeyTypedAction));
 
-            if(dbgNb.getBoolean()) {
+            if(isDbgNb()) {
                 System.err.println(MOD + "capture: "
                         + cid(ep)
                         + " action: " + a.getClass().getSimpleName());
             }
         }
-        else if(dbgNb.getBoolean()) {
+        else if(isDbgNb()) {
             System.err.println(MOD + "MISSED CAPTURE: "
                     + cid(ep)
                     + " action: " + a.getClass().getSimpleName());
@@ -922,7 +932,7 @@ if(false) {
         if(!(ep.getCaret() instanceof ViCaret)) {
             if(editorToCaret.get(ep) == null) {
                 editorToCaret.put(ep, ep.getCaret());
-                if(dbgNb.getBoolean()) {
+                if(isDbgNb()) {
                     System.err.println(MOD + "capture caret");
                 }
             }

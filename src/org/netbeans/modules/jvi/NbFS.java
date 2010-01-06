@@ -6,6 +6,7 @@ import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
 import java.io.IOException;
+import java.util.Iterator;
 import javax.swing.text.Document;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.actions.SaveAllAction;
@@ -113,9 +114,19 @@ public class NbFS implements ViFS
     }
 
     public void edit(ViTextView tv, boolean force, int i) {
-	TopComponent tc = i >= 0
-                ? (TopComponent)ViManager.getTextBuffer(i)
-                : (TopComponent)ViManager.getMruBuffer(-i);
+        TopComponent tc = null;
+        if(i >= 0) {
+            Iterator iter = ViManager.getTextBufferIterator();
+            while(iter.hasNext()) {
+                TopComponent tc01 = (TopComponent)iter.next();
+                if(i == ViManager.getViFactory().getWNum(tc01)) {
+                    tc = tc01;
+                    break;
+                }
+            }
+        } else {
+            tc = (TopComponent)ViManager.getMruBuffer(-i);
+        }
 	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
 	  return;

@@ -167,7 +167,7 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     @Override
-    protected ViTextView createViTextView(JEditorPane editorPane) {
+    protected ViTextView newTextView(JEditorPane editorPane) {
         // Set up some linkage so we can clean up the editorpane
         // when the TopComponent closes.
         // NEEDSWORK: move this to base class or ViManager.activateFile
@@ -180,7 +180,7 @@ final public class NbFactory extends DefaultViFactory {
             }
             assert(ep != null && ep == editorPane);
         } else
-            ViManager.log("createViTextView: not isBuffer");
+            ViManager.log("newViTextView: not isBuffer");
         
         ViTextView tv = new NbTextView(editorPane);
         return tv;
@@ -217,6 +217,26 @@ final public class NbFactory extends DefaultViFactory {
         }
         newCaret.setBlinkRate(blinkRate);
     }
+
+    @Override
+    public ViTextView getTextView(Object appHandle) {
+        Set<JEditorPane> eps = Module.fetchEpFromTC((TopComponent)appHandle);
+        if(eps.size() == 1) {
+            JEditorPane ep = eps.iterator().next();
+            return getTextView(ep);
+        } else
+            return null;
+    }
+
+    @Override
+    public int getWNum(Object appHandle) {
+                        // tv2 != null ? tv2.getNum() : -9,
+        Integer wnum = (Integer)
+                ((TopComponent)appHandle).getClientProperty(Module.PROP_W_NUM);
+        return wnum != null ? wnum : -9;
+    }
+
+
 
     @Override
     public boolean isNomadic(JEditorPane ep, Object appHandle) {

@@ -136,10 +136,13 @@ public class NbColonCommands {
         // "Menu/Source/org-netbeans-modules-editor-java"
         // + "-JavaFixAllImports$MainMenuWrapper.instance"));
         public void actionPerformed(ActionEvent e) {
-            Object o = ViManager.getViFactory()
-                        .getExistingViTextView(e.getSource());
-            NbTextView tv = (NbTextView)o;
-            tv.getOps().xact("fix-imports");
+            Object source = e.getSource();
+            if(source instanceof JEditorPane) {
+                Object o = ViManager.getViFactory()
+                            .getTextView((JEditorPane)source);
+                NbTextView tv = (NbTextView)o;
+                tv.getOps().xact("fix-imports");
+            }
         }
     }
 

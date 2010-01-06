@@ -99,6 +99,12 @@ public class NbTextView extends TextView
     private boolean isNomadic() {
         return ViManager.getViFactory().isNomadic(editorPane, null);
     }
+
+    @Override
+    public int getNum() {
+        Integer wnum = (Integer)editorPane.getClientProperty(Module.PROP_W_NUM);
+        return wnum != null ? wnum : 0;
+    }
     
     //
     // The viOptionBag interface
@@ -642,7 +648,7 @@ public class NbTextView extends TextView
             discarded.discard();
         }
         if(installed != null) {
-            installed.tvTag = String.valueOf(mygen);
+            installed.tvTag = String.valueOf(w_num);
             if(dbgHL(installed))
                 System.err.println(installed.displayName()
                         + ": hookup");
@@ -913,7 +919,7 @@ public class NbTextView extends TextView
 
         protected NbTextView getTv() {
             NbTextView tv = (NbTextView)ViManager.getViFactory()
-                                        .getExistingViTextView((ep));
+                                        .getTextView((ep));
             return tv;
         }
 

@@ -120,7 +120,9 @@ public class Module extends ModuleInstall
                             Module.class.getClassLoader())) + ": ";
     
     static final String PROP_JEP = "ViJEditorPane";
+    static final String PROP_W_NUM = "ViWindowNumber";
     private static final String PREF_ENABLED = "viEnabled";
+    private static int genWNum;
     
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
@@ -1026,8 +1028,8 @@ if(false) {
             } else if(evt.getPropertyName()
                     .equals(TopComponent.Registry.PROP_TC_OPENED)) {
                 TopComponent tc = (TopComponent) evt.getNewValue();
-                tcDumpInfo(tc, "open");
                 JEditorPane ep = getTCEditor(tc);
+                tcDumpInfo(tc, "open");
                 if(ep != null)
                     activateTC(ep, tc, "P_OPEN");
             } else if(evt.getPropertyName()
@@ -1069,12 +1071,12 @@ if(false) {
             panes = ec.getOpenedPanes();
         Mode mode = WindowManager.getDefault().findMode(tc);
         if(dbgAct.getBoolean()) {
-            System.err.println("trackTC: " + tag + ": "
-                        + tc.getDisplayName() + ":" + cid(tc)
-                        + " '" + (mode == null ? "null" : mode.getName()) + "'"
-                        + (ec == null ? " ec null"
-                           : " : nPanes = "
-                             + (panes == null ? "null" : panes.length)));
+            System.err.format("trackTC: %s: %s: %s:%s '%s' : nPanes = %s\n",
+                    tag,
+                    tc.getClientProperty(PROP_W_NUM),
+                    tc.getDisplayName(), cid(tc),
+                    (mode == null ? "null" : mode.getName()),
+                    (panes == null ? "null" : panes.length));
         }
         if(panes != null) {
             for (JEditorPane ep : panes) {
@@ -1112,21 +1114,38 @@ if(false) {
             return null;
         
         JEditorPane panes [] = ec.getOpenedPanes();
+        JEditorPane ep = null;
         if(panes != null) {
-            for (JEditorPane ep : panes) {
+loop:
+            for (JEditorPane _ep : panes) {
                 Container parent = SwingUtilities
-                        .getAncestorOfClass(TopComponent.class, ep);
+                        .getAncestorOfClass(TopComponent.class, _ep);
                 while (parent != null) {
                     Container c01 = parent;
-                    if(tc == c01)
-                        return ep;
-                    parent = SwingUtilities.getAncestorOfClass(TopComponent.class,
-                                                               c01);
+                    if(tc == c01) {
+                        ep = _ep;
+                        break loop;
+                    }
+                    parent = SwingUtilities.getAncestorOfClass(
+                            TopComponent.class, c01);
                 }
             }
         }
+
+        if(ep != null) {
+            Integer wnum = (Integer)tc.getClientProperty(PROP_W_NUM);
+            if(wnum == null) {
+                wnum = ++genWNum;
+                tc.putClientProperty(PROP_W_NUM, wnum);
+            }
+            Integer wnum02 = (Integer)ep.getClientProperty(PROP_W_NUM);
+            if(wnum02 == null)
+                ep.putClientProperty(PROP_W_NUM, wnum);
+            else if(!wnum.equals(wnum02))
+                ViManager.dumpStack("WNum mismatch: " + wnum + "," + wnum02);
+        }
         
-        return null;
+        return ep;
     }
     
     public static void runInDispatch(boolean wait, Runnable runnable) {
@@ -1199,7 +1218,7 @@ if(false) {
         return done;
     }
 
-    private static DocumentListener ceDocListen;
+    private static CodeComplDocListener ceDocListen;
     private static boolean ceInSubstitute;
     private static BooleanOption dbgCompl;
 
@@ -1247,16 +1266,7 @@ if(false) {
         ceInSubstitute = false;
 
         Document ceDoc = ceText.getDocument();
-        ceDocListen = new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
-            }
-            public void insertUpdate(DocumentEvent e) {
-                ceDocCheck(e.getDocument());
-            }
-            public void removeUpdate(DocumentEvent e) {
-                ceDocCheck(e.getDocument());
-            }
-        };
+        ceDocListen = new CodeComplDocListener();
         ceDoc.addDocumentListener(ceDocListen);
 
         String text = null;
@@ -1268,6 +1278,7 @@ if(false) {
         // see if initial conditions warrent bringing up completion
         if(text != null && text.startsWith("e#")) {
             // Wait till combo's ready to go.
+            ceDocListen.didIt = true;
             if(ceText.hasFocus())
                 initShowCompletion.focusGained(null);
             else
@@ -1284,21 +1295,36 @@ if(false) {
         }
     };
 
-    private static void ceDocCheck(Document doc) {
-        try {
-            if(doc.getLength() == 2 && !ceInSubstitute) {
-                if("e#".equals(doc.getText(0, doc.getLength()))) {
+    private static class CodeComplDocListener implements DocumentListener {
+        boolean didIt;
+
+        public void changedUpdate(DocumentEvent e) {
+        }
+        public void insertUpdate(DocumentEvent e) {
+            ceDocCheck(e.getDocument());
+        }
+        public void removeUpdate(DocumentEvent e) {
+            ceDocCheck(e.getDocument());
+        }
+
+        private void ceDocCheck(Document doc) {
+            try {
+                if(doc.getLength() == 2 && !ceInSubstitute) {
+                    if(!didIt && "e#".equals(doc.getText(0, doc.getLength()))) {
+                        if(dbgCompl.getBoolean())
+                            System.err.println("SHOW:");
+                        Completion.get().showCompletion();
+                        didIt = true;
+                    }
+                } else if(doc.getLength() < 2) {
                     if(dbgCompl.getBoolean())
-                        System.err.println("SHOW:");
-                    Completion.get().showCompletion();
+                        System.err.println("HIDE:");
+                    Completion.get().hideCompletion();
+                    didIt = false;
                 }
-            } else if(doc.getLength() < 2) {
-                if(dbgCompl.getBoolean())
-                    System.err.println("HIDE:");
-                Completion.get().hideCompletion();
+            } catch (BadLocationException ex) {
+                LOG.log(Level.SEVERE, null, ex);
             }
-        } catch (BadLocationException ex) {
-            LOG.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -1349,6 +1375,7 @@ if(false) {
             Font font = getTxtFont();
             while((o = ViManager.getTextBuffer(++i)) != null) {
                 TopComponent tc = (TopComponent)o;
+                int wnum = ViManager.getViFactory().getWNum(tc);
                 int flags = 0;
                 if(TopComponent.getRegistry().getActivated() == tc)
                     flags |= ITEM_SELECTED;
@@ -1370,7 +1397,7 @@ if(false) {
                 if(name == null)
                     name = ViManager.getViFactory().getDisplayFilename(tc);
                 query.add(new ViCommandCompletionItem(
-                                name, String.format("%02d", i), icon,
+                                name, String.format("%02d", wnum), icon,
                                 false, flags, font,
                                 2)); // offset 2 is after "e#"
             }

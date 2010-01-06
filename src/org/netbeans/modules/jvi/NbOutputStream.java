@@ -23,12 +23,15 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.OutputStreamAdaptor;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
+import java.awt.EventQueue;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.Segment;
+import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.awt.HtmlBrowser;
 import org.openide.text.Line;
@@ -168,22 +171,36 @@ public class NbOutputStream extends OutputStreamAdaptor {
                 tv.getEditorComponent().getDocument(),
                 tv.getBuffer().getLineStartOffset(line),
                 false);
-        return new OutputListenerImpl(nbLine, col);
+        return new OutputListenerImpl(nbLine, col, length);
     }
 
     private static class OutputListenerImpl implements OutputListener {
         Line nbLine;
         int col;
+        int len;
 
-        OutputListenerImpl(Line nbLine, int col) {
+        OutputListenerImpl(Line nbLine, int col, int len) {
             this.nbLine = nbLine;
             this.col = col;
+            this.len = len;
         }
 
         public void outputLineAction(OutputEvent outputEvent) {
             nbLine.show(Line.ShowOpenType.OPEN,
-                        Line.ShowVisibilityType.FRONT,
+                        Line.ShowVisibilityType.FOCUS,
                         col);
+            // highlights takes care of this
+            // This is flakey for the first time click on hyperlink
+            //final JTextComponent tc = EditorRegistry.focusedComponent();
+            //if(tc != null) {
+            //    EventQueue.invokeLater(new Runnable() {
+            //        public void run() {
+            //            int off = tc.getCaretPosition();
+            //            tc.setCaretPosition(off + len);
+            //            tc.moveCaretPosition(off);
+            //        }
+            //    });
+            //}
         }
 
         public void outputLineCleared(OutputEvent outputEvent) {

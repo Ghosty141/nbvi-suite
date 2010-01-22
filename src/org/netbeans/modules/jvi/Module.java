@@ -144,6 +144,8 @@ public class Module extends ModuleInstall
             = new HashMap<JEditorPane, Action>();
     private static Map<EditorKit, Action> kitToDefaultKeyAction
             = new HashMap<EditorKit, Action>();
+    // private static final Map<MimePath, MultiKeymap> kitKeymaps
+    //         = new WeakHashMap<MimePath, MultiKeymap>(KIT_CNT_PREALLOC);
     
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
@@ -804,7 +806,7 @@ if(false) {
 
                 map.putAll(mapJvi);
             }
-            hackCaptureCheckLater();
+            hackCaptureCheckLater(); // check all opened TC's ep's.
         }
 
         @Override
@@ -888,14 +890,15 @@ if(false) {
             }
         }
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-            epToDefaultKeyAction.put(ep, a);
+            putDefaultKeyAction(ep, a);
+            //epToDefaultKeyAction.put(ep, a);
 
-            // Sometimes the ep when install action has the wrong default KTA
-            // so kleep track per kit as well
-            EditorKit kit = ep.getEditorKit();
-            if(kitToDefaultKeyAction.get(kit) == null) {
-                kitToDefaultKeyAction.put(kit, a);
-            }
+            //// Sometimes the ep when install action has the wrong default KTA
+            //// so kleep track per kit as well
+            //EditorKit kit = ep.getEditorKit();
+            //if(kitToDefaultKeyAction.get(kit) == null) {
+            //    kitToDefaultKeyAction.put(kit, a);
+            //}
 
             ep.getKeymap().setDefaultAction(
                     ViManager.getViFactory().createCharAction(
@@ -928,6 +931,17 @@ if(false) {
             a = kitToDefaultKeyAction.get(kit);
         }
         return a;
+    }
+
+    private static final void putDefaultKeyAction(JEditorPane ep, Action a) {
+        epToDefaultKeyAction.put(ep, a);
+
+        // Sometimes the ep when install action has the wrong default KTA
+        // so kleep track per kit as well
+        EditorKit kit = ep.getEditorKit();
+        if(kitToDefaultKeyAction.get(kit) == null) {
+            kitToDefaultKeyAction.put(kit, a);
+        }
     }
     
     public static final void checkCaret(JEditorPane ep) {
@@ -1024,6 +1038,7 @@ if(false) {
                     activateTC(ep, evt.getNewValue(), "P_ACTV");
                     // Do this for activate (but not for open)
                     ViManager.requestSwitch(ep);
+                    doRunAfterActivateSwitch();
                 }
             } else if(evt.getPropertyName()
                     .equals(TopComponent.Registry.PROP_TC_OPENED)) {
@@ -1146,6 +1161,12 @@ loop:
         }
         
         return ep;
+    }
+
+    static void runAfterActivateSwitch(Runnable runnable) {
+    }
+
+    static private void doRunAfterActivateSwitch() {
     }
     
     public static void runInDispatch(boolean wait, Runnable runnable) {

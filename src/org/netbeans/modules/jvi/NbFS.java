@@ -1,18 +1,25 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.Filemark;
 import com.raelity.jvi.Msg;
+import com.raelity.jvi.Util;
 import com.raelity.jvi.ViBuffer;
 import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
+import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import javax.swing.text.Document;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.actions.SaveAllAction;
+import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+import org.openide.text.Line;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 
@@ -135,8 +142,70 @@ public class NbFS implements ViFS
         Msg.smsg(tv.getBuffer().getDisplayFileNameAndSize());
     }
 
-    public void edit(ViTextView tv, boolean force, String fName)
+    /** Edit either a File or Filemark or String */
+    public void edit(ViTextView tv, boolean force, Object fileThing)
     {
-	Msg.emsg("edit fname NOT IMPLEMENTED ");
+        String msg = null;
+        try {
+            File f = null;
+            Filemark fm = null;
+
+            // get a java File object for the thing
+            if(fileThing instanceof Filemark) {
+                fm = (Filemark)fileThing;
+                f = fm.getFile();
+            } else if(fileThing instanceof File) {
+                f = (File)fileThing;
+            } else if(fileThing instanceof String) {
+                f = new File((String)fileThing);
+            } else {
+                ViManager.dumpStack("unknown fileThing type");
+                return;
+            }
+
+            // get a netbens FileObject
+            if(!f.isAbsolute()) {
+                f = f.getAbsoluteFile();
+            }
+            FileObject fo;
+            if(f.exists()) {
+                fo = FileUtil.toFileObject(f);
+            } else if(force) {
+                fo = FileUtil.createData(f);
+            } else {
+                msg = "'!' required when file does not exist";
+                return;
+            }
+            DataObject dobj = DataObject.find(fo);
+            EditorCookie ec = dobj.getCookie(EditorCookie.class);
+
+            // Start bringing it up in the editor
+            ec.open();
+            // Wait for the document to be available
+            Document doc = ec.openDocument();
+            //System.err.println("Document Ready");
+            if(fm != null) {
+                // finishTagPush ??
+                int wnum = 0; // window of file mark
+
+                // currently active or not
+                // if active use offset
+
+                // Q up goto line for next switch, Q: tc,run
+
+                Line l = NbEditorUtilities.getLine(doc, fm.getOffset(), false);
+                l.show(Line.ShowOpenType.OPEN, Line.ShowVisibilityType.FOCUS);
+            }
+        } catch (DataObjectNotFoundException ex) {
+            msg = ex.getLocalizedMessage();
+        } catch (IOException ex) {
+            msg = ex.getLocalizedMessage();
+            //Logger.getLogger(NbFS.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if(msg != null) {
+                Msg.emsg("edit failed: " + msg);
+                Util.vim_beep();
+            }
+        }
     }
 }

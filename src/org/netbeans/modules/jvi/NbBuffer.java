@@ -159,7 +159,7 @@ public class NbBuffer extends DefaultBuffer {
      * @return null or the path for this file
      */
     @Override
-    public File getJavaFile() {
+    public File getFile() {
         File fi = null;
         Document doc = getDocument();
         if(doc != null) {

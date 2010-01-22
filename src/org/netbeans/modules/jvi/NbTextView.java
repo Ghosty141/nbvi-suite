@@ -201,6 +201,10 @@ public class NbTextView extends TextView
      */
     @Override
     public boolean openNewLine(NLOP op) {
+        if ( !isEditable() ) {
+            Util.vim_beep();
+            return false;
+        }
         if(op == NLOP.NL_BACKWARD && w_cursor.getLine() == 1) {
             // Special case if BACKWARD and at first line of document.
             // set the caret position to 0 so that insert line on first line
@@ -212,17 +216,15 @@ public class NbTextView extends TextView
             
             MySegment seg = getBuffer().getLineSegment(1);
             w_cursor.set(0 + Misc.coladvanceColumnIndex(MAXCOL, seg));
-            //w_cursor.setPosition(1, coladvanceColumnIndex(MAXCOL, seg));
             return true;
         }
         
-        // position cursor according to dir, probably an 'O' or 'o' command
-        int line;
-        int offset;
+        // Position cursor according to dir, probably an 'O' or 'o' command.
+        int offset; // First set to after \n and check if after EOF
         boolean afterEOF = false;
+        int line; // Set to the line number of new line, must be > 1
         if(op == NLOP.NL_FORWARD) {
-            // after the current line, but since we might be sitting on
-            // a fold,
+            // add line after the current line
             offset = getBufferLineOffset(
                     getCoordLine(w_cursor.getLine()) + 1);
             if(offset > getBuffer().getLength()) {
@@ -232,22 +234,46 @@ public class NbTextView extends TextView
                 line = getBuffer().getLineNumber(offset);
             }
         } else {
-            // before the current line
+            // add line before the current line
             offset = getBuffer()
                         .getLineStartOffsetFromOffset(w_cursor.getOffset());
             line = w_cursor.getLine();
         }
+        --offset; // on line before new line at the char before the \n
+
+        // Check out the fold situation
+        boolean inCollapsedFold = false;
+        if(!afterEOF) { // folding doesn't matter if at end of file
+            FoldHierarchy fh = FoldHierarchy.get(editorPane);
+            fh.lock();
+            try {
+                // Is the line before where the newly opened line goes
+                // (position before the newline) in a collapsed fold?
+                int tOff = getBuffer().getLineStartOffset(line-1);
+                Fold f = FoldUtilities.findCollapsedFold(fh, tOff, tOff);
+                if(f != null)
+                    inCollapsedFold = true;
+            } finally {
+                fh.unlock();
+            }
+        }
+
+        // And the guarded section
+        boolean inGuarded = getBuffer().isGuarded(offset);
         
-        if(afterEOF) {
-            offset--;
+        // Everything could go through the "afterEOF" case, except for
+        // problems with unmodifiable or folded text, see method comment.
+        if(afterEOF || !(inCollapsedFold || inGuarded)) {
             if(!Edit.canEdit(this, getBuffer(), offset))
                 return false;
             w_cursor.set(offset);
             insertNewLine();
             return true;
         }
+
+        //
         
-        // offset is where insert happens
+        ++offset; // oops, back to after newline and some special handling
         if(!Edit.canEdit(this, getBuffer(), offset))
             return false;
         w_cursor.set(offset);

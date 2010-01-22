@@ -250,10 +250,10 @@ final public class NbFactory extends DefaultViFactory {
     }
   
     @Override
-    public boolean isVisible(ViTextView tv) {
+    public boolean isShowing(ViTextView tv) {
         TopComponent tc = getEditorTopComponent(tv.getEditorComponent());
         // wonder if this really works
-        return tc != null ? tc.isVisible() : false;
+        return tc != null ? tc.isShowing() : false;
     }
     
     @Override

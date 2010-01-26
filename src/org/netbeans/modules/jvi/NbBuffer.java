@@ -160,6 +160,7 @@ public class NbBuffer extends DefaultBuffer {
      */
     @Override
     public File getFile() {
+        // NEEDSWORK: see NbFactory.isNomadic
         File fi = null;
         Document doc = getDocument();
         if(doc != null) {

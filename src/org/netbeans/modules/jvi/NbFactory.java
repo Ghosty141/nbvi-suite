@@ -59,6 +59,11 @@ final public class NbFactory extends DefaultViFactory {
     NbFactory() {
         super();
     }
+
+    @Override
+    public boolean isEnabled() {
+        return Module.jViEnabled();
+    }
     
     static Set<JEditorPane> getEditorSet() {
         return Collections.unmodifiableSet(
@@ -192,22 +197,28 @@ final public class NbFactory extends DefaultViFactory {
     }
     
     @Override
-    public void registerEditorPane(JEditorPane ep) {
+    public void setupCaret(JEditorPane ep) {
         // Cursor is currently installed by editor kit
         // install cursor if neeeded
-        if( ! (ep.getCaret() instanceof ViCaret)) {
+        if(isEnabled() && ! (ep.getCaret() instanceof ViCaret)) {
             installCaret(ep, new NbCaret());
         }
     }
     
     // NEEDSWORK: put installCaret in factory?
-    public static void installCaret(JEditorPane ep, Caret newCaret) {
+    static void installCaret(JEditorPane ep, Caret newCaret) {
         Caret oldCaret = ep.getCaret(); // should never be null
         int offset = 0;
         int blinkRate = 400;
+        boolean visible = true;
         if(oldCaret != null) {
             offset = oldCaret.getDot();
             blinkRate = oldCaret.getBlinkRate();
+            visible = oldCaret.isVisible();
+            if(G.dbgEditorActivation.getBoolean()) {
+                System.err.format("installCaret: was off %d, rate %d, vis %b\n",
+                        offset, blinkRate, visible);
+            }
         }
         ep.setCaret(newCaret);
         if(ep.getDocument() instanceof BaseDocument) {
@@ -216,6 +227,7 @@ final public class NbFactory extends DefaultViFactory {
             newCaret.setDot(offset);
         }
         newCaret.setBlinkRate(blinkRate);
+        newCaret.setVisible(visible);
     }
 
     @Override
@@ -240,6 +252,7 @@ final public class NbFactory extends DefaultViFactory {
 
     @Override
     public boolean isNomadic(JEditorPane ep, Object appHandle) {
+        // NEEDSWORK: see NbBuffer.getFile
         boolean isNomadic;
         Document doc = ep.getDocument();
         if(doc == null || NbEditorUtilities.getFileObject(doc) == null)

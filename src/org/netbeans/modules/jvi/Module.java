@@ -118,7 +118,7 @@ public class Module extends ModuleInstall
     private static final String MOD
             = "Module-" + Integer.toHexString(System.identityHashCode(
                             Module.class.getClassLoader())) + ": ";
-    
+
     static final String PROP_JEP = "ViJEditorPane";
     static final String PROP_W_NUM = "ViWindowNumber";
     private static final String PREF_ENABLED = "viEnabled";
@@ -144,11 +144,12 @@ public class Module extends ModuleInstall
             = new HashMap<JEditorPane, Action>();
     private static Map<EditorKit, Action> kitToDefaultKeyAction
             = new HashMap<EditorKit, Action>();
-    // private static final Map<MimePath, MultiKeymap> kitKeymaps
-    //         = new WeakHashMap<MimePath, MultiKeymap>(KIT_CNT_PREALLOC);
     
     private static Map<JEditorPane, Caret> editorToCaret
             = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
+
+    private static Map<JEditorPane, Object> knownEditors
+            = new WeakHashMap<JEditorPane, Object>();
 
     private static Runnable shutdownHook;
 
@@ -156,7 +157,6 @@ public class Module extends ModuleInstall
         try {
             Lookup.getDefault().lookup(ClassLoader.class)
                 .loadClass("org.openide.util.NbPreferences");
-            //Class.forName("org.openide.util.NbPreferences");
             nb6 = true;
         } catch (ClassNotFoundException ex) { }
     }
@@ -199,6 +199,17 @@ public class Module extends ModuleInstall
     private static void setModuleEnabled(boolean flag) {
         getModulePreferences().putBoolean(PREF_ENABLED, flag);
     }
+
+    /** @return false when editor already in there */
+    private static boolean addKnownEditor(JEditorPane ep) {
+        return knownEditors.put(ep, null) != null;
+    }
+
+    /** @return false when editor already was not in there */
+    private static boolean removeKnownEditor(JEditorPane ep) {
+        editorToCaret.remove(ep);
+        return knownEditors.remove(ep) != null;
+    }
     
     /** called when the module is loaded (at netbeans startup time) */
     @Override
@@ -238,6 +249,13 @@ public class Module extends ModuleInstall
             prefNode.putBoolean(PREF_ENABLED, true);
         }
 
+        // Monitor activations/opens/closes.
+        if(topComponentRegistryListener == null) {
+            topComponentRegistryListener = new TopComponentRegistryListener();
+            TopComponent.getRegistry().addPropertyChangeListener(
+                    topComponentRegistryListener);
+        }
+
         if (isModuleEnabled()) {
             runInDispatch(true, new RunJViEnable());
         }
@@ -271,154 +289,77 @@ public class Module extends ModuleInstall
         public void run() {
             if(jViEnabled)
                 return;
-            
+
             if(isDbgNb())
-                System.err.println(MOD + " runJViEnable");
-            
+                System.err.println(MOD + " runJViEnable knownJEP: "
+                        + knownEditors.size());
+
             jViEnabled = true;
-            
-            // Monitor activations/opens/closes.
-            // NEEDSWORK: in NB6.0 may be able to monitor WindowManager Mode.
-            //        WindowManager.findMode("editor").addPropertyChangeListener
-            //        or org.netbeans.editor.Registry monitoring.
-            if(topComponentRegistryListener == null) {
-                topComponentRegistryListener = new TopComponentRegistryListener();
-                TopComponent.getRegistry().addPropertyChangeListener(
-                        topComponentRegistryListener);
-            }
 
             updateKeymap();
 
-            // See if there's anything to attach to, there are two cases to
-            // consider:
-            // enbable through the menu/toolbar
-            //      In this case the default key typed action has already
-            //      been captured for any opened editors.
-            // module activation
-            //      At boot, there are no opened editors. But if the module
-            //      is activated after NB comes up, then there *are* editors.
-            //      So capture keyType for the TopComponents. The nomads will
-            //      not be captured, oh well. Could capture the nomads by
-            //      checking at keyTyped, not worth it.
-            //
-if(false) {
-            // NEEDSWORK: use this to grab editors
-            // EditorRegistry.componentList()
-            for(JTextComponent jtc : EditorRegistry.componentList()) {
-                if(isDbgNb())
-                    System.err.println(MOD+"init EditorRegistry " + cid(jtc));
-                if(jtc instanceof JEditorPane) {
-                    TopComponent tc = NbEditorUtilities.getTopComponent(jtc);
-                    JEditorPane ep = (JEditorPane) jtc;
-                    captureDefaultKeyTypedActionAndEtc(ep); // includes nomads
-                    if(tc != null) {
-                        activateTC(ep, tc, "JVI-ENABLE");
-                    }
-                    else if(isDbgNb())
-                        System.err.println(MOD+"initNomad" + cid(ep));
-                }
-                else if(isDbgNb())
-                    System.err.println(MOD+"init not a JEP " + cid(jtc));
+            // give all the editors the jVi DKTA
+            for (JEditorPane ep : knownEditors.keySet()) {
+                captureDefaultKeyTypedActionAndEtc(ep);
             }
-            for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
-                JEditorPane ep = getTCEditor(tc);
-                if(ep != null) {
-                    if(isDbgNb())
-                        System.err.println(MOD
-                                + "init TCRegistry editor " + cid(ep));
-                }
-            }
-} else {
-            for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
-                JEditorPane ep = getTCEditor(tc);
-                if(ep != null) {
-                    captureDefaultKeyTypedActionAndEtc(ep);
-                    activateTC(ep, tc, "JVI-ENABLE");
-                }
-            }
-}
-            // And setup the nomads
-            // nomadicEditors
 
-            ///// hackCaptureCheck();
+            // install caret for current editor
+            JTextComponent c = EditorRegistry.lastFocusedComponent();
+            if(c instanceof JEditorPane) {
+                checkCaret((JEditorPane)c);
+                //JEditorPane ep = (JEditorPane)c;
+                //if(knownEditors.containsKey(ep)) {
+                //    ViManager.getViFactory().setupCaret(ep);
+                //}
+            }
         }
     }
-    
+
     /**
-     * Unhook almost everything.
-     * <p/>
-     * In the future, may want to leave the TopComponent listener active so
-     * that we can maintain the MRU list.
+     * Restore editor's caret's and keymaps
      */
     private static class RunJViDisable implements Runnable {
         public void run() {
             if(!jViEnabled)
                 return;
-            
+
             jViEnabled = false;
-            
+
             // XXX NbOptions.disable();
             // XXX didOptionsInit = false;
-            
+
             if(isDbgNb())
-                System.err.println(MOD + "runJViDisable");
-            
-            if(topComponentRegistryListener != null) {
-                TopComponent.getRegistry().removePropertyChangeListener(
-                        topComponentRegistryListener);
-                topComponentRegistryListener = null;
-            }
+                System.err.println(MOD + " runJViDisable knownJEP: "
+                        + knownEditors.size());
 
             // NEEDSWORK: ?? restore default key typed in following....
             // NEEDSWORK: clear out default keyTypedCaptures.
-            
-            // remove all jVi connections, replace original caret
-            TopComponent tc = (TopComponent)ViManager.getTextBuffer(1);
-            while(tc != null) {
-                for (JEditorPane ep : fetchEpFromTC(tc)) {
-                    Caret c01 = editorToCaret.get(ep);
-                    if(c01 != null) {
-                        if(ep.getCaret() instanceof NbCaret) {
-                            NbFactory.installCaret(ep, c01);
-                            if(isDbgNb()) {
-                                System.err.println(MOD + "restore caret: "
-                                                + tc.getDisplayName());
-                            }
+
+            // restore the carets
+            for (JEditorPane ep : knownEditors.keySet()) {
+                Caret c01 = editorToCaret.get(ep);
+                if(c01 != null) {
+                    if(ep.getCaret() instanceof NbCaret) {
+                        NbFactory.installCaret(ep, c01);
+                        if(isDbgNb()) {
+                            TopComponent tc = NbEditorUtilities
+                                    .getOuterTopComponent(ep);
+                            System.err.println(MOD + "restore caret: "
+                                + (tc != null ? tc.getDisplayName() : null));
                         }
                     }
-                    closeTC(ep, tc);
+                    editorToCaret.remove(ep);
                 }
-                tc = (TopComponent)ViManager.getTextBuffer(1);
             }
-            
-            // At this point, any remaining members of editorToCaret
-            // must be nomad (or so one would think).
-            // Remove any references.
-            for (JEditorPane ep : editorToCaret.keySet()) {
-                Caret c01 = null;
-                if(ep.getCaret() instanceof ViCaret) {
-                    c01 = editorToCaret.get(ep);
-                    if(c01 != null)
-                        NbFactory.installCaret(ep, c01);
-                }
-                if(isDbgNb())
-                    System.err.println(MOD + "shutdown nomad"
-                            + (c01 != null ? " restore caret" : ""));
-                ViManager.closeAppEditor(ep, null);
+
+            if(editorToCaret.size() > 0) {
+                System.err.println(MOD + "restore caret: "
+                    + "HUH? editorToCaret size: " + editorToCaret.size());
             }
-            
-            for (Document doc : NbFactory.getDocSet()) {
-                doc.putProperty(NbFactory.PROP_BUF, null);
-            }
-            
-            // Following shouldn't be needed
-            for (JEditorPane ep : NbFactory.getEditorSet()) {
-                ep.putClientProperty(NbFactory.PROP_VITV, null);
-            }
-            
+
             if(isDbgNb())
                 ViManager.dump(System.err);
-            
+
             JViOptionWarning.clear();
             updateKeymap();
         }
@@ -623,30 +564,6 @@ if(false) {
     public static Action createKBA(Map params) {
         return KeyBinding.getAction((String)params.get("action-name"));
     }
-    
-    private static void hackCaptureCheck() {
-        for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
-            JEditorPane ep = getTCEditor(tc);
-            if(ep != null) {
-                if(isDbgNb()) {
-                    System.err.println("HACK CAPTURE CHECK: "
-                            + cid(ep)
-                            + ", Action: " + ep.getKeymap().getDefaultAction());
-                }
-                Action a = ep.getKeymap().getDefaultAction();
-                if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-                    captureDefaultKeyTypedActionAndEtc(ep);
-                }
-            }
-        }
-    }
-    private static void hackCaptureCheckLater() {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                hackCaptureCheck();
-            }
-        });
-    }
 
     //
     // registered in META-INF/services
@@ -806,7 +723,7 @@ if(false) {
 
                 map.putAll(mapJvi);
             }
-            hackCaptureCheckLater(); // check all opened TC's ep's.
+            //hackCaptureCheckLater(); // check all opened TC's ep's.
         }
 
         @Override
@@ -860,6 +777,7 @@ if(false) {
         }
         
         public void actionPerformed(ActionEvent e) {
+            addKnownEditor((JEditorPane)e.getSource());
             if(!jViEnabled())
                 return;
             JEditorPane ep = (JEditorPane)e.getSource();
@@ -878,27 +796,19 @@ if(false) {
     /**
      * Get the defaultKeyTypedAction and other per ep stuff.
      * Do JViOptionWarning.
+     *
+     * The DKTA is captured on a per EditorKit basis. See
+     *  Bug 140201 -  kit install action, JEditorPane, DefaultKeyTypedAction issues
+     * for further info.
      * @param ep
      */
     private static void captureDefaultKeyTypedActionAndEtc(JEditorPane ep) {
         JViOptionWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
-        if(epToDefaultKeyAction.containsKey(ep)) {
-            if(isDbgNb()) {
-                System.err.println(MOD + ": ALREADY CAPTURED: "
-                        + cid(ep));
-            }
-        }
+        EditorKit kit = ep.getEditorKit();
         if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
-            putDefaultKeyAction(ep, a);
-            //epToDefaultKeyAction.put(ep, a);
-
-            //// Sometimes the ep when install action has the wrong default KTA
-            //// so kleep track per kit as well
-            //EditorKit kit = ep.getEditorKit();
-            //if(kitToDefaultKeyAction.get(kit) == null) {
-            //    kitToDefaultKeyAction.put(kit, a);
-            //}
+            kitToDefaultKeyAction.put(kit, a);
+            //putDefaultKeyAction(ep, a);
 
             ep.getKeymap().setDefaultAction(
                     ViManager.getViFactory().createCharAction(
@@ -906,12 +816,12 @@ if(false) {
 
             if(isDbgNb()) {
                 System.err.println(MOD + "capture: "
-                        + cid(ep)
+                        + cid(ep.getEditorKit()) + " " + cid(ep)
                         + " action: " + a.getClass().getSimpleName());
             }
         }
         else if(isDbgNb()) {
-            System.err.println(MOD + "MISSED CAPTURE: "
+            System.err.println(MOD + "ALREADY DKTA: "
                     + cid(ep)
                     + " action: " + a.getClass().getSimpleName());
         }
@@ -920,6 +830,8 @@ if(false) {
     /**
      * Find NB's DefaultKeyTypedAction for the edtior pane, or one for
      * the associted editor kit if the JEP doesn't have one.
+     *
+     * Turns out only need to save per EditorKit
      *
      * @param ep the edtior pane.
      * @return a best guess defaultKeytypedAction.
@@ -945,6 +857,10 @@ if(false) {
     }
     
     public static final void checkCaret(JEditorPane ep) {
+        assert knownEditors.containsKey(ep);
+
+        if(!jViEnabled())
+            return;
         if(!(ep.getCaret() instanceof ViCaret)) {
             if(editorToCaret.get(ep) == null) {
                 editorToCaret.put(ep, ep.getCaret());
@@ -952,13 +868,13 @@ if(false) {
                     System.err.println(MOD + "capture caret");
                 }
             }
-            NbFactory.installCaret(ep, new NbCaret());
+            ViManager.getViFactory().setupCaret(ep);
         }
     }
 
     private static void closeTC(JEditorPane ep, TopComponent tc) {
         ViManager.closeAppEditor(ep, tc);
-        editorToCaret.remove(ep);
+        removeKnownEditor(ep);
     }
     
     // This was private, but there are times when a TopComponent with

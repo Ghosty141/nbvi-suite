@@ -289,28 +289,18 @@ public class Module extends ModuleInstall
         public void run() {
             if(jViEnabled)
                 return;
+            jViEnabled = true;
 
             if(isDbgNb())
                 System.err.println(MOD + " runJViEnable knownJEP: "
                         + knownEditors.size());
 
-            jViEnabled = true;
-
             updateKeymap();
 
-            // give all the editors the jVi DKTA
+            // give all the editors the jVi DKTA and cursor
             for (JEditorPane ep : knownEditors.keySet()) {
                 captureDefaultKeyTypedActionAndEtc(ep);
-            }
-
-            // install caret for current editor
-            JTextComponent c = EditorRegistry.lastFocusedComponent();
-            if(c instanceof JEditorPane) {
-                checkCaret((JEditorPane)c);
-                //JEditorPane ep = (JEditorPane)c;
-                //if(knownEditors.containsKey(ep)) {
-                //    ViManager.getViFactory().setupCaret(ep);
-                //}
+                checkCaret(ep);
             }
         }
     }
@@ -322,18 +312,11 @@ public class Module extends ModuleInstall
         public void run() {
             if(!jViEnabled)
                 return;
-
             jViEnabled = false;
-
-            // XXX NbOptions.disable();
-            // XXX didOptionsInit = false;
 
             if(isDbgNb())
                 System.err.println(MOD + " runJViDisable knownJEP: "
                         + knownEditors.size());
-
-            // NEEDSWORK: ?? restore default key typed in following....
-            // NEEDSWORK: clear out default keyTypedCaptures.
 
             // restore the carets
             for (JEditorPane ep : knownEditors.keySet()) {
@@ -342,16 +325,13 @@ public class Module extends ModuleInstall
                     if(ep.getCaret() instanceof NbCaret) {
                         NbFactory.installCaret(ep, c01);
                         if(isDbgNb()) {
-                            TopComponent tc = NbEditorUtilities
-                                    .getOuterTopComponent(ep);
-                            System.err.println(MOD + "restore caret: "
-                                + (tc != null ? tc.getDisplayName() : null));
+                            System.err.println("restore caret: " + ViManager
+                                .getViFactory().getDisplayFilename(ep.getDocument()));
                         }
                     }
                     editorToCaret.remove(ep);
                 }
             }
-
             if(editorToCaret.size() > 0) {
                 System.err.println(MOD + "restore caret: "
                     + "HUH? editorToCaret size: " + editorToCaret.size());

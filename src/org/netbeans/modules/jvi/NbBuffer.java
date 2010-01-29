@@ -42,6 +42,7 @@ import org.netbeans.editor.GuardedDocument;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -199,6 +200,34 @@ public class NbBuffer extends DefaultBuffer {
                 }
             } finally {
                 indent.unlock();
+            }
+        } else {
+            Util.vim_beep();
+        }
+    }
+
+    @Override
+    public void reformat(int line, int count) {
+        if(getDoc() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument)getDoc();
+            boolean keepAtomicLock = doc.isAtomicLock();
+            if(keepAtomicLock)
+                doc.atomicUnlock();
+            Reformat reformat = Reformat.get(doc);
+            reformat.lock();
+            try {
+                doc.atomicLock();
+                try {
+                    reformat.reformat(getLineStartOffset(line),
+                                    getLineEndOffset(line + count - 1));
+                } catch (BadLocationException ex) {
+                    LOG.log(Level.SEVERE, null, ex);
+                } finally {
+                    if(!keepAtomicLock)
+                        doc.atomicUnlock();
+                }
+            } finally {
+                reformat.unlock();
             }
         } else {
             Util.vim_beep();

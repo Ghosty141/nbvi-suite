@@ -134,7 +134,6 @@ public class Module extends ModuleInstall
 
     public static final String HACK_CC = "NB6.7 Code Completion";
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
-    public static final String HACK_SB = "NB6.7 Status Bar";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
     private static KeybindingsInjector KB_INJECTOR = null;
@@ -234,7 +233,6 @@ public class Module extends ModuleInstall
                         new SpecificationVersion("1.11.1.2")) >= 0) {
                     ViManager.putHackMap(HACK_CC, Boolean.TRUE);
                     ViManager.putHackMap(HACK_SCROLL, Boolean.TRUE);
-                    ViManager.putHackMap(HACK_SB, Boolean.TRUE);
                 }
             }
         }

@@ -7,7 +7,8 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.ViCaret;
 import com.raelity.jvi.swing.ViCaretDelegate;
 import java.awt.Graphics;
-import java.awt.event.MouseEvent;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import org.netbeans.editor.ext.ExtCaret;
 
@@ -40,6 +41,13 @@ public class NbCaret extends ExtCaret implements ViCaret {
     super();
     viDelegate = new com.raelity.jvi.swing.ViCaretDelegate(this);
     ViManager.setPlatformFindMatch(true);
+    addChangeListener(new ChangeListener() {
+
+        public void stateChanged(ChangeEvent e)
+        {
+            ViManager.cursorChange(NbCaret.this);
+        }
+    });
   }
 
   public void setCursor(ViCursor cursor) {
@@ -82,20 +90,6 @@ public class NbCaret extends ExtCaret implements ViCaret {
     return viDelegate.getCursor();
   }
 
-  /*
-  protected synchronized void damage(Rectangle r) {
-    if(viDelegate.damage(this, r)) {
-      repaint();
-    }
-  }
-  
-  protected void adjustVisibility(Rectangle nloc) {
-    Rectangle r = new Rectangle();
-    viDelegate.damage(r, nloc); // broaden to encompass whole character
-    super.adjustVisibility(r);
-  }
-  */
-
   /**
    * Render the caret as specified by the cursor.
    * <br>
@@ -110,67 +104,6 @@ public class NbCaret extends ExtCaret implements ViCaret {
   public JTextComponent getTextComponent() {
     return component; // from super
   }
-
-    @Override
-    public void setDot(int i) {
-        if(isMouseAction || mouseButtonDown) {
-            i = ViManager.mouseSetDot(i, mouseComponent, mouseEvent);
-        }
-        super.setDot(i);
-    }
-    
-    @Override
-    public void moveDot(int i) {
-        if(mouseButtonDown)
-            i = ViManager.mouseMoveDot(i, mouseComponent, mouseEvent);
-        super.moveDot(i);
-    }
-  
-    boolean mouseButtonDown;
-
-    @Override
-    public void mousePressed(MouseEvent mouseEvent) {
-        mouseButtonDown = true;
-        beginClickHack(mouseEvent);
-        super.mousePressed(mouseEvent);
-        endClickHack();
-    }
-    
-    @Override
-    public void mouseReleased(MouseEvent mouseEvent) {
-        beginClickHack(mouseEvent);
-        super.mouseReleased(mouseEvent);
-        ViManager.mouseRelease(mouseEvent);
-        endClickHack();
-        mouseButtonDown = false;
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent mouseEvent) {
-        beginClickHack(mouseEvent);
-        super.mouseClicked(mouseEvent);
-        endClickHack();
-    }
-    @Override
-    public void mouseDragged(MouseEvent mouseEvent) {
-        beginClickHack(mouseEvent);
-        super.mouseDragged(mouseEvent);
-        endClickHack();
-    }
-
-    boolean isMouseAction = false;
-    JTextComponent mouseComponent;
-    MouseEvent mouseEvent;
-    
-    private void beginClickHack(MouseEvent mouseEvent) {
-        isMouseAction = true;
-        this.mouseEvent = mouseEvent;
-        mouseComponent = (JTextComponent)getEventComponent(mouseEvent);
-    }
-    
-    private void endClickHack() {
-        isMouseAction = false;
-    }
 }
 
 // vi:set sw=2 ts=8:

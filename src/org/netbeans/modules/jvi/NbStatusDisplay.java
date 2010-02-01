@@ -99,6 +99,9 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 	    nbMode = "INS";
 	} else if(mode.equals(Edit.VI_MODE_REPLACE)) {
 	    nbMode = "OVR";
+	} else if(mode.equals(ViManager.getViFactory()
+                .getPlatformSelectionDisplayName())) {
+            nbMode = "";
 	} else {
             jviOnlyMode = true;
             if(mode.equals("")) {
@@ -201,15 +204,9 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         if(sb != null) {
             // Only use alternate for CELL_MAIN and when sb not visible
             boolean useAlternate = false;
-            boolean sb6dot7 = ViManager.getHackFlag(Module.HACK_SB);
-            if(sb6dot7) {
-                if(StatusBar.CELL_MAIN.equals(cellName)
-                        && !sb.isVisible())
-                    useAlternate = true;
-            } else {
-                if(!sb.getPanel().isShowing())
-                    useAlternate = true;
-            }
+            if(StatusBar.CELL_MAIN.equals(cellName)
+                    && !sb.isVisible())
+                useAlternate = true;
 
             boolean allBlank = true;
             for(int i = 0; i < text.length(); i++) {
@@ -218,20 +215,16 @@ public final class NbStatusDisplay implements ViStatusDisplay {
                     break;
                 }
             }
-            if(sdMsg != null) {
+            if(sdMsg != null && StatusBar.CELL_MAIN.equals(cellName)) {
                 // clear a previous message
                 sdMsg.clear(0);
                 sdMsg = null;
             }
             if(useAlternate) {
-                if(sb6dot7) {
-                    // message was just cleared, so nothing to do if new msg blank
-                    if(!allBlank) {
-                        sdMsg = StatusDisplayer.getDefault()
-                                .setStatusText(text, 1);
-                    }
-                } else {
-                    StatusDisplayer.getDefault().setStatusText(text);
+                // message was just cleared, so nothing to do if new msg blank
+                if(!allBlank) {
+                    sdMsg = StatusDisplayer.getDefault()
+                            .setStatusText(text, 1);
                 }
             } else {
                 sb.setText(cellName, text, coloring);

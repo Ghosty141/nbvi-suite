@@ -23,7 +23,7 @@
  */
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.core.ViManager;
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.OptionsPanel;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;

@@ -6,7 +6,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViCmdEntry;
-import com.raelity.jvi.core.ViManager;
+import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.DefaultViFactory;

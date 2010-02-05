@@ -20,7 +20,7 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.OutputStreamAdaptor;
+import com.raelity.jvi.lib.OutputStreamAdaptor;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.ViTextView;
 import java.awt.EventQueue;

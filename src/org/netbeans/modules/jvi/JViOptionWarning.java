@@ -20,7 +20,7 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.MutableBoolean;
+import com.raelity.jvi.lib.MutableBoolean;
 import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;

@@ -1,15 +1,15 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Buffer;
-import com.raelity.jvi.Edit;
-import com.raelity.jvi.G;
-import com.raelity.jvi.Misc;
-import com.raelity.jvi.Msg;
+import com.raelity.jvi.core.Buffer;
+import com.raelity.jvi.core.Edit;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.core.Misc;
+import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.options.Option.ColorOption;
-import com.raelity.jvi.Options;
-import com.raelity.jvi.Util;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.core.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
@@ -54,7 +54,7 @@ import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
-import static com.raelity.jvi.Constants.*;
+import static com.raelity.jvi.core.Constants.*;
 
 /**
  * Pretty much the TextView used for standard swing.

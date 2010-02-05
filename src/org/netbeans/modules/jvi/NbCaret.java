@@ -1,9 +1,9 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.G;
+import com.raelity.jvi.core.G;
 import com.raelity.jvi.ViCursor;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.core.ViManager;
 import com.raelity.jvi.swing.ViCaret;
 import com.raelity.jvi.swing.ViCaretDelegate;
 import java.awt.Graphics;

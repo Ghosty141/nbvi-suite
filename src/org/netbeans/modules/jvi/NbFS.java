@@ -1,11 +1,11 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Filemark;
-import com.raelity.jvi.Msg;
-import com.raelity.jvi.Util;
+import com.raelity.jvi.core.Filemark;
+import com.raelity.jvi.core.Msg;
+import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
 import com.raelity.jvi.ViFS;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.core.ViManager;
 import com.raelity.jvi.ViTextView;
 import java.io.File;
 import java.io.IOException;

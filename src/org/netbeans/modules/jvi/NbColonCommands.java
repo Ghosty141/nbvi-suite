@@ -28,13 +28,13 @@
  */
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.AbbrevLookup;
-import com.raelity.jvi.ColonCommands;
-import com.raelity.jvi.ColonCommands.ColonAction;
-import com.raelity.jvi.ColonCommands.ColonEvent;
-import com.raelity.jvi.Msg;
-import com.raelity.jvi.Util;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.core.AbbrevLookup;
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.ColonAction;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
+import com.raelity.jvi.core.Msg;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.core.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -71,10 +71,6 @@ public class NbColonCommands {
         ColonCommands.register("N", "Next", ACTION_Next);
         ColonCommands.register("prev", "previous", ACTION_Next);
         
-        ColonCommands.register("files","files", ColonCommands.ACTION_BUFFERS);
-        ColonCommands.register("buffers","buffers", ColonCommands.ACTION_BUFFERS);
-        ColonCommands.register("ls","ls", ColonCommands.ACTION_BUFFERS);
-
         // goto editor tab
         ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
         ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);

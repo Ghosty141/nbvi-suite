@@ -20,10 +20,10 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.Edit;
-import com.raelity.jvi.G;
-import com.raelity.jvi.Util;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.core.Edit;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.core.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import java.awt.Color;

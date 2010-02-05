@@ -19,7 +19,7 @@
  */
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.OptionsBean;
+import com.raelity.jvi.options.OptionsBean;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.OptionsPanel;
 import java.beans.BeanInfo;

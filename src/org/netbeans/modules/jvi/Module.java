@@ -1,6 +1,6 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.BooleanOption;
+import com.raelity.jvi.options.BooleanOption;
 import com.raelity.jvi.ColonCommands;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Options;

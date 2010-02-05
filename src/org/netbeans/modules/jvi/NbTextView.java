@@ -5,7 +5,7 @@ import com.raelity.jvi.Edit;
 import com.raelity.jvi.G;
 import com.raelity.jvi.Misc;
 import com.raelity.jvi.Msg;
-import com.raelity.jvi.Option.ColorOption;
+import com.raelity.jvi.options.Option.ColorOption;
 import com.raelity.jvi.Options;
 import com.raelity.jvi.Util;
 import com.raelity.jvi.ViBuffer;

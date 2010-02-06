@@ -6,6 +6,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViCmdEntry;
+import com.raelity.jvi.ViInitialization;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.swing.CommandLine;
@@ -65,7 +66,6 @@ import javax.swing.UIManager;
 
 import javax.swing.text.EditorKit;
 import javax.swing.text.Keymap;
-import org.netbeans.api.editor.EditorRegistry;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
@@ -89,6 +89,7 @@ import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
 import org.openide.util.actions.SystemAction;
 import org.openide.util.Lookup;
+import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -113,7 +114,6 @@ public class Module extends ModuleInstall
     private static Logger LOG = Logger.getLogger(Module.class.getName());
 
     private static boolean jViEnabled;
-    private static boolean nb6;
 
     private static final String MOD
             = "Module-" + Integer.toHexString(System.identityHashCode(
@@ -152,12 +152,32 @@ public class Module extends ModuleInstall
 
     private static Runnable shutdownHook;
 
-    static {
-        try {
-            Lookup.getDefault().lookup(ClassLoader.class)
-                .loadClass("org.openide.util.NbPreferences");
-            nb6 = true;
-        } catch (ClassNotFoundException ex) { }
+    @ServiceProvider(service=ViInitialization.class)
+    public static class Init implements ViInitialization
+    {
+      public void init()
+      {
+        Module.init();
+      }
+    }
+
+    private static void init()
+    {
+        PropertyChangeListener pcl = new PropertyChangeListener()
+        {
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                String pname = evt.getPropertyName();
+                if(pname.equals(ViManager.P_BOOT)) {
+                    addDebugOptions();
+                } else if(pname.equals(ViManager.P_LATE_INIT)) {
+                    NbColonCommands.init();
+                    addDebugColonCommands();
+                }
+            }
+        };
+        ViManager.addPropertyChangeListener(ViManager.P_BOOT, pcl);
+        ViManager.addPropertyChangeListener(ViManager.P_LATE_INIT, pcl);
     }
 
     public static String cid(Object o)
@@ -172,10 +192,6 @@ public class Module extends ModuleInstall
         if (o == null)
             return "(null)";
         return Integer.toHexString(System.identityHashCode(o));
-    }
-
-    public static boolean isNb6() {
-        return nb6;
     }
 
     static boolean jViEnabled() {
@@ -237,7 +253,7 @@ public class Module extends ModuleInstall
             }
         }
 
-        earlyInit();
+        earlyInit(); // set up the ViFactory
 
         // in layer.xml Actions/Tools: <file name="o-n-m-jvi-enable.instance">
         // produces the checkbox linked to preferences.
@@ -281,6 +297,19 @@ public class Module extends ModuleInstall
     public void close() {
         if(shutdownHook != null)
             shutdownHook.run();
+    }
+
+    private static boolean didEarlyInit = false;
+    private static synchronized void earlyInit() {
+        if(didEarlyInit)
+            return;
+        didEarlyInit = true;
+
+        runInDispatch(true, new Runnable() {
+            public void run() {
+                ViManager.setViFactory(new NbFactory());
+            }
+        });
     }
 
     private static class RunJViEnable implements Runnable {
@@ -343,106 +372,67 @@ public class Module extends ModuleInstall
         }
     }
     
-    private static boolean didEarlyInit = false;
-    private static synchronized void earlyInit() {
-        if(didEarlyInit)
-            return;
-        didEarlyInit = true;
-        
-        runInDispatch(true, runEarlyInit);
+    private static void addDebugOptions()
+    {
+        dbgNb = Options.createBooleanOption(DBG_MODULE, false);
+        Options.setupOptionDesc(DBG_MODULE, "Module interface",
+                                "Module and editor kit install/install");
+
+        dbgAct = Options.createBooleanOption(DBG_TC, false);
+        Options.setupOptionDesc(DBG_TC, "Top Component",
+                                "TopComponent activation/open");
+
+        dbgHL = Options.createBooleanOption(DBG_HL, false);
+        Options.setupOptionDesc(DBG_HL, "Hilighting",
+                                "Visual/Search highlighting");
     }
-    
-    private static Runnable runEarlyInit = new Runnable() {
-        public void run() {
-            ViManager.setViFactory(new NbFactory());
-            
-            dbgNb = Options.createBooleanOption(DBG_MODULE, false);
-            Options.setupOptionDesc(DBG_MODULE, "Module interface",
-                                    "Module and editor kit install/install");
-            
-            dbgAct = Options.createBooleanOption(DBG_TC, false);
-            Options.setupOptionDesc(DBG_TC, "Top Component",
-                                    "TopComponent activation/open");
-            
-            dbgHL = Options.createBooleanOption(DBG_HL, false);
-            Options.setupOptionDesc(DBG_HL, "Hilighting",
-                                    "Visual/Search highlighting");
-            
-            ViManager.addStartupListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    initJVi(); // can wait a little while for this
-                }
-            });
-        }
-    };
-    
-    /** Return true if have done module initialization */
-    public static boolean isInit() {
-        return didInit;
-    }
-    
-    private static boolean didInit;
-    
-    private synchronized static void initJVi() {
-        if(didInit)
-            return;
-        didInit = true;
-        
-        runInDispatch(true, runInitJVi);
-    }
-    
-    private static Runnable runInitJVi = new Runnable() {
-        public void run() {
-            earlyInit();
-            
-            NbColonCommands.init();
-            
-            addDebugColonCommands();
-        }
-    };
     
     private static void addDebugColonCommands() {
         
         //
         // Some debug commands
         //
-        ColonCommands.register("topcomponentDump", "topcomponentDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Set<TopComponent> s = TopComponent.getRegistry().getOpened();
-                System.err.println("TopComponents:");
-                for (TopComponent tc : s) {
-                    if(tc == null) continue;
-                    System.err.print("    tc = " + tc.getDisplayName() );
-                    System.err.print(", " + tc.isVisible());
-                    System.err.println(", " + tc.getClass().getName());
-                }
-            }
-        });
-        ColonCommands.register("kitDump", "kitDump", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Map<JEditorPane, Action> m = epToDefaultKeyAction;
-                ViOutputStream os = ViManager.createOutputStream(
-                        null, ViOutputStream.OUTPUT, "Known Kits");
-                for (Map.Entry<JEditorPane, Action> entry
-                        : epToDefaultKeyAction.entrySet()) {
-                    os.println(String.format("%20s %s",
-                               entry.getKey().getClass().getSimpleName(),
-                               entry.getValue().getClass().getSimpleName()));
-                }
-                os.close();
-            }
-        });
-        ColonCommands.register("checkFsActList", "checkFsActList",
-                new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                for (String act : FsAct.getFsActList()) {
-                    if(fetchFileSystemAction(act) == null) {
-                        System.err.println("Not found: " + act);
+        ColonCommands.register("topcomponentDump", "topcomponentDump",
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Set<TopComponent> s = TopComponent.getRegistry().getOpened();
+                    System.err.println("TopComponents:");
+                    for (TopComponent tc : s) {
+                        if(tc == null) continue;
+                        System.err.print("    tc = " + tc.getDisplayName() );
+                        System.err.print(", " + tc.isVisible());
+                        System.err.println(", " + tc.getClass().getName());
                     }
                 }
-
             }
-        });
+        );
+        ColonCommands.register("kitDump", "kitDump",
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    ViOutputStream os = ViManager.createOutputStream(
+                            null, ViOutputStream.OUTPUT, "Known Kits");
+                    for (Map.Entry<EditorKit, Action> entry
+                            : kitToDefaultKeyAction.entrySet()) {
+                        os.println(String.format("%20s %s",
+                                   entry.getKey().getClass().getSimpleName(),
+                                   entry.getValue().getClass().getSimpleName()));
+                    }
+                    os.close();
+                }
+            }
+        );
+        ColonCommands.register("checkFsActList", "checkFsActList",
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    for (String act : FsAct.getFsActList()) {
+                        if(fetchFileSystemAction(act) == null) {
+                            System.err.println("Not found: " + act);
+                        }
+                    }
+
+                }
+            }
+        );
         
         /*
         WindowManager.getDefault().addPropertyChangeListener(new PropertyChangeListener() {

@@ -327,7 +327,7 @@ final public class NbFactory extends DefaultViFactory {
     @Override
     public ViCmdEntry createCmdEntry(int type) {
         ViCmdEntry ce = super.createCmdEntry(type);
-        if(type == ViCmdEntry.COLON_ENTRY && Module.isNb6()) {
+        if(type == ViCmdEntry.COLON_ENTRY) {
             JTextComponent jtc = ce.getTextComponent();
 
             // Set mime type to connect with code completion provider
@@ -542,7 +542,6 @@ final public class NbFactory extends DefaultViFactory {
 
     @Override
     public void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable) {
-        if(Module.isNb6())
-            Module.commandEntryAssist(cmdEntry, enable);
+        Module.commandEntryAssist(cmdEntry, enable);
     }
 }

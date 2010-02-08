@@ -22,13 +22,13 @@ package org.netbeans.modules.jvi;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
-import com.raelity.jvi.ViManager;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
+import java.awt.Component;
 
 import java.awt.Container;
 import java.util.Collections;
@@ -51,13 +51,12 @@ import javax.swing.text.Position;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.modules.editor.NbEditorUtilities;
-import org.openide.filesystems.FileObject;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
 import org.openide.windows.TopComponent;
 
-final public class NbFactory extends DefaultViFactory {
+final public class NbFactory extends Factory {
 
     private static Logger LOG = Logger.getLogger(NbFactory.class.getName());
     
@@ -65,6 +64,17 @@ final public class NbFactory extends DefaultViFactory {
     
     NbFactory() {
         super();
+    }
+
+    @Override
+    public NbAppView getAppView(Component e)
+    {
+        NbAppView av = (NbAppView)super.getAppView(e);
+        // For NB make sure there is always an app view.
+        // A null tc gets treated like a nomad
+        if(av == null)
+            av = new NbAppView(null, (JEditorPane)e);
+        return av;
     }
 
     @Override
@@ -238,8 +248,11 @@ final public class NbFactory extends DefaultViFactory {
     }
 
     @Override
-    public ViTextView getTextView(Object appHandle) {
-        Set<JEditorPane> eps = Module.fetchEpFromTC((TopComponent)appHandle);
+    public ViTextView getTextView(ViAppView _av) {
+        NbAppView av = (NbAppView)_av;
+        if(av.getEditor() != null)
+            return getTextView(av.getEditor());
+        Set<JEditorPane> eps = Module.fetchEpFromTC(av.getTopComponent());
         if(eps.size() == 1) {
             JEditorPane ep = eps.iterator().next();
             return getTextView(ep);
@@ -248,18 +261,21 @@ final public class NbFactory extends DefaultViFactory {
     }
 
     @Override
-    public int getWNum(Object appHandle) {
+    public int getWNum(ViAppView _av) {
+        NbAppView av = (NbAppView)_av;
                         // tv2 != null ? tv2.getNum() : -9,
         Integer wnum = (Integer)
-                ((TopComponent)appHandle).getClientProperty(Module.PROP_W_NUM);
+                av.getTopComponent().getClientProperty(Module.PROP_W_NUM);
         return wnum != null ? wnum : -9;
     }
 
 
 
     @Override
-    public boolean isNomadic(JEditorPane ep, Object appHandle) {
-        // NEEDSWORK: see NbBuffer.getFile
+    public boolean isNomadic(JEditorPane ep, ViAppView av) {
+
+        // NEEDSWORK: see NbBuffer.getFile, isNomadic issues.
+
         boolean isNomadic;
         Document doc = ep.getDocument();
         if(doc == null || NbEditorUtilities.getFileObject(doc) == null)
@@ -275,29 +291,19 @@ final public class NbFactory extends DefaultViFactory {
         // wonder if this really works
         return tc != null ? tc.isShowing() : false;
     }
-    
-    @Override
-    public String getDisplayFilename(Object appHandle) {
-        if(appHandle instanceof TopComponent)
-            return ((TopComponent)appHandle).getDisplayName();
-        if(appHandle instanceof Document) {
-            Document doc = (Document) appHandle;
-            FileObject fo = NbEditorUtilities.getFileObject(doc);
-            return fo != null ? fo.getNameExt() : "null-FileObject";
-        }
-        if(appHandle == null)
-            return "null-appHandle";
-        return "";
-    }
 
     /** Find a TopComponent that has been activated as an editor */
     public static TopComponent getEditorTopComponent(JEditorPane editorPane) {
+
+        // NEEDSWORK: return NbEditorUtilities.getTopComponent(editorPane);
+
         TopComponent tc = null;
         Container parent = SwingUtilities
                 .getAncestorOfClass(TopComponent.class, editorPane);
         while (parent != null) {
             tc = (TopComponent)parent;
-            if(ViManager.isKnownAppHandle(tc))
+            if(ViManager.isKnownAppView(
+                    Module.getAppView(tc, editorPane)))
                 break;
             parent = SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
         }

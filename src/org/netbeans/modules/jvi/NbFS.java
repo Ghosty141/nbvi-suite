@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Filemark;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
@@ -39,20 +40,28 @@ public class NbFS implements ViFS
         return dobj;
     }
 
-    public String getDisplayFileName(ViBuffer buf) {
-        Document doc = (Document)buf.getDocument();
-        if(doc != null) {
-            FileObject fo = NbEditorUtilities.getFileObject(doc);
-            /*System.err.println("getPath = " + fo.getPath());
-            System.err.println("getFileDisplayName = "
-                               + FileUtil.getFileDisplayName(fo));
-            System.err.println("toFileAbs = " + FileUtil.toFile(fo).getAbsolutePath());
-            System.err.println("toFileRel = " + FileUtil.toFile(fo).getPath());
-            System.err.println("toFileParent = " + FileUtil.toFile(fo).getParent());*/
-            if(fo != null)
-                return fo.getNameExt();
+    @Override
+    public String getDisplayFileName(ViAppView _av) {
+        NbAppView av = (NbAppView)_av;
+        if(av.getTopComponent() != null)
+            return av.getTopComponent().getDisplayName();
+        if(av.getEditor() != null) {
+            ViTextView tv = ViManager.getViFactory().getTextView(av);
+            if(tv != null)
+                return getDisplayFileName(tv.getBuffer());
+            return "no-filename-null-Editor";
         }
-        return "UNKNOWN";
+        return "screwy AppView";
+    }
+
+    @Override
+    public String getDisplayFileName(ViBuffer buf) {
+        FileObject fo = null;
+        if(buf != null) {
+            Document doc = (Document) buf.getDocument();
+            fo = NbEditorUtilities.getFileObject(doc);
+        }
+        return fo != null ? fo.getNameExt() : "null-FileObject";
     }
 
     public boolean isModified(ViBuffer buf) {
@@ -123,16 +132,16 @@ public class NbFS implements ViFS
     public void edit(ViTextView tv, boolean force, int i) {
         TopComponent tc = null;
         if(i >= 0) {
-            Iterator iter = ViManager.getTextBufferIterator();
+            Iterator<ViAppView> iter = ViManager.getTextBufferIterator();
             while(iter.hasNext()) {
-                TopComponent tc01 = (TopComponent)iter.next();
-                if(i == ViManager.getViFactory().getWNum(tc01)) {
-                    tc = tc01;
+                NbAppView av = (NbAppView)iter.next();
+                if(i == ViManager.getViFactory().getWNum(av)) {
+                    tc = av.getTopComponent();
                     break;
                 }
             }
         } else {
-            tc = (TopComponent)ViManager.getMruBuffer(-i);
+            tc = ((NbAppView)ViManager.getMruBuffer(1)).getTopComponent();
         }
 	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");

@@ -9,8 +9,9 @@ import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.ViInitialization;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.swing.CommandLine;
-import com.raelity.jvi.swing.DefaultViFactory;
+import com.raelity.jvi.swing.Factory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
 
@@ -113,6 +114,8 @@ public class Module extends ModuleInstall
 {
     private static Logger LOG = Logger.getLogger(Module.class.getName());
 
+    private static NbFactory factory;
+
     private static boolean jViEnabled;
 
     private static final String MOD
@@ -205,7 +208,7 @@ public class Module extends ModuleInstall
     /** @return the module specific preferences.
      */
     private static Preferences getModulePreferences() {
-        return ViManager.getViFactory().getPreferences().node("module");
+        return factory.getPreferences().node("module");
     }
     private static boolean isModuleEnabled() {
         Preferences prefs = getModulePreferences();
@@ -307,7 +310,8 @@ public class Module extends ModuleInstall
 
         runInDispatch(true, new Runnable() {
             public void run() {
-                ViManager.setViFactory(new NbFactory());
+                factory = new NbFactory();
+                ViManager.setViFactory(factory);
             }
         });
     }
@@ -352,8 +356,9 @@ public class Module extends ModuleInstall
                     if(ep.getCaret() instanceof NbCaret) {
                         NbFactory.installCaret(ep, c01);
                         if(isDbgNb()) {
-                            System.err.println("restore caret: " + ViManager
-                                .getViFactory().getDisplayFilename(ep.getDocument()));
+                            System.err.println("restore caret: "
+                                    + factory.getFS().getDisplayFileName(
+                                            new NbAppView(null, ep)));
                         }
                     }
                     editorToCaret.remove(ep);
@@ -374,16 +379,16 @@ public class Module extends ModuleInstall
     
     private static void addDebugOptions()
     {
-        dbgNb = Options.createBooleanOption(DBG_MODULE, false);
-        Options.setupOptionDesc(DBG_MODULE, "Module interface",
+        dbgNb = OptUtil.createBooleanOption(DBG_MODULE, false);
+        OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
                                 "Module and editor kit install/install");
 
-        dbgAct = Options.createBooleanOption(DBG_TC, false);
-        Options.setupOptionDesc(DBG_TC, "Top Component",
+        dbgAct = OptUtil.createBooleanOption(DBG_TC, false);
+        OptUtil.setupOptionDesc(DBG_TC, "Top Component",
                                 "TopComponent activation/open");
 
-        dbgHL = Options.createBooleanOption(DBG_HL, false);
-        Options.setupOptionDesc(DBG_HL, "Hilighting",
+        dbgHL = OptUtil.createBooleanOption(DBG_HL, false);
+        OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
                                 "Visual/Search highlighting");
     }
     
@@ -774,12 +779,12 @@ public class Module extends ModuleInstall
         JViOptionWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
         EditorKit kit = ep.getEditorKit();
-        if(!(a instanceof DefaultViFactory.EnqueCharAction)) {
+        if(!(a instanceof Factory.EnqueCharAction)) {
             kitToDefaultKeyAction.put(kit, a);
             //putDefaultKeyAction(ep, a);
 
             ep.getKeymap().setDefaultAction(
-                    ViManager.getViFactory().createCharAction(
+                    factory.createCharAction(
                     DefaultEditorKit.defaultKeyTypedAction));
 
             if(isDbgNb()) {
@@ -836,13 +841,28 @@ public class Module extends ModuleInstall
                     System.err.println(MOD + "capture caret");
                 }
             }
-            ViManager.getViFactory().setupCaret(ep);
+            factory.setupCaret(ep);
         }
     }
 
     private static void closeTC(JEditorPane ep, TopComponent tc) {
-        ViManager.closeAppEditor(ep, tc);
+        //ViManager.closeAppEditor(factory.getAppView(ep), ep, tc);
+        ViManager.closeAppEditor(getAppView(tc, ep));
+        // NEEDSWORK: spin through viman lists close any special
         removeKnownEditor(ep);
+    }
+
+    private static void deactivateTC(TopComponent tc) {
+        JEditorPane ep = getTCEditor(tc);
+        // NEEDSWORK: why following test on ep?
+        // just cause no ep??????????
+        if(tc == null || ep == null)
+            return;
+
+        // NEEDSWORK: pick the right one
+        // probably only allow one to be the "master"?
+        //ViManager.deactivateCurrentAppEditor(factory.getAppView(ep), tc);
+        ViManager.deactivateCurrentAppEditor(getAppView(tc, ep));
     }
     
     // This was private, but there are times when a TopComponent with
@@ -852,7 +872,23 @@ public class Module extends ModuleInstall
         if(ep != null)
             checkCaret(ep);
         addEpToTC(tc, ep);
-        ViManager.activateAppEditor(ep, tc, tag);
+        NbAppView av = getAppView(tc, ep);
+        ViManager.activateAppEditor(av, tag);
+    }
+
+    static NbAppView getAppView(TopComponent tc, JEditorPane ep)
+    {
+        if(true)
+            return new NbAppView(tc, ep);
+        NbAppView av = factory.getAppView(ep);
+        if(av.getTopComponent() == null) {
+            LOG.log(Level.WARNING, "AppView converting from nomad", new Exception());
+            // NEEDSWORK: ViManager.cleanup(av);
+            av = null;
+        }
+        if(av == null)
+            av = new NbAppView(tc, ep);
+        return av;
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -913,9 +949,8 @@ public class Module extends ModuleInstall
                     .equals(TopComponent.Registry.PROP_ACTIVATED)) {
                 tcDumpInfo(evt.getOldValue(), "activated oldTC");
                 tcDumpInfo(evt.getNewValue(), "activated newTC");
-                
-                if(getTCEditor(evt.getOldValue()) != null)
-                    ViManager.deactivateCurrentAppEditor(evt.getOldValue());
+
+                deactivateTC((TopComponent)evt.getOldValue());
                 
                 JEditorPane ep = getTCEditor(evt.getNewValue());
                 if(ep != null) {
@@ -1003,11 +1038,10 @@ public class Module extends ModuleInstall
      * @return The contained editor or null if there is none.
      */
     public static JEditorPane getTCEditor(Object o) {
-        TopComponent tc = null;
         if(!(o instanceof TopComponent)) {
             return null;
         }
-        tc = (TopComponent) o;
+        TopComponent tc = (TopComponent) o;
         EditorCookie ec = tc.getLookup().lookup(EditorCookie.class);
         if(ec == null)
             return null;
@@ -1276,11 +1310,11 @@ loop:
             query = new ArrayList<Module.ViCommandCompletionItem>();
 
             int i = 0;
-            Object o;
+            NbAppView av;
             Font font = getTxtFont();
-            while((o = ViManager.getTextBuffer(++i)) != null) {
-                TopComponent tc = (TopComponent)o;
-                int wnum = ViManager.getViFactory().getWNum(tc);
+            while((av = (NbAppView)ViManager.getTextBuffer(++i)) != null) {
+                TopComponent tc = av.getTopComponent();
+                int wnum = factory.getWNum(av);
                 int flags = 0;
                 if(TopComponent.getRegistry().getActivated() == tc)
                     flags |= ITEM_SELECTED;
@@ -1300,7 +1334,7 @@ loop:
                     }
                 }
                 if(name == null)
-                    name = ViManager.getViFactory().getDisplayFilename(tc);
+                    name = factory.getFS().getDisplayFileName(av);
                 query.add(new ViCommandCompletionItem(
                                 name, String.format("%02d", wnum), icon,
                                 false, flags, font,

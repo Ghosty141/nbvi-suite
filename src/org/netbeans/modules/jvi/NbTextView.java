@@ -1,11 +1,12 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Misc;
 import com.raelity.jvi.core.Msg;
-import com.raelity.jvi.options.Option.ColorOption;
+import com.raelity.jvi.options.ColorOption;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
@@ -14,6 +15,7 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
+import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.TextView;
 import com.raelity.text.TextUtil.MySegment;
 import java.awt.Color;
@@ -124,7 +126,7 @@ public class NbTextView extends TextView
             Preferences prefs = MimeLookup.getLookup(mimeType)
                     .lookup(Preferences.class);
             prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
-            Options.SetCommand.syncAllInstances("w_p_nu");
+            SetColonCommand.syncAllInstances("w_p_nu");
         }
     }
     
@@ -484,11 +486,11 @@ public class NbTextView extends TextView
      * Second element is index of currently active top component, or -1.
      * list of editors ordered as from getTextBuffer.
      */
-    private Object[] getEditors(Iterator iter, boolean showingOnly) {
+    private Object[] getEditors(Iterator<ViAppView> iter, boolean showingOnly) {
         List<TopComponent> l = new ArrayList();
         int idx = -1;
         while(iter.hasNext()) {
-            TopComponent tc = (TopComponent) iter.next();
+            TopComponent tc = ((NbAppView) iter.next()).getTopComponent();
             if(tc == null)
                 continue;
             if(!showingOnly || tc.isShowing()) {
@@ -594,7 +596,8 @@ public class NbTextView extends TextView
             return;
         
         // activate the previously active TC
-        TopComponent prevTC = ((TopComponent)ViManager.getMruBuffer(1));
+        TopComponent prevTC
+                = ((NbAppView)ViManager.getMruBuffer(1)).getTopComponent();
         if(prevTC != null)
             prevTC.requestActive();
         

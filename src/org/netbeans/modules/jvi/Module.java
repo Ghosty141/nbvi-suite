@@ -11,7 +11,7 @@ import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.swing.CommandLine;
-import com.raelity.jvi.swing.Factory;
+import com.raelity.jvi.swing.SwingFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.ViCaret;
 
@@ -779,7 +779,7 @@ public class Module extends ModuleInstall
         JViOptionWarning.monitorMimeType(ep);
         Action a = ep.getKeymap().getDefaultAction();
         EditorKit kit = ep.getEditorKit();
-        if(!(a instanceof Factory.EnqueCharAction)) {
+        if(!(a instanceof SwingFactory.EnqueCharAction)) {
             kitToDefaultKeyAction.put(kit, a);
             //putDefaultKeyAction(ep, a);
 
@@ -846,8 +846,8 @@ public class Module extends ModuleInstall
     }
 
     private static void closeTC(JEditorPane ep, TopComponent tc) {
-        //ViManager.closeAppEditor(factory.getAppView(ep), ep, tc);
-        ViManager.closeAppEditor(getAppView(tc, ep));
+        //ViManager.closeAppView(factory.getAppView(ep), ep, tc);
+        ViManager.closeAppView(getAppView(tc, ep));
         // NEEDSWORK: spin through viman lists close any special
         removeKnownEditor(ep);
     }
@@ -861,8 +861,8 @@ public class Module extends ModuleInstall
 
         // NEEDSWORK: pick the right one
         // probably only allow one to be the "master"?
-        //ViManager.deactivateCurrentAppEditor(factory.getAppView(ep), tc);
-        ViManager.deactivateCurrentAppEditor(getAppView(tc, ep));
+        //ViManager.deactivateCurrentAppView(factory.getAppView(ep), tc);
+        ViManager.deactivateCurrentAppView(getAppView(tc, ep));
     }
     
     // This was private, but there are times when a TopComponent with
@@ -873,7 +873,7 @@ public class Module extends ModuleInstall
             checkCaret(ep);
         addEpToTC(tc, ep);
         NbAppView av = getAppView(tc, ep);
-        ViManager.activateAppEditor(av, tag);
+        ViManager.activateAppView(av, tag);
     }
 
     static NbAppView getAppView(TopComponent tc, JEditorPane ep)
@@ -931,8 +931,8 @@ public class Module extends ModuleInstall
     
     /** This class monitors the TopComponent registry and issues
      * <ul>
-     * <li> ViManager.activateAppEditor("debuginfo", tc) </li>
-     * <li> ViManager.deactivateCurrentAppEditor(ep, tc) </li>
+     * <li> ViManager.activateAppView("debuginfo", tc) </li>
+     * <li> ViManager.deactivateCurrentAppView(ep, tc) </li>
      * <li> ViManager.exitInputMode() </li>
      * </ul>
      */

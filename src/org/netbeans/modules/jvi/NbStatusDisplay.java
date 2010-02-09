@@ -50,8 +50,9 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     private Coloring lastMsgColoring = null;
     private String mode = "";
     private boolean fFrozen;
-    // NOTE: StatusDisplayer.Message only on 6.7
-    private StatusDisplayer.Message sdMsg;
+
+    // NOTE: StatusDisplayer.Message
+    private static StatusDisplayer.Message sdMsg;
 
     // a few things for working with the netbeans status bar.
     private static Coloring red = new Coloring(null, Color.red, null);
@@ -183,6 +184,11 @@ public final class NbStatusDisplay implements ViStatusDisplay {
         if(fFrozen)
             return;
 	setMessageText("");
+    }
+
+    public void clearDisplay() {
+        // don't change any status state, just do it
+        setText(StatusBar.CELL_MAIN, "");
     }
 
     public void refresh() {

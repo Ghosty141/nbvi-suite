@@ -15,7 +15,7 @@ import com.raelity.jvi.core.Misc;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.swing.DefaultBuffer;
+import com.raelity.jvi.swing.SwingBuffer;
 import com.raelity.text.TextUtil;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -54,7 +54,7 @@ import static com.raelity.jvi.core.Constants.*;
  *
  * @author erra
  */
-public class NbBuffer extends DefaultBuffer {
+public class NbBuffer extends SwingBuffer {
     private static Logger LOG = Logger.getLogger(NbBuffer.class.getName());
     private UndoRedo.Manager undoRedo;
 

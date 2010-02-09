@@ -196,8 +196,6 @@ public class NbColonCommands {
             TopComponent tc = (TopComponent)ViManager.relativeMruBuffer(offset);
             if(tc != null) {
                 // don't want mru list to change
-                //ViManager.keepMruAfterActivation(Module.getAppView(
-                //        tc, ce.getViTextView().getEditorComponent()));
                 ViManager.keepMruAfterActivation(Module.getAppView(tc, null));
                 tc.requestActive();
             }

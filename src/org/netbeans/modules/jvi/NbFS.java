@@ -5,9 +5,9 @@ import com.raelity.jvi.core.Filemark;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
-import com.raelity.jvi.ViFS;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.lib.abstractFS;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -24,7 +24,7 @@ import org.openide.text.Line;
 import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 
-public class NbFS implements ViFS
+public class NbFS extends abstractFS
 {
     private DataObject getDataObject(ViBuffer buf) {
 	Document doc = (Document)buf.getDocument();
@@ -87,7 +87,7 @@ public class NbFS implements ViFS
             if(sc != null) {
                 try {
                     sc.save();
-                    Msg.smsg(buf.getDisplayFileNameAndSize() + " written");
+                    Msg.smsg(getDisplayFileNameAndSize(buf) + " written");
                 } catch (IOException ex) {
                     Msg.emsg("error writing " + buf.getDisplayFileName());
                     ok = false;
@@ -148,7 +148,7 @@ public class NbFS implements ViFS
 	  return;
 	}
 	tc.requestActive();
-        Msg.smsg(tv.getBuffer().getDisplayFileNameAndSize());
+        Msg.smsg(getDisplayFileNameAndSize(tv.getBuffer()));
     }
 
     /** Edit either a File or Filemark or String */

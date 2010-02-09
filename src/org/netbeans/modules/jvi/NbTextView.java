@@ -16,7 +16,7 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
 import com.raelity.jvi.options.SetColonCommand;
-import com.raelity.jvi.swing.TextView;
+import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -59,9 +59,9 @@ import org.openide.windows.TopComponent;
 import static com.raelity.jvi.core.Constants.*;
 
 /**
- * Pretty much the TextView used for standard swing.
+ * Pretty much the SwingTextView used for standard swing.
  */
-public class NbTextView extends TextView
+public class NbTextView extends SwingTextView
 {
 
     NbTextView(JEditorPane editorPane) {

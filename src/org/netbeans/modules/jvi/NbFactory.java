@@ -56,7 +56,7 @@ import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
 import org.openide.windows.TopComponent;
 
-final public class NbFactory extends Factory {
+final public class NbFactory extends SwingFactory {
 
     private static Logger LOG = Logger.getLogger(NbFactory.class.getName());
     
@@ -202,13 +202,12 @@ final public class NbFactory extends Factory {
             }
             assert(ep != null && ep == editorPane);
         } else
-            ViManager.log("newViTextView: not isBuffer");
+            System.err.println("newViTextView: not isBuffer");
         
         ViTextView tv = new NbTextView(editorPane);
         return tv;
     }
     
-    @Override
     protected Buffer createBuffer(ViTextView tv) {
         return new NbBuffer(tv);
     }

@@ -5,7 +5,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.ViCursor;
 import com.raelity.jvi.ViManager;
 import com.raelity.jvi.swing.ViCaret;
-import com.raelity.jvi.swing.ViCaretDelegate;
+import com.raelity.jvi.swing.SwingPaintCaret;
 import java.awt.Graphics;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -35,11 +35,11 @@ public class NbCaret extends ExtCaret implements ViCaret {
   public static final String PROP_MAX_FORWARD_LOOKAHEAD
                     = "nbeditor-bracesMatching-maxForwardLookahead"; //NOI18N
   
-  ViCaretDelegate viDelegate;
+  SwingPaintCaret viDelegate;
 
   public NbCaret() {
     super();
-    viDelegate = new com.raelity.jvi.swing.ViCaretDelegate(this);
+    viDelegate = new com.raelity.jvi.swing.SwingPaintCaret(this);
     ViManager.setPlatformFindMatch(true);
     addChangeListener(new ChangeListener() {
 

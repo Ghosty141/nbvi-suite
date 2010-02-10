@@ -294,13 +294,13 @@ public class NbBuffer extends SwingBuffer {
     //
 
     @Override
-    protected void redoOperation() {
+    public void redo() {
         //undoOrRedo("Redo", FsAct.REDO);
         undoOrRedo("Redo", NbEditorKit.redoAction);
     }
     
     @Override
-    protected void undoOperation() {
+    public void undo() {
         //undoOrRedo("Undo", FsAct.UNDO);
         undoOrRedo("Undo", NbEditorKit.undoAction);
     }

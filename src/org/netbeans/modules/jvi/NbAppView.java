@@ -59,6 +59,13 @@ public class NbAppView implements ViAppView
         return doc == null || NbEditorUtilities.getFileObject(doc) == null;
     }
 
+    public int getWNum()
+    {
+        Integer wnum = (Integer)
+                getTopComponent().getClientProperty(Module.PROP_W_NUM);
+        return wnum != null ? wnum : -9;
+    }
+
     //////////////////////////////////////////////////////////////////////
     //
     // auto gen'd, based only on tc

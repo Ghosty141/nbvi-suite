@@ -2,9 +2,9 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.core.G;
-import com.raelity.jvi.ViCursor;
+import com.raelity.jvi.ViCaretStyle;
 import com.raelity.jvi.ViManager;
-import com.raelity.jvi.swing.ViCaret;
+import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.swing.SwingPaintCaret;
 import java.awt.Graphics;
 import javax.swing.event.ChangeEvent;
@@ -50,7 +50,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     });
   }
 
-  public void setCursor(ViCursor cursor) {
+  public void setCursor(ViCaretStyle cursor) {
     viDelegate.setCursor(cursor);
     
     int offset = cursor.getMatchBraceOffset();
@@ -86,7 +86,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     }
   }
 
-  public ViCursor getCursor() {
+  public ViCaretStyle getCursor() {
     return viDelegate.getCursor();
   }
 

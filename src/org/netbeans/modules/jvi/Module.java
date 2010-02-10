@@ -13,7 +13,7 @@ import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.SwingFactory;
 import com.raelity.jvi.swing.KeyBinding;
-import com.raelity.jvi.swing.ViCaret;
+import com.raelity.jvi.ViCaret;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -1314,7 +1314,7 @@ loop:
             Font font = getTxtFont();
             while((av = (NbAppView)ViManager.getTextBuffer(++i)) != null) {
                 TopComponent tc = av.getTopComponent();
-                int wnum = factory.getWNum(av);
+                int wnum = av.getWNum();
                 int flags = 0;
                 if(TopComponent.getRegistry().getActivated() == tc)
                     flags |= ITEM_SELECTED;

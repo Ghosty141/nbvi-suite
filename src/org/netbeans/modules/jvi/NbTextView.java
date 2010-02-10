@@ -597,8 +597,10 @@ public class NbTextView extends SwingTextView
             return;
         
         // activate the previously active TC
-        TopComponent prevTC
-                = ((NbAppView)ViManager.getMruBuffer(1)).getTopComponent();
+        NbAppView av = (NbAppView)ViManager.getMruBuffer(1);
+        TopComponent prevTC = null;
+        if(av != null)
+                prevTC = av.getTopComponent();
         if(prevTC != null)
             prevTC.requestActive();
         

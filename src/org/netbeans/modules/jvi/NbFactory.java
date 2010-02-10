@@ -96,11 +96,6 @@ final public class NbFactory extends SwingFactory {
     public Class loadClass(String name) throws ClassNotFoundException {
         return Lookup.getDefault().lookup(ClassLoader.class).loadClass(name);
     }
-
-    @Override
-    public boolean isStandalone() {
-        return false;
-    }
     
     @Override
     public ViFS getFS() {
@@ -260,17 +255,6 @@ final public class NbFactory extends SwingFactory {
         } else
             return null;
     }
-
-    @Override
-    public int getWNum(ViAppView _av) {
-        NbAppView av = (NbAppView)_av;
-                        // tv2 != null ? tv2.getNum() : -9,
-        Integer wnum = (Integer)
-                av.getTopComponent().getClientProperty(Module.PROP_W_NUM);
-        return wnum != null ? wnum : -9;
-    }
-
-
 
     @Override
     public boolean isNomadic(Component editor, ViAppView av)

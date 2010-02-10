@@ -10,7 +10,6 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.lib.abstractFS;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
 import javax.swing.text.Document;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.actions.SaveAllAction;
@@ -131,18 +130,9 @@ public class NbFS extends abstractFS
 
     public void edit(ViTextView tv, boolean force, int i) {
         TopComponent tc = null;
-        if(i >= 0) {
-            Iterator<ViAppView> iter = ViManager.getTextBufferIterator();
-            while(iter.hasNext()) {
-                NbAppView av = (NbAppView)iter.next();
-                if(i == ViManager.getViFactory().getWNum(av)) {
-                    tc = av.getTopComponent();
-                    break;
-                }
-            }
-        } else {
-            tc = ((NbAppView)ViManager.getMruBuffer(1)).getTopComponent();
-        }
+        NbAppView av = (NbAppView)getAppViewByNumber(i);
+        if(av != null)
+            tc = av.getTopComponent();
 	if(tc == null) {
 	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
 	  return;

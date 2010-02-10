@@ -31,6 +31,7 @@ import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoableEdit;
 import org.netbeans.modules.editor.indent.api.Indent;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
@@ -69,7 +70,7 @@ public class NbBuffer extends SwingBuffer {
     public NbBuffer(ViTextView tv) {
         super(tv);
         
-        UndoableEditListener l[] = ((AbstractDocument)getDoc())
+        UndoableEditListener l[] = ((AbstractDocument)getDocument())
                                                 .getUndoableEditListeners();
         for (int i = 0; i < l.length; i++) {
             if(l[i] instanceof UndoRedo.Manager) {
@@ -106,8 +107,8 @@ public class NbBuffer extends SwingBuffer {
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
         // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType
-                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        String mimeType = NbEditorUtilities.getMimeType(
+                ((JTextComponent)tv.getEditorComponent()));
         Preferences prefs = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(Preferences.class);
 
@@ -130,8 +131,8 @@ public class NbBuffer extends SwingBuffer {
     public void viOptionSet(ViTextView tv, String name) {
         super.viOptionSet(tv, name);
         // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType
-                = NbEditorUtilities.getMimeType(tv.getEditorComponent());
+        String mimeType = NbEditorUtilities.getMimeType(
+                ((JTextComponent)tv.getEditorComponent()));
         Preferences prefs = MimeLookup.getLookup(
                 MimePath.parse(mimeType)).lookup(Preferences.class);
 
@@ -180,8 +181,8 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     public void reindent(int line, int count) {
-        if(getDoc() instanceof BaseDocument) {
-            BaseDocument doc = (BaseDocument)getDoc();
+        if(getDocument() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument)getDocument();
             boolean keepAtomicLock = doc.isAtomicLock();
             if(keepAtomicLock)
                 doc.atomicUnlock();
@@ -208,8 +209,8 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     public void reformat(int line, int count) {
-        if(getDoc() instanceof BaseDocument) {
-            BaseDocument doc = (BaseDocument)getDoc();
+        if(getDocument() instanceof BaseDocument) {
+            BaseDocument doc = (BaseDocument)getDocument();
             boolean keepAtomicLock = doc.isAtomicLock();
             if(keepAtomicLock)
                 doc.atomicUnlock();
@@ -242,8 +243,8 @@ public class NbBuffer extends SwingBuffer {
     @Override
     public boolean isGuarded(int offset) {
         boolean isGuarded = false;
-        if(getDoc() instanceof GuardedDocument) {
-            return ((GuardedDocument)getDoc()).isPosGuarded(offset);
+        if(getDocument() instanceof GuardedDocument) {
+            return ((GuardedDocument)getDocument()).isPosGuarded(offset);
         }
         return isGuarded;
     }
@@ -348,7 +349,7 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     protected void do_runUndoable(final Runnable r) {
-        final Document doc = getDoc();
+        final Document doc = getDocument();
         if(doc instanceof BaseDocument) {
             r.run();
 
@@ -372,7 +373,7 @@ public class NbBuffer extends SwingBuffer {
     @Override
     public void do_beginUndo() {
         clearExceptions();
-        Document doc = getDoc();
+        Document doc = getDocument();
         if(doc instanceof BaseDocument) {
             ((BaseDocument)doc).atomicLock();
         }
@@ -380,7 +381,7 @@ public class NbBuffer extends SwingBuffer {
     
     @Override
     public void do_endUndo() {
-        Document doc = getDoc();
+        Document doc = getDocument();
         if(doc instanceof BaseDocument) {
             if(isAnyExecption()) {
                 // get rid of the changes
@@ -446,12 +447,12 @@ public class NbBuffer extends SwingBuffer {
     private UndoableEditListener undoableEditListener;
 
     private void stopDocumentEvents() {
-        getDoc().removeDocumentListener(documentListener);
-        getDoc().removeUndoableEditListener(undoableEditListener);
+        getDocument().removeDocumentListener(documentListener);
+        getDocument().removeUndoableEditListener(undoableEditListener);
     }
     
     private void correlateDocumentEvents() {
-        Document doc = getDoc();
+        Document doc = getDocument();
         documentListener = new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
                 //dumpDocEvent("change", e);

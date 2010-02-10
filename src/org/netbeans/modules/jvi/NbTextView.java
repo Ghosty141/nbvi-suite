@@ -34,6 +34,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.fold.Fold;
 import org.netbeans.api.editor.fold.FoldHierarchy;
@@ -122,7 +123,7 @@ public class NbTextView extends SwingTextView
         if("w_p_nu".equals(name)) {
             showLineNumbers = w_p_nu;
             String mimeType = NbEditorUtilities
-                    .getMimeType(tv.getEditorComponent());
+                    .getMimeType(((JEditorPane)tv.getEditorComponent()));
             Preferences prefs = MimeLookup.getLookup(mimeType)
                     .lookup(Preferences.class);
             prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
@@ -590,7 +591,7 @@ public class NbTextView extends SwingTextView
     
     @Override
     public void win_close(boolean freeBuf) {
-        JEditorPane ep = getEditorComponent();
+        JEditorPane ep = (JEditorPane)getEditorComponent();
         TopComponent closeTC = NbFactory.getEditorTopComponent(ep);
         if(closeTC == null)
             return;
@@ -692,14 +693,14 @@ public class NbTextView extends SwingTextView
     
     // Map so that text view can get hold of the highlighter
     // shortly after textview creation.
-    private static final Map<JEditorPane, MyHl> hlMap
-            = new WeakHashMap<JEditorPane, MyHl>();
+    private static final Map<JTextComponent, MyHl> hlMap
+            = new WeakHashMap<JTextComponent, MyHl>();
 
     private static class MyHl {
         WeakReference<VisualSelectHighlighter> visualRef;
         WeakReference<SearchResultsHighlighter> searchRef;
 
-        static MyHl get(JEditorPane ep) {
+        static MyHl get(JTextComponent ep) {
             MyHl myHl = hlMap.get(ep);
             if(myHl == null) {
                 myHl = new MyHl();
@@ -708,7 +709,7 @@ public class NbTextView extends SwingTextView
             return myHl;
         }
 
-        static void putVisual(JEditorPane ep, VisualSelectHighlighter visual) {
+        static void putVisual(JTextComponent ep, VisualSelectHighlighter visual) {
             synchronized(hlMap) {
                 MyHl myHl = get(ep);
                 myHl.visualRef
@@ -716,7 +717,7 @@ public class NbTextView extends SwingTextView
             }
         }
 
-        static VisualSelectHighlighter getVisual(JEditorPane ep) {
+        static VisualSelectHighlighter getVisual(JTextComponent ep) {
             synchronized(hlMap) {
                 WeakReference<VisualSelectHighlighter> ref;
                 ref = get(ep).visualRef;
@@ -724,7 +725,7 @@ public class NbTextView extends SwingTextView
             }
         }
 
-        static void putSearch(JEditorPane ep, SearchResultsHighlighter search) {
+        static void putSearch(JTextComponent ep, SearchResultsHighlighter search) {
             synchronized(hlMap) {
                 MyHl myHl = get(ep);
                 myHl.searchRef
@@ -732,7 +733,7 @@ public class NbTextView extends SwingTextView
             }
         }
 
-        static SearchResultsHighlighter getSearch(JEditorPane ep) {
+        static SearchResultsHighlighter getSearch(JTextComponent ep) {
             synchronized(hlMap) {
                 WeakReference<SearchResultsHighlighter> ref;
                 ref = get(ep).searchRef;

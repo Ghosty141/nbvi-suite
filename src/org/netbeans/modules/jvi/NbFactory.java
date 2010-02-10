@@ -9,7 +9,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * The Original Code is jvi - vi editor clone.
+ * The Original Code is jvi - vi ed clone.
  *
  * The Initial Developer of the Original Code is Ernie Rael.
  * Portions created by Ernie Rael are
@@ -82,7 +82,7 @@ final public class NbFactory extends SwingFactory {
         return Module.jViEnabled();
     }
     
-    static Set<JEditorPane> getEditorSet() {
+    static Set<JTextComponent> getEditorSet() {
         return Collections.unmodifiableSet(
                 ((NbFactory)INSTANCE).editorSet.keySet());
     }
@@ -189,22 +189,23 @@ final public class NbFactory extends SwingFactory {
     }
     
     @Override
-    protected ViTextView newTextView(JEditorPane editorPane) {
+    protected ViTextView newTextView(JTextComponent editor) {
+        JEditorPane ed = (JEditorPane)editor;
         // Set up some linkage so we can clean up the editorpane
         // when the TopComponent closes.
         // NEEDSWORK: move this to base class or ViManager.activateFile
-        TopComponent tc = getEditorTopComponent(editorPane);
+        TopComponent tc = getEditorTopComponent(ed);
         if(tc != null) {
-            JEditorPane ep = Module.fetchEpFromTC(tc, editorPane);
+            JEditorPane ep = Module.fetchEpFromTC(tc, ed);
             if(ep == null) {
-                Module.activateTC(editorPane, tc, "CREATE-TV");
-                ep = Module.fetchEpFromTC(tc, editorPane);
+                Module.activateTC(ed, tc, "CREATE-TV");
+                ep = Module.fetchEpFromTC(tc, ed);
             }
-            assert(ep != null && ep == editorPane);
+            assert(ep != null && ep == ed);
         } else
             System.err.println("newViTextView: not isBuffer");
         
-        ViTextView tv = new NbTextView(editorPane);
+        ViTextView tv = new NbTextView(ed);
         return tv;
     }
     
@@ -213,8 +214,9 @@ final public class NbFactory extends SwingFactory {
     }
     
     @Override
-    public void setupCaret(JEditorPane ep) {
-        // Cursor is currently installed by editor kit
+    public void setupCaret(Component editor) {
+        JEditorPane ep = (JEditorPane)editor;
+        // Cursor is currently installed by ed kit
         // install cursor if neeeded
         if(isEnabled() && ! (ep.getCaret() instanceof ViCaret)) {
             installCaret(ep, new NbCaret());
@@ -271,7 +273,9 @@ final public class NbFactory extends SwingFactory {
 
 
     @Override
-    public boolean isNomadic(JEditorPane ep, ViAppView av) {
+    public boolean isNomadic(Component editor, ViAppView av)
+    {
+        JEditorPane ep = (JEditorPane)editor;
 
         // NEEDSWORK: see NbBuffer.getFile, isNomadic issues.
 
@@ -286,15 +290,16 @@ final public class NbFactory extends SwingFactory {
   
     @Override
     public boolean isShowing(ViTextView tv) {
-        TopComponent tc = getEditorTopComponent(tv.getEditorComponent());
+        TopComponent tc = getEditorTopComponent(
+                (JEditorPane)tv.getEditorComponent());
         // wonder if this really works
         return tc != null ? tc.isShowing() : false;
     }
 
-    /** Find a TopComponent that has been activated as an editor */
+    /** Find a TopComponent that has been activated as an ed */
     public static TopComponent getEditorTopComponent(JEditorPane editorPane) {
 
-        // NEEDSWORK: return NbEditorUtilities.getTopComponent(editorPane);
+        // NEEDSWORK: return NbEditorUtilities.getTopComponent(ed);
 
         TopComponent tc = null;
         Container parent = SwingUtilities
@@ -376,12 +381,10 @@ final public class NbFactory extends SwingFactory {
     }
     
     private static void fillTagFrom(Tag tag, ViTextView tv) {
-        tag.fromDoc = tv.getEditorComponent().getDocument();
+        tag.fromDoc = ((JEditorPane)tv.getEditorComponent()).getDocument();
         tag.fromFile = tv.getBuffer().getDisplayFileName();
         try {
-            tag.fromPosition
-                = tag.fromDoc.createPosition(
-                            tv.getEditorComponent().getCaretPosition());
+            tag.fromPosition = tag.fromDoc.createPosition(tv.getCaretPosition());
         } catch (BadLocationException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
@@ -401,7 +404,8 @@ final public class NbFactory extends SwingFactory {
            String fromData = tag.fromFile;
            // If the from tag is the current file, show the document's line
             ViTextView tv = G.curwin;
-            if(tv.getEditorComponent().getDocument().equals(tag.fromDoc)) {
+            if(((JEditorPane)tv.getEditorComponent())
+                    .getDocument().equals(tag.fromDoc)) {
                 String s = tv.getBuffer().getLineSegment(
                                     tag.fromLine.getLineNumber() +1).toString();
                 fromData = s.trim();
@@ -480,7 +484,7 @@ final public class NbFactory extends SwingFactory {
     public final void startTagPush(ViTextView tv, String ident) {
         if(tv == null)
             return;
-        if(tv.getEditorComponent().getDocument() == null)
+        if(((JEditorPane)tv.getEditorComponent()).getDocument() == null)
             return;
         
         pushingTag = new Tag();
@@ -490,7 +494,7 @@ final public class NbFactory extends SwingFactory {
     }
     
     /**
-     * This is called from any number of places to indicate that an editor
+     * This is called from any number of places to indicate that an ed
      * is in use, and if a tagPush is in progress, the target has been reached.
      */
     @Override
@@ -500,14 +504,13 @@ final public class NbFactory extends SwingFactory {
         if(pushingTag == null)
             return;
         
-        Document doc = tv.getEditorComponent().getDocument();
+        Document doc = ((JEditorPane)tv.getEditorComponent()).getDocument();
         if(doc == null)
             return;
                 
         pushingTag.toDoc = doc;
         try {
-            pushingTag.toPosition
-                   = doc.createPosition(tv.getEditorComponent().getCaretPosition());
+            pushingTag.toPosition = doc.createPosition(tv.getCaretPosition());
         } catch (BadLocationException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }

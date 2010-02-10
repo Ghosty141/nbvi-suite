@@ -240,7 +240,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 
     private StatusBar getStatusBar() {
 	StatusBar sb = null;
-        JEditorPane ep = textView.getEditorComponent();
+        JEditorPane ep = (JEditorPane)textView.getEditorComponent();
         if(ep != null) {
             EditorUI ui = Utilities.getEditorUI(ep);
             if(ui != null) {

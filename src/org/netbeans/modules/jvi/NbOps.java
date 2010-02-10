@@ -11,7 +11,9 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.OpsBase;
+import com.raelity.jvi.swing.SwingTextView;
 import javax.swing.Action;
+import javax.swing.JEditorPane;
 import javax.swing.text.EditorKit;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.ext.ExtKit;
@@ -41,7 +43,7 @@ public class NbOps extends OpsBase {
                 break;
             case KEY_TYPED:
                 Action a = Module.getDefaultKeyAction(
-                        textView.getEditorComponent());
+                        ((JEditorPane)textView.getEditorComponent()));
                 xact(a != null ? a : keyTypedAction);
                 return;
             case INSERT_NEW_LINE:
@@ -62,7 +64,7 @@ public class NbOps extends OpsBase {
 
     @Override
     protected Action findAction(String actionName) {
-        EditorKit editorKit = textView.getEditorComponent().getEditorKit();
+        EditorKit editorKit = ((SwingTextView)textView).getEditorKit();
         if(!(editorKit instanceof BaseKit)) {
             return super.findAction(actionName);
         }

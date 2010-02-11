@@ -104,7 +104,7 @@ public class NbTextView extends SwingTextView
     }
 
     @Override
-    public int getNum() {
+    public int getWNum() {
         Integer wnum = (Integer)editorPane.getClientProperty(Module.PROP_W_NUM);
         return wnum != null ? wnum : 0;
     }

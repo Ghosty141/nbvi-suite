@@ -21,7 +21,7 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.SwingFactory;
 import java.awt.EventQueue;
 import java.util.HashSet;

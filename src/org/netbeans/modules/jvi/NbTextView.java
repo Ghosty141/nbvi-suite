@@ -9,7 +9,7 @@ import com.raelity.jvi.options.ColorOption;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;

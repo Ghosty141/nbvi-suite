@@ -20,7 +20,7 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.options.OptionsBean;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.OptionsPanel;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;

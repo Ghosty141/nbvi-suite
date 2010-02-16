@@ -3,7 +3,7 @@ package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.ViCaretStyle;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.swing.SwingPaintCaret;
 import java.awt.Graphics;

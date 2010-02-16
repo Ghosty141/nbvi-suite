@@ -19,6 +19,7 @@
  */
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;

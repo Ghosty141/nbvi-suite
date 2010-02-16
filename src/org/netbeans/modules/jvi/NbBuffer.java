@@ -13,7 +13,7 @@ import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Misc;
 import com.raelity.jvi.core.Util;
-import com.raelity.jvi.ViManager;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.SwingBuffer;
 import com.raelity.text.TextUtil;

@@ -1,6 +1,5 @@
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -22,10 +21,8 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
@@ -101,12 +98,6 @@ public class NbTextView extends SwingTextView
 
     private boolean isNomadic() {
         return ViManager.getViFactory().isNomadic(editorPane, null);
-    }
-
-    @Override
-    public int getWNum() {
-        Integer wnum = (Integer)editorPane.getClientProperty(Module.PROP_W_NUM);
-        return wnum != null ? wnum : 0;
     }
     
     //
@@ -481,131 +472,39 @@ public class NbTextView extends SwingTextView
         super.win_goto(n);
     }
 
-    /**
-     * Return a two element array of objects.
-     * First element is list of visible editor top component
-     * Second element is index of currently active top component, or -1.
-     * list of editors ordered as from getTextBuffer.
-     */
-    private Object[] getEditors(Iterator<ViAppView> iter, boolean showingOnly) {
-        List<TopComponent> l = new ArrayList();
-        int idx = -1;
-        while(iter.hasNext()) {
-            TopComponent tc = ((NbAppView) iter.next()).getTopComponent();
-            if(tc == null)
-                continue;
-            if(!showingOnly || tc.isShowing()) {
-                l.add(tc);
-                Set<JEditorPane> s = (Set<JEditorPane>)
-                        tc.getClientProperty(Module.PROP_JEP);
-                if(s != null) {
-                    for (JEditorPane ep : s) {
-                        if(ep == getEditorComponent())
-                            idx = l.size() - 1; // the current/active window
-                    }
-                }
-            }
-        }
-
-        Object[] o = new Object[] {l, idx};
-        return o;
-    }
-    
-    @Override
-    public void win_cycle(int n) {
-        if(n == 0)
-            n = 1;
-
-        Object[] o = getEditors(ViManager.getTextBufferIterator(),true);
-        List<TopComponent> l = (List<TopComponent>) o[0];
-        int idx = (Integer)o[1];
-        if(l.size() == 0) {
-            Util.vim_beep();
-            return;
-        }
-
-        // idx may be < 0, if the current textView is not in the list
-        // that is ok for ^W^W (but not for close others)
-        boolean foundInList = idx >= 0;
-        if(idx < 0)
-            idx = l.size() - 1;
-        if(foundInList && l.size() <= 1)
-            return;
-
-        // get the window after/before the current window and activate it
-        // Need to check the geometric relationship of the showing windows
-        // and implement the down/left traversal algorithm.
-        // For now just pick the next one in the list.
-        idx += n;
-        if(idx >= l.size())
-            idx = 0;
-        l.get(idx).requestActive();
-    }
-
-    @Override
-    public void win_cycle_nomad(int n) {
-        if(n == 0)
-            n = 1;
-
-        Object[] o = getEditors(ViManager.getNomadBufferIterator(),true);
-        List<TopComponent> l = (List<TopComponent>) o[0];
-        int idx = (Integer)o[1];
-        if(l.size() == 0) {
-            Util.vim_beep();
-            return;
-        }
-
-        // idx may be < 0, if the current textView is not in the list
-        // that is ok for ^W^W (but not for close others)
-        boolean foundInList = idx >= 0;
-        if(idx < 0)
-            idx = l.size() - 1;
-        if(foundInList && l.size() <= 1)
-            return;
-
-        // get the window after/before the current window and activate it
-        // Need to check the geometric relationship of the showing windows
-        // and implement the down/left traversal algorithm.
-        // For now just pick the next one in the list.
-        idx += n;
-        if(idx >= l.size())
-            idx = 0;
-        l.get(idx).requestActive();
-    }
-    
     @Override
     public void win_close_others(boolean forceit) {
-        Object[] o = getEditors(ViManager.getTextBufferIterator(),true);
-        List<TopComponent> l = (List<TopComponent>) o[0];
+        Object[] o = ViManager.getAppViews(ViManager.AppViews.ACTIVE, false);
+        List<NbAppView> l = (List<NbAppView>) o[0];
         int idx = (Integer)o[1];
 
         if(l.size() <= 1 || idx < 0)
             return;
 
         for (int i = 0; i < l.size(); i++) {
-            TopComponent tc = l.get(i);
             if(i != idx)
-                tc.close();
+                l.get(i).getTopComponent().close();
         }
     }
     
     @Override
     public void win_close(boolean freeBuf) {
-        JEditorPane ep = (JEditorPane)getEditorComponent();
-        TopComponent closeTC = NbFactory.getEditorTopComponent(ep);
-        if(closeTC == null)
+        NbAppView avClose = (NbAppView)ViManager.getViFactory()
+                .getAppView(this.editorPane);
+
+        if(avClose == null)
             return;
         
         // activate the previously active TC
-        NbAppView av = (NbAppView)ViManager.getMruBuffer(1);
+        NbAppView avPrev = (NbAppView)ViManager.getMruBuffer(1);
         TopComponent prevTC = null;
-        if(av != null)
-                prevTC = av.getTopComponent();
+        if(avPrev != null)
+                prevTC = avPrev.getTopComponent();
         if(prevTC != null)
             prevTC.requestActive();
         
         // and close the one requested
-        if(!closeTC.close())
+        if(!avClose.getTopComponent().close())
             Msg.emsg(getBuffer().getDisplayFileName() + " not closed");
     }
     

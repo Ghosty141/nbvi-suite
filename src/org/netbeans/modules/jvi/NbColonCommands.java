@@ -178,7 +178,7 @@ public class NbColonCommands {
     private static ColonAction ACTION_Next = new Next(false);
     
     /** next/Next/previous */
-    static private class Next extends ColonAction {
+    static private class Next extends ColonAction { // NEEDSWORK: count
         boolean goForward;
         
         Next(boolean goForward) {
@@ -193,11 +193,11 @@ public class NbColonCommands {
                 offset = ce.getLine1();
             if(!goForward)
                 offset = -offset;
-            TopComponent tc = (TopComponent)ViManager.relativeMruBuffer(offset);
-            if(tc != null) {
+            NbAppView av = (NbAppView)ViManager.relativeMruBuffer(offset);
+            if(av != null && av.getTopComponent() != null) {
                 // don't want mru list to change
-                ViManager.keepMruAfterActivation(Module.getAppView(tc, null));
-                tc.requestActive();
+                ViManager.keepMruAfterActivation(av);
+                av.getTopComponent().requestActive();
             }
         }
     }
@@ -205,7 +205,7 @@ public class NbColonCommands {
     private static ActionListener ACTION_tabnext = new TabNext(true);
     private static ActionListener ACTION_tabprevious = new TabNext(false);
 
-    private static class TabNext implements ActionListener {
+    private static class TabNext implements ActionListener { // NEEDSWORK: count
         boolean goForward;
 
         TabNext(boolean goForward) {

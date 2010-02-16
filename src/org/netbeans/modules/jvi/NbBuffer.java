@@ -241,7 +241,8 @@ public class NbBuffer extends SwingBuffer {
     //
 
     @Override
-    public boolean isGuarded(int offset) {
+    public boolean isGuarded(int offset)
+    {
         boolean isGuarded = false;
         if(getDocument() instanceof GuardedDocument) {
             return ((GuardedDocument)getDocument()).isPosGuarded(offset);

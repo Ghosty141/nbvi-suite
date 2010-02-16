@@ -30,7 +30,6 @@ import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
 import java.awt.Component;
 
-import java.awt.Container;
 import java.util.Collections;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -40,7 +39,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
-import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.Document;
@@ -64,17 +62,6 @@ final public class NbFactory extends SwingFactory {
     
     NbFactory() {
         super();
-    }
-
-    @Override
-    public NbAppView getAppView(Component e)
-    {
-        NbAppView av = (NbAppView)super.getAppView(e);
-        // For NB make sure there is always an app view.
-        // A null tc gets treated like a nomad
-        if(av == null)
-            av = new NbAppView(null, (JEditorPane)e);
-        return av;
     }
 
     @Override
@@ -121,84 +108,27 @@ final public class NbFactory extends SwingFactory {
     private Preferences prefs;
     @Override
     public Preferences getPreferences() {
-        if(prefs == null) {
-            Preferences jdkPrefs
-                        = Preferences.userRoot().node(ViManager.PREFS_ROOT);
-            // ALWAYS USE PLATFORM PREFS so import/export options works
-            //if(!jdkPrefs.getBoolean(Options.platformPreferences, false))
-            if(false) {
-                // Use the jdk's Preferences implementation
-                prefs = jdkPrefs;
-            } else {
-                // May use NetBeans platform Preferences implementation
-                // unless it is set to false
-                Preferences platformPrefs
-                        = NbPreferences.forModule(Module.class);
-                try {
-                    platformPrefs.nodeExists("");
-                    // Options.platformPreferences is a boolean,
-                    // if it is empty, then it has never been initialized
-                    // and we should copy over the options from the jdk
-                    // and start using the platform preferences
-                    if(platformPrefs.get(Options.platformPreferences, "")
-                            .equals("")) {
-                        //System.err.println("COPY JVI PREFERENCES");
-                        ViManager.copyPreferences(
-                                    platformPrefs, jdkPrefs, false);
-                        platformPrefs.putBoolean(
-                            Options.platformPreferences, true);
-                    }
-
-                    // ALWAYS USE PLATFORM PREFS
-                    platformPrefs.putBoolean(Options.platformPreferences, true);
-
-                    // Default doesn't matter in following, since this
-                    // must have a value.
-                    boolean usePlatform = platformPrefs.getBoolean(
-                            Options.platformPreferences, false);
-
-                    if(usePlatform) {
-                        prefs = platformPrefs;
-                        //System.err.println("USE PLATFORM PREFERENCES NODE");
-                    } else {
-                        // switching back to the jdk preferences
-                        jdkPrefs.putBoolean(Options.platformPreferences, false);
-                        // leave the platformPrefs side of the value as true,
-                        // so things are ready if/when jdk side is set to true
-                        platformPrefs.putBoolean(
-                                Options.platformPreferences, true);
-                        prefs = jdkPrefs;
-                        //System.err.println("USE JDK PREFERENCES NODE");
-                    }
-                } catch(BackingStoreException ex) {
-                    LOG.log(Level.SEVERE, null, ex);
-                }
-            }
-
-            // If for whatever reason, there aren't preferences at this
-            // point, try the superclass
-            if(prefs == null)
-                prefs = super.getPreferences();
-        }
+        if(prefs == null)
+            prefs = NbPreferences.forModule(Module.class);
         return prefs;
     }
     
     @Override
     protected ViTextView newTextView(JTextComponent editor) {
         JEditorPane ed = (JEditorPane)editor;
-        // Set up some linkage so we can clean up the editorpane
-        // when the TopComponent closes.
         // NEEDSWORK: move this to base class or ViManager.activateFile
-        TopComponent tc = getEditorTopComponent(ed);
-        if(tc != null) {
-            JEditorPane ep = Module.fetchEpFromTC(tc, ed);
-            if(ep == null) {
-                Module.activateTC(ed, tc, "CREATE-TV");
-                ep = Module.fetchEpFromTC(tc, ed);
-            }
-            assert(ep != null && ep == ed);
-        } else
-            System.err.println("newViTextView: not isBuffer");
+        NbAppView av = (NbAppView)getAppView(ed);
+        if(av == null) {
+            // Wow, this must be a real nomad
+            TopComponent tc = Module.getKnownTopComponent(ed);
+
+            //note that doing a swap on the diff window
+            // can create this situation where tc is non null.
+            //assert tc == null; // otherwise should have an app view by now
+
+            // Hmm, create a nomad.
+            av = NbAppView.updateAppViewForTC(tc, ed, true);
+        }
         
         ViTextView tv = new NbTextView(ed);
         return tv;
@@ -246,56 +176,7 @@ final public class NbFactory extends SwingFactory {
     @Override
     public ViTextView getTextView(ViAppView _av) {
         NbAppView av = (NbAppView)_av;
-        if(av.getEditor() != null)
-            return getTextView(av.getEditor());
-        Set<JEditorPane> eps = Module.fetchEpFromTC(av.getTopComponent());
-        if(eps.size() == 1) {
-            JEditorPane ep = eps.iterator().next();
-            return getTextView(ep);
-        } else
-            return null;
-    }
-
-    @Override
-    public boolean isNomadic(Component editor, ViAppView av)
-    {
-        JEditorPane ep = (JEditorPane)editor;
-
-        // NEEDSWORK: see NbBuffer.getFile, isNomadic issues.
-
-        boolean isNomadic;
-        Document doc = ep.getDocument();
-        if(doc == null || NbEditorUtilities.getFileObject(doc) == null)
-            isNomadic = true;
-        else
-            isNomadic = false;
-        return isNomadic;
-    }
-  
-    @Override
-    public boolean isShowing(ViTextView tv) {
-        TopComponent tc = getEditorTopComponent(
-                (JEditorPane)tv.getEditorComponent());
-        // wonder if this really works
-        return tc != null ? tc.isShowing() : false;
-    }
-
-    /** Find a TopComponent that has been activated as an ed */
-    public static TopComponent getEditorTopComponent(JEditorPane editorPane) {
-
-        // NEEDSWORK: return NbEditorUtilities.getTopComponent(ed);
-
-        TopComponent tc = null;
-        Container parent = SwingUtilities
-                .getAncestorOfClass(TopComponent.class, editorPane);
-        while (parent != null) {
-            tc = (TopComponent)parent;
-            if(ViManager.isKnownAppView(
-                    Module.getAppView(tc, editorPane)))
-                break;
-            parent = SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
-        }
-        return tc;
+        return getTextView(av.getEditor());
     }
 
     @Override

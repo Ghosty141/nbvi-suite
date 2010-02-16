@@ -39,18 +39,30 @@ public class NbFS extends abstractFS
         return dobj;
     }
 
+    private static final String NULL_FO = "noname-null-FileObject";
+    private static final String NULL_ED = "noname-null-tv";
+
     @Override
     public String getDisplayFileName(ViAppView _av) {
         NbAppView av = (NbAppView)_av;
-        if(av.getTopComponent() != null)
-            return av.getTopComponent().getDisplayName();
-        if(av.getEditor() != null) {
-            ViTextView tv = ViManager.getViFactory().getTextView(av);
-            if(tv != null)
-                return getDisplayFileName(tv.getBuffer());
-            return "no-filename-null-Editor";
+        if(av != null) {
+            if(av.getTopComponent() != null) {
+                String s = av.getTopComponent().getDisplayName();
+                if(s != null)
+                    return s;
+            }
+            if(av.getEditor() != null) {
+                ViTextView tv = ViManager.getViFactory().getTextView(av);
+                if(tv != null) {
+                    String s = getDisplayFileName(tv.getBuffer());
+                    if(s.equals(NULL_FO))
+                        s = av.getEditor().getClass().getSimpleName();
+                    return s;
+                }
+                return NULL_ED;
+            }
         }
-        return "screwy AppView";
+        return "screwy-AppView";
     }
 
     @Override
@@ -60,7 +72,7 @@ public class NbFS extends abstractFS
             Document doc = (Document) buf.getDocument();
             fo = NbEditorUtilities.getFileObject(doc);
         }
-        return fo != null ? fo.getNameExt() : "null-FileObject";
+        return fo != null ? fo.getNameExt() : NULL_FO;
     }
 
     public boolean isModified(ViBuffer buf) {
@@ -69,9 +81,9 @@ public class NbFS extends abstractFS
     }
 
     public boolean isReadOnly(ViBuffer buf) {
-        //DataObject dobj = getDataObject(buf);
-        //return dobj != null ? dobj.isReadOnly() : true;
-        return false;
+        FileObject fo = NbEditorUtilities.getFileObject(
+                (Document)buf.getDocument());
+        return fo != null && !fo.canWrite();
     }
 
     private boolean write(ViTextView tv, boolean force) {
@@ -92,7 +104,7 @@ public class NbFS extends abstractFS
                     ok = false;
                 }
             } else {
-                // Msg.wmsg(fo.getNameExt() + " not dirty");
+                Msg.wmsg(getDisplayFileName(buf) + " NOT written");
             }
         }
         return ok;
@@ -128,6 +140,7 @@ public class NbFS extends abstractFS
         return true;
     }
 
+    // NEEDSWORK: get rid of this in favor of edit(ViAppView)
     public void edit(ViTextView tv, boolean force, int i) {
         TopComponent tc = null;
         NbAppView av = (NbAppView)getAppViewByNumber(i);
@@ -138,7 +151,15 @@ public class NbFS extends abstractFS
 	  return;
 	}
 	tc.requestActive();
-        Msg.smsg(getDisplayFileNameAndSize(tv.getBuffer()));
+    }
+
+    public void edit(ViAppView _av)
+    {
+        NbAppView av = (NbAppView)_av;
+        if(av.getTopComponent() != null)
+            av.getTopComponent().requestActive();
+        else
+            Msg.emsg("Can not edit " + getDisplayFileName(av));
     }
 
     /** Edit either a File or Filemark or String */

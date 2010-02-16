@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -122,10 +121,7 @@ public class Module extends ModuleInstall
             = "Module-" + Integer.toHexString(System.identityHashCode(
                             Module.class.getClassLoader())) + ": ";
 
-    static final String PROP_JEP = "ViJEditorPane";
-    static final String PROP_W_NUM = "ViWindowNumber";
     private static final String PREF_ENABLED = "viEnabled";
-    private static int genWNum;
     
     // The persistent option names and their variables
     public static final String DBG_MODULE = "DebugNbModule";
@@ -148,8 +144,13 @@ public class Module extends ModuleInstall
             = new HashMap<EditorKit, Action>();
     
     private static Map<JEditorPane, Caret> editorToCaret
-            = new WeakHashMap<JEditorPane, Caret>(); // NB6 don't want this
+            = new WeakHashMap<JEditorPane, Caret>();
 
+    // a SET
+    private static Map<TopComponent, Object> tcChecked
+            = new WeakHashMap<TopComponent, Object>();
+
+    // a SET
     private static Map<JEditorPane, Object> knownEditors
             = new WeakHashMap<JEditorPane, Object>();
 
@@ -358,7 +359,7 @@ public class Module extends ModuleInstall
                         if(isDbgNb()) {
                             System.err.println("restore caret: "
                                     + factory.getFS().getDisplayFileName(
-                                            new NbAppView(null, ep)));
+                                            factory.getAppView(ep)));
                         }
                     }
                     editorToCaret.remove(ep);
@@ -755,9 +756,11 @@ public class Module extends ModuleInstall
                 return;
             JEditorPane ep = (JEditorPane)e.getSource();
             if(isDbgNb()) {
-                System.err.println(MOD + "kit installed: "
-                                + ep.getEditorKit().getClass().getSimpleName());
+                System.err.printf(MOD + "kit installed: %s into %s\n",
+                                ep.getEditorKit().getClass().getSimpleName(),
+                                cid(ep));
             }
+            // this is done before it is installed into the top component
             
             captureDefaultKeyTypedActionAndEtc(ep);
             
@@ -846,49 +849,39 @@ public class Module extends ModuleInstall
     }
 
     private static void closeTC(JEditorPane ep, TopComponent tc) {
-        //ViManager.closeAppView(factory.getAppView(ep), ep, tc);
-        ViManager.closeAppView(getAppView(tc, ep));
+        ViManager.closeAppView(fetchAvFromTC(tc, ep));
         // NEEDSWORK: spin through viman lists close any special
-        removeKnownEditor(ep);
+        // Can't do this. Just because a TC is closed, doesn't mean
+        // that the associated editor won't be re-used, eg CodeEvaluator
+        //removeKnownEditor(ep);
     }
 
     private static void deactivateTC(TopComponent tc) {
-        JEditorPane ep = getTCEditor(tc);
-        // NEEDSWORK: why following test on ep?
-        // just cause no ep??????????
-        if(tc == null || ep == null)
+        if(tc == null)
+            return;
+        NbAppView av = null;
+        for (NbAppView _av : fetchAvFromTC(tc)) {
+            av = _av;
+        }
+        if(av == null)
             return;
 
-        // NEEDSWORK: pick the right one
+        // NEEDSWORK: pick the right appview to deactivate
         // probably only allow one to be the "master"?
-        //ViManager.deactivateCurrentAppView(factory.getAppView(ep), tc);
-        ViManager.deactivateCurrentAppView(getAppView(tc, ep));
+        ViManager.deactivateCurrentAppView(av);
     }
     
     // This was private, but there are times when a TopComponent with
     // an editor pane sneaks through the TC open/activation logic (DiffExecuter)
-    static void activateTC(JEditorPane ep, Object o, String tag) {
-        TopComponent tc = (TopComponent)o;
+    private static void activateTC(JEditorPane ep, TopComponent tc, String tag) {
         if(ep != null)
             checkCaret(ep);
-        addEpToTC(tc, ep);
-        NbAppView av = getAppView(tc, ep);
+        NbAppView av = fetchAvFromTC(tc, ep);
         ViManager.activateAppView(av, tag);
     }
 
-    static NbAppView getAppView(TopComponent tc, JEditorPane ep)
-    {
-        if(true)
-            return new NbAppView(tc, ep);
-        NbAppView av = factory.getAppView(ep);
-        if(av.getTopComponent() == null) {
-            LOG.log(Level.WARNING, "AppView converting from nomad", new Exception());
-            // NEEDSWORK: ViManager.cleanup(av);
-            av = null;
-        }
-        if(av == null)
-            av = new NbAppView(tc, ep);
-        return av;
+    private static void registerTC(NbAppView av, String tag) {
+        ViManager.registerAppView(av, tag);
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -896,34 +889,43 @@ public class Module extends ModuleInstall
     // Some methods to handle a TC's PROP_JEP.
     // Note that a TC may have more than one JEditorPane.
     //
-    
-    /** Add the editor as a property to the top component, if either parameter
-     * is null, then false is returned.
-     * @return true if editor added or already was there, false if couldn't add
-     */
-    static boolean addEpToTC(TopComponent tc, JEditorPane ep) {
-        if(ep == null || tc == null)
-            return false;
-        @SuppressWarnings("unchecked")
-        Set<JEditorPane> s = (Set<JEditorPane>)tc.getClientProperty(PROP_JEP);
-        if(s == null) {
-            s = new HashSet<JEditorPane>();
-            tc.putClientProperty(PROP_JEP, s);
+
+    static NbAppView fetchAvFromTC(TopComponent tc, JEditorPane ep) {
+        if(tc == null)
+            return (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
+        for (NbAppView av : fetchAvFromTC(tc)) {
+            if(av.getEditor() == ep)
+                return av;
+
         }
-        if(!s.contains(ep))
-            s.add(ep);
-        return true;
-    }
-    
-    static JEditorPane fetchEpFromTC(TopComponent tc, JEditorPane ep) {
-        if(fetchEpFromTC(tc).contains(ep))
-            return ep;
         return null;
     }
-    
-    static Set<JEditorPane> fetchEpFromTC(TopComponent tc) {
+
+    /**
+     * Look for a top component that this editor is contained in.
+     * Only consider top components that have been opened.
+     * @param editorPane
+     * @return
+     */
+    static TopComponent getKnownTopComponent(JEditorPane editorPane)
+    {
+        Set<TopComponent> setTC = TopComponent.getRegistry().getOpened();
+        TopComponent tc = null;
+        Container parent = SwingUtilities
+                .getAncestorOfClass(TopComponent.class, editorPane);
+        while (parent != null) {
+            tc = (TopComponent)parent;
+            if(setTC.contains(tc))
+                break;
+            parent = SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
+        }
+        return tc;
+    }
+
+    static Set<NbAppView> fetchAvFromTC(TopComponent tc) {
         @SuppressWarnings("unchecked")
-        Set<JEditorPane> s = (Set<JEditorPane>)tc.getClientProperty(PROP_JEP);
+        Set<NbAppView> s = (Set<NbAppView>)tc
+                .getClientProperty(SwingFactory.PROP_AV);
         if(s != null)
             return s;
         return Collections.emptySet();
@@ -947,37 +949,106 @@ public class Module extends ModuleInstall
             }
             if(evt.getPropertyName()
                     .equals(TopComponent.Registry.PROP_ACTIVATED)) {
-                tcDumpInfo(evt.getOldValue(), "activated oldTC");
-                tcDumpInfo(evt.getNewValue(), "activated newTC");
+                TopComponent tc = (TopComponent) evt.getOldValue();
+                if(tc != null) {
+                    tcDumpInfo(evt.getOldValue(), "activated oldTC");
 
-                deactivateTC((TopComponent)evt.getOldValue());
-                
-                JEditorPane ep = getTCEditor(evt.getNewValue());
-                if(ep != null) {
-                    activateTC(ep, evt.getNewValue(), "P_ACTV");
-                    // Do this for activate (but not for open)
-                    ViManager.requestSwitch(ep);
-                    doRunAfterActivateSwitch();
+                    deactivateTC((TopComponent)evt.getOldValue());
+                }
+
+                //
+                // NEEDSWORK: P_ACTV and switchto which of multiple av's
+                // maybe if multiple, don't do an activate/switch
+                //
+
+                tc = (TopComponent) evt.getNewValue();
+                if(tc != null) {
+                    pokeTC(tc, true);
+
+                    if(!tcChecked.containsKey(tc)) {
+                        List<JEditorPane> l = getDescendentJep(tc);
+                        for (JEditorPane ep : l) {
+                            NbAppView av = NbAppView.updateAppViewForTC(tc, ep);
+                            registerTC(av, "P_ACTV");
+                        }
+                        tcChecked.put(tc, null);
+                    }
+
+                    tcDumpInfo(tc, "activated newTC");
+
+                    // grab the first editor in the top component
+                    NbAppView av = null;
+                    for (NbAppView _av : fetchAvFromTC(tc)) {
+                        av = _av;
+                    }
+
+                    if(av != null) {
+                        activateTC(av.getEditor(), tc, "P_ACTV");
+                        ViManager.requestSwitch(av.getEditor());
+                        doRunAfterActivateSwitch();
+                    }
                 }
             } else if(evt.getPropertyName()
                     .equals(TopComponent.Registry.PROP_TC_OPENED)) {
                 TopComponent tc = (TopComponent) evt.getNewValue();
-                JEditorPane ep = getTCEditor(tc);
+
+                boolean isEditor = pokeTC(tc, false);
                 tcDumpInfo(tc, "open");
-                if(ep != null)
-                    activateTC(ep, tc, "P_OPEN");
+
+                boolean didRegister = false;
+                List<JEditorPane> l = getDescendentJep(tc);
+                for (JEditorPane ep : l) {
+                    // if it is not an editor then treat it like a nomad
+                    NbAppView av = NbAppView.updateAppViewForTC(
+                            tc, ep, !isEditor);
+                    registerTC(av, "P_OPEN");
+                    didRegister = true;
+                }
+                if(isEditor && !didRegister) {
+                    NbAppView av = NbAppView.updateAppViewForTC(tc, null);
+                    registerTC(av, "P_OPEN_LAZY");
+                }
             } else if(evt.getPropertyName()
                     .equals(TopComponent.Registry.PROP_TC_CLOSED)) {
                 TopComponent tc = (TopComponent) evt.getNewValue();
-                for (JEditorPane ep : fetchEpFromTC(tc)) {
+                for (NbAppView av : fetchAvFromTC(tc)) {
                     tcDumpInfo(tc, "close");
-                    closeTC(ep, tc);
+                    closeTC(av.getEditor(), tc);
                 }
             }
         }
     }
+
+    static List<JEditorPane> getDescendentJep(Component parent) {
+        return getDescendentJep(parent, true);
+    }
+    static List<JEditorPane> getDescendentJep(Component parent, boolean verb)
+    {
+        List<JEditorPane> l = new ArrayList<JEditorPane>(2);
+        if (parent instanceof Container) {
+            Component components[] = ((Container)parent).getComponents();
+            for (int i = 0 ; i < components.length ; i++) {
+                Component comp = components[i];
+                if (comp != null) {
+                    if(comp instanceof JEditorPane) {
+                        l.add((JEditorPane)comp);
+                        if(G.dbgEditorActivation.getBoolean()) {
+                            JTextComponent ep = (JTextComponent)comp;
+                            FileObject fo = null;
+                            Document doc = ep.getDocument();
+                            fo = NbEditorUtilities.getFileObject(doc);
+                        }
+                    } else if (comp instanceof Container) {
+                        l.addAll(getDescendentJep(comp));
+                    }
+                }
+            }
+        }
+        return l;
+    }
     
-    private static String ancestorStringTC(Object o) {
+    private static String ancestorStringTC(Object o)
+    {
         StringBuilder s = new StringBuilder();
         TopComponent tc = null;
         TopComponent parent = (TopComponent)SwingUtilities
@@ -993,93 +1064,54 @@ public class Module extends ModuleInstall
         return s.toString();
     }
     
-    private static final void tcDumpInfo(Object o, String tag) {
+    private static final void tcDumpInfo(Object o, String tag)
+    {
         if(!G.dbgEditorActivation.getBoolean())
             return;
         if(!(o instanceof TopComponent))
             return;
         TopComponent tc = (TopComponent) o;
-        EditorCookie ec = tc.getLookup().lookup(EditorCookie.class);
-        JEditorPane panes[] = null;
-        if(ec != null)
-            panes = ec.getOpenedPanes();
+        List<JEditorPane> panes = getDescendentJep(tc);
         Mode mode = WindowManager.getDefault().findMode(tc);
         if(dbgAct.getBoolean()) {
-            System.err.format("trackTC: %s: %s: %s:%s '%s' : nPanes = %s\n",
+            System.err.format("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
                     tag,
-                    tc.getClientProperty(PROP_W_NUM),
                     tc.getDisplayName(), cid(tc),
                     (mode == null ? "null" : mode.getName()),
-                    (panes == null ? "null" : panes.length));
+                    panes.size());
         }
-        if(panes != null) {
+        if(dbgAct.getBoolean()) {
             for (JEditorPane ep : panes) {
-                if(dbgAct.getBoolean()) {
-                    System.err.println("\tep " + cid(ep)
-                                       + ancestorStringTC(ep));
+                NbAppView av = fetchAvFromTC(tc, ep);
+                if(av == null) {
+                    System.err.printf("\tep %s tc: %s isEditable %b\n",
+                            cid(ep), ancestorStringTC(ep), ep.isEditable());
+                } else {
+                    System.err.printf("\tep:%d %s tc: %s isEditable %b\n",
+                            av.getWNum(),
+                            cid(ep), ancestorStringTC(ep), ep.isEditable());
                 }
             }
         }
+    }
+
+    private static boolean pokeTC(TopComponent tc, boolean force)
+    {
+        if(tc == null)
+            return false;
+        Lookup lookup = tc.getLookup();
+        if(lookup == null)
+            return false;
+        EditorCookie ec = lookup.lookup(EditorCookie.class);
+        if(ec == null)
+            return false; // no editor cookie
+
+        JEditorPane[] panes;
+        if(force)
+            panes = ec.getOpenedPanes(); // force the panes to be instantiated
+        return true; // this top component has an editor cookie
     }
     
-    /**
-     * Investigate the argument Object and return a
-     * contained JEditorPane.
-     *
-     * This method investigates a TC to see if it is something that jVi 
-     * wants to work with. Assuming one of the associated editorPanes is a
-     * decendant of the TopComponent.
-     *
-     * Note: MVTC do not have panes at open time, not until they are acivated.
-     * Note: can not count on TC's Mode.
-     * Note: simply having an associated JEditorPane is insuficient, for
-     * example a navigator may be associated with a JEditorPane.
-     *
-     * @return The contained editor or null if there is none.
-     */
-    public static JEditorPane getTCEditor(Object o) {
-        if(!(o instanceof TopComponent)) {
-            return null;
-        }
-        TopComponent tc = (TopComponent) o;
-        EditorCookie ec = tc.getLookup().lookup(EditorCookie.class);
-        if(ec == null)
-            return null;
-        
-        JEditorPane panes [] = ec.getOpenedPanes();
-        JEditorPane ep = null;
-        if(panes != null) {
-loop:
-            for (JEditorPane _ep : panes) {
-                Container parent = SwingUtilities
-                        .getAncestorOfClass(TopComponent.class, _ep);
-                while (parent != null) {
-                    Container c01 = parent;
-                    if(tc == c01) {
-                        ep = _ep;
-                        break loop;
-                    }
-                    parent = SwingUtilities.getAncestorOfClass(
-                            TopComponent.class, c01);
-                }
-            }
-        }
-
-        if(ep != null) {
-            Integer wnum = (Integer)tc.getClientProperty(PROP_W_NUM);
-            if(wnum == null) {
-                wnum = ++genWNum;
-                tc.putClientProperty(PROP_W_NUM, wnum);
-            }
-            Integer wnum02 = (Integer)ep.getClientProperty(PROP_W_NUM);
-            if(wnum02 == null)
-                ep.putClientProperty(PROP_W_NUM, wnum);
-            else if(!wnum.equals(wnum02))
-                ViManager.dumpStack("WNum mismatch: " + wnum + "," + wnum02);
-        }
-        
-        return ep;
-    }
 
     static void runAfterActivateSwitch(Runnable runnable) {
     }
@@ -1323,16 +1355,22 @@ loop:
                         ? new ImageIcon(tc.getIcon())
                         : null;
 
-                Set<JEditorPane> jepSet = fetchEpFromTC(tc);
-                String name = null;
-                if(jepSet.size() == 1) {
-                    for (JEditorPane jep : jepSet) {
-                        Document doc = jep.getDocument();
-                        if(NbEditorUtilities.getDataObject(doc).isModified())
-                            flags |= ITEM_MODIFIED;
-                        name = NbEditorUtilities.getFileObject(doc).getNameExt();
-                    }
-                }
+                // NEEDSWORK: why "== 1"
+                //Set<JEditorPane> jepSet = fetchEpFromTC(tc);
+                //Set<NbAppView> avSet = fetchAvFromTC(tc);
+                //String name = null;
+                //if(avSet.size() == 1) {
+                //    for (NbAppView av : avSet) {
+                //        Document doc = av.getEditor().getDocument();
+                //        if(NbEditorUtilities.getDataObject(doc).isModified())
+                //            flags |= ITEM_MODIFIED;
+                //        name = NbEditorUtilities.getFileObject(doc).getNameExt();
+                //    }
+                //}
+                Document doc = av.getEditor().getDocument();
+                if(NbEditorUtilities.getDataObject(doc).isModified())
+                    flags |= ITEM_MODIFIED;
+                String name = NbEditorUtilities.getFileObject(doc).getNameExt();
                 if(name == null)
                     name = factory.getFS().getDisplayFileName(av);
                 query.add(new ViCommandCompletionItem(

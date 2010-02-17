@@ -14,6 +14,7 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
+import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
@@ -474,7 +475,7 @@ public class NbTextView extends SwingTextView
 
     @Override
     public void win_close_others(boolean forceit) {
-        Object[] o = ViManager.getAppViews(ViManager.AppViews.ACTIVE, false);
+        Object[] o = AppViews.get(AppViews.ACTIVE, false);
         List<NbAppView> l = (List<NbAppView>) o[0];
         int idx = (Integer)o[1];
 
@@ -496,7 +497,7 @@ public class NbTextView extends SwingTextView
             return;
         
         // activate the previously active TC
-        NbAppView avPrev = (NbAppView)ViManager.getMruBuffer(1);
+        NbAppView avPrev = (NbAppView)AppViews.getMruBuffer(1);
         TopComponent prevTC = null;
         if(avPrev != null)
                 prevTC = avPrev.getTopComponent();

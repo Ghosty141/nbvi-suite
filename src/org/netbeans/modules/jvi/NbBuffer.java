@@ -15,6 +15,7 @@ import com.raelity.jvi.core.Misc;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.manager.Scheduler;
 import com.raelity.jvi.swing.SwingBuffer;
 import com.raelity.text.TextUtil;
 import java.io.File;
@@ -307,7 +308,7 @@ public class NbBuffer extends SwingBuffer {
     }
     
     private void undoOrRedo(String tag, String action) {
-        NbTextView tv = (NbTextView)ViManager.getCurrentTextView();
+        NbTextView tv = (NbTextView)Scheduler.getCurrentTextView();
         if(tv == null || !tv.isEditable()) {
             Util.vim_beep();
             return;
@@ -392,7 +393,7 @@ public class NbBuffer extends SwingBuffer {
             ((BaseDocument)doc).atomicUnlock();
 
             if(isAnyExecption()) {
-                final ViTextView tv = ViManager.getCurrentTextView();
+                final ViTextView tv = Scheduler.getCurrentTextView();
                 // This must come *after* atomicUnlock, otherwise it gets
                 // overwritten by a clear message due to scrolling.
                 

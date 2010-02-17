@@ -34,6 +34,7 @@ import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
+import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -193,10 +194,10 @@ public class NbColonCommands {
                 offset = ce.getLine1();
             if(!goForward)
                 offset = -offset;
-            NbAppView av = (NbAppView)ViManager.relativeMruBuffer(offset);
+            NbAppView av = (NbAppView)AppViews.relativeMruBuffer(offset);
             if(av != null && av.getTopComponent() != null) {
                 // don't want mru list to change
-                ViManager.keepMruAfterActivation(av);
+                AppViews.keepMruAfterActivation(av);
                 av.getTopComponent().requestActive();
             }
         }

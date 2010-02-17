@@ -5,6 +5,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.ViCaretStyle;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.manager.Scheduler;
 import com.raelity.jvi.swing.SwingPaintCaret;
 import java.awt.Graphics;
 import javax.swing.event.ChangeEvent;
@@ -45,7 +46,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
 
         public void stateChanged(ChangeEvent e)
         {
-            ViManager.cursorChange(NbCaret.this);
+            Scheduler.cursorChange(NbCaret.this);
         }
     });
   }

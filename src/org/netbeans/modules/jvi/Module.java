@@ -14,6 +14,8 @@ import com.raelity.jvi.swing.CommandLine;
 import com.raelity.jvi.swing.SwingFactory;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.manager.Scheduler;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -371,7 +373,7 @@ public class Module extends ModuleInstall
             }
 
             if(isDbgNb())
-                ViManager.dump(System.err);
+                AppViews.dump(System.err);
 
             JViOptionWarning.clear();
             updateKeymap();
@@ -849,7 +851,7 @@ public class Module extends ModuleInstall
     }
 
     private static void closeTC(JEditorPane ep, TopComponent tc) {
-        ViManager.closeAppView(fetchAvFromTC(tc, ep));
+        AppViews.close(fetchAvFromTC(tc, ep));
         // NEEDSWORK: spin through viman lists close any special
         // Can't do this. Just because a TC is closed, doesn't mean
         // that the associated editor won't be re-used, eg CodeEvaluator
@@ -868,7 +870,7 @@ public class Module extends ModuleInstall
 
         // NEEDSWORK: pick the right appview to deactivate
         // probably only allow one to be the "master"?
-        ViManager.deactivateCurrentAppView(av);
+        AppViews.deactivateCurrent(av);
     }
     
     // This was private, but there are times when a TopComponent with
@@ -877,11 +879,11 @@ public class Module extends ModuleInstall
         if(ep != null)
             checkCaret(ep);
         NbAppView av = fetchAvFromTC(tc, ep);
-        ViManager.activateAppView(av, tag);
+        AppViews.activate(av, tag);
     }
 
     private static void registerTC(NbAppView av, String tag) {
-        ViManager.registerAppView(av, tag);
+        AppViews.register(av, tag);
     }
     
     //////////////////////////////////////////////////////////////////////
@@ -933,8 +935,8 @@ public class Module extends ModuleInstall
     
     /** This class monitors the TopComponent registry and issues
      * <ul>
-     * <li> ViManager.activateAppView("debuginfo", tc) </li>
-     * <li> ViManager.deactivateCurrentAppView(ep, tc) </li>
+     * <li> ViManager.activate("debuginfo", tc) </li>
+     * <li> ViManager.deactivateCurrent(ep, tc) </li>
      * <li> ViManager.exitInputMode() </li>
      * </ul>
      */
@@ -984,7 +986,7 @@ public class Module extends ModuleInstall
 
                     if(av != null) {
                         activateTC(av.getEditor(), tc, "P_ACTV");
-                        ViManager.requestSwitch(av.getEditor());
+                        Scheduler.requestSwitch(av.getEditor());
                         doRunAfterActivateSwitch();
                     }
                 }
@@ -1344,7 +1346,7 @@ public class Module extends ModuleInstall
             int i = 0;
             NbAppView av;
             Font font = getTxtFont();
-            while((av = (NbAppView)ViManager.getTextBuffer(++i)) != null) {
+            while((av = (NbAppView)AppViews.getTextBuffer(++i)) != null) {
                 TopComponent tc = av.getTopComponent();
                 int wnum = av.getWNum();
                 int flags = 0;

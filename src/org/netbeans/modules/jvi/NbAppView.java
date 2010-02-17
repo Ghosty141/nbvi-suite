@@ -47,7 +47,7 @@ import org.openide.windows.TopComponent;
  *
  * @author Ernie Rael <err at raelity.com>
  */
-class NbAppView implements ViAppView
+public class NbAppView implements ViAppView
 {
     private TopComponent tc;
     private JEditorPane ep;
@@ -69,7 +69,7 @@ class NbAppView implements ViAppView
         this.isNomad = isNomad;
     }
 
-    TopComponent getTopComponent()
+    public TopComponent getTopComponent()
     {
         return tc;
     }

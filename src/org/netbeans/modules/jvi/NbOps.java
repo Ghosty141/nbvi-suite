@@ -42,7 +42,7 @@ public class NbOps extends OpsBase {
                 actionName = NbEditorKit.insertContentAction;
                 break;
             case KEY_TYPED:
-                Action a = Module.getDefaultKeyAction(
+                Action a = KeyBindings.getDefaultKeyAction(
                         ((JEditorPane)textView.getEditorComponent()));
                 xact(a != null ? a : keyTypedAction);
                 return;

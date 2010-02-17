@@ -4,5 +4,5 @@
 <editor-preferences>
     <entry javaType="methodvalue"
            name="kit-install-action-name-list"
-           value="org.netbeans.modules.jvi.Module.getKitInstallActionNameList" />
+           value="org.netbeans.modules.jvi.KeyBindings.getKitInstallActionNameList" />
 </editor-preferences>

@@ -20,7 +20,6 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.core.Buffer;
@@ -32,7 +31,6 @@ import com.raelity.jvi.ViTextView.TAGOP;
 import java.awt.Component;
 
 import java.util.Collections;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.Stack;
@@ -50,6 +48,8 @@ import javax.swing.text.Position;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.util.CcCompletion;
+import org.netbeans.modules.jvi.util.NbUtil;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
@@ -209,7 +209,7 @@ final public class NbFactory extends SwingFactory {
             // Set mime type to connect with code completion provider
             jtc.getDocument().putProperty("mimeType", "text/x-vicommand");
 
-            Module.EditorRegistryRegister(jtc);
+            NbUtil.EditorRegistryRegister(jtc);
         }
 
         return ce;
@@ -416,6 +416,6 @@ final public class NbFactory extends SwingFactory {
 
     @Override
     public void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable) {
-        Module.commandEntryAssist(cmdEntry, enable);
+        CcCompletion.commandEntryAssist(cmdEntry, enable);
     }
 }

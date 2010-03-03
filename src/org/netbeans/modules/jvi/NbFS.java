@@ -1,7 +1,6 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.core.Filemark;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
@@ -50,7 +49,7 @@ public class NbFS extends abstractFS
                 s = av.getTopComponent().getDisplayName();
             }
             if(s == null && av.getEditor() != null) {
-                ViTextView tv = ViManager.getViFactory().getTextView(av);
+                ViTextView tv = ViManager.getFactory().getTextView(av);
                 if(tv != null)
                     s = findName(tv.getBuffer());
                 if(s == null)

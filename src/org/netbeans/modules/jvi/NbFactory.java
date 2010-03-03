@@ -413,7 +413,7 @@ final public class NbFactory extends SwingFactory {
     public void tagDialog(ColonCommands.ColonEvent ce) {
         Action act = Module.fetchFileSystemAction(FsAct.GO_TYPE);
         if(act != null && act.isEnabled()) {
-            ViManager.getViFactory().startTagPush(ce.getViTextView(), "");
+            ViManager.getFactory().startTagPush(ce.getViTextView(), "");
             act.actionPerformed(ce);
         } else
             Util.vim_beep();

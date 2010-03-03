@@ -59,15 +59,15 @@ public class NbOptionsNode extends OptionsPanel {
             PropertyDescriptor d02 = null;
             PropertyDescriptor d03 = null;
             try {
-                d01 = ViManager.getViFactory()
+                d01 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_MODULE,
                                                GETSET_DBG_MODULE,
                                                NbDebugOptions.class);
-                d02 = ViManager.getViFactory()
+                d02 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_TC,
                                                GETSET_DBG_TC,
                                                NbDebugOptions.class);
-                d03 = ViManager.getViFactory()
+                d03 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_HL,
                                                GETSET_DBG_HL,
                                                NbDebugOptions.class);

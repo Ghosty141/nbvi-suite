@@ -100,9 +100,9 @@ public class KeyBindings {
                     NbFactory.installCaret(ep, c01);
                     if(Module.isDbgNb()) {
                         System.err.println("restore caret: "
-                                + ViManager.getViFactory().getFS()
+                                + ViManager.getFactory().getFS()
                                   .getDisplayFileName(
-                                   ViManager.getViFactory().getAppView(ep)));
+                                   ViManager.getFactory().getAppView(ep)));
                     }
                 }
                 editorToCaret.remove(ep);
@@ -180,7 +180,7 @@ public class KeyBindings {
             kitToDefaultKeyAction.put(kit, a);
             //putDefaultKeyAction(ep, a);
             ep.getKeymap().
-                    setDefaultAction(((NbFactory)ViManager.getViFactory())
+                    setDefaultAction(((NbFactory)ViManager.getFactory())
                     .createCharAction(DefaultEditorKit.defaultKeyTypedAction));
             if (Module.isDbgNb())
                 System.err.println(Module.MOD + "capture: "
@@ -234,7 +234,7 @@ public class KeyBindings {
                 if (Module.isDbgNb())
                     System.err.println(Module.MOD + "capture caret");
             }
-            ViManager.getViFactory().setupCaret(ep);
+            ViManager.getFactory().setupCaret(ep);
         }
     }
 

@@ -114,7 +114,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 	    nbMode = "INS";
 	} else if(mode.equals(Edit.VI_MODE_REPLACE)) {
 	    nbMode = "OVR";
-	} else if(mode.equals(ViManager.getViFactory()
+	} else if(mode.equals(ViManager.getFactory()
                 .getPlatformSelectionDisplayName())) {
             nbMode = "";
 	} else {

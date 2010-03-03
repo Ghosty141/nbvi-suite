@@ -281,7 +281,7 @@ public class NbTextView extends SwingTextView
     @Override
     public void jumpDefinition(String ident) {
         ops.xact(NbEditorKit.gotoDeclarationAction);
-        ViManager.getViFactory().startTagPush(this, ident);
+        ViManager.getFactory().startTagPush(this, ident);
     }
     
     @Override
@@ -838,7 +838,7 @@ public class NbTextView extends SwingTextView
         }
 
         protected NbTextView getTv() {
-            NbTextView tv = (NbTextView)ViManager.getViFactory()
+            NbTextView tv = (NbTextView)ViManager.getFactory()
                                         .getTextView((ep));
             return tv;
         }

@@ -249,7 +249,7 @@ public class CcCompletion
                     name = NbEditorUtilities.getFileObject(doc).getNameExt();
                 }
                 if (name == null)
-                    name = ViManager.getViFactory()
+                    name = ViManager.getFactory()
                             .getFS().getDisplayFileName(av);
                 query.add(new ViCommandCompletionItem(
                         name,

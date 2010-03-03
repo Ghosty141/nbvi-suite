@@ -135,7 +135,7 @@ public class NbColonCommands {
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
             if(source instanceof JEditorPane) {
-                Object o = ViManager.getViFactory()
+                Object o = ViManager.getFactory()
                             .getTextView((JEditorPane)source);
                 NbTextView tv = (NbTextView)o;
                 tv.getOps().xact("fix-imports");

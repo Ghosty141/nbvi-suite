@@ -5,6 +5,7 @@ import com.raelity.jvi.core.Filemark;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViBuffer;
+import com.raelity.jvi.ViFPOS;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.lib.abstractFS;
@@ -139,7 +140,7 @@ public class NbFS extends abstractFS
     public boolean write(
             ViTextView tv, boolean force, Object writeTarget, Integer[] range)
     {
-        if(range.length == 0) {
+        if(range == null || range.length == 0) {
             if(writeTarget == null) {
                 return write(tv, force);
             } else if(writeTarget instanceof String) {
@@ -171,27 +172,11 @@ public class NbFS extends abstractFS
             Msg.emsg("Can not edit " + getDisplayFileName(av));
     }
 
-    /** Edit either a File or Filemark or String */
-    public void edit(ViTextView tv, boolean force, Object fileThing)
+    /** Edit a File */
+    public void edit(File f, boolean force, ViFPOS fpos)
     {
         String msg = null;
         try {
-            File f = null;
-            Filemark fm = null;
-
-            // get a java File object for the thing
-            if(fileThing instanceof Filemark) {
-                fm = (Filemark)fileThing;
-                f = fm.getFile();
-            } else if(fileThing instanceof File) {
-                f = (File)fileThing;
-            } else if(fileThing instanceof String) {
-                f = new File((String)fileThing);
-            } else {
-                ViManager.dumpStack("unknown fileThing type");
-                return;
-            }
-
             // get a netbens FileObject
             if(!f.isAbsolute()) {
                 f = f.getAbsoluteFile();
@@ -213,16 +198,15 @@ public class NbFS extends abstractFS
             // Wait for the document to be available
             Document doc = ec.openDocument();
             //System.err.println("Document Ready");
-            if(fm != null) {
+            if(fpos != null) {
                 // finishTagPush ??
-                int wnum = 0; // window of file mark
 
                 // currently active or not
                 // if active use offset
 
                 // Q up goto line for next switch, Q: tc,run
 
-                Line l = NbEditorUtilities.getLine(doc, fm.getOffset(), false);
+                Line l = NbEditorUtilities.getLine(doc, fpos.getOffset(), false);
                 l.show(Line.ShowOpenType.OPEN, Line.ShowVisibilityType.FOCUS);
             }
         } catch (DataObjectNotFoundException ex) {

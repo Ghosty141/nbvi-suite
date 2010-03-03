@@ -194,7 +194,7 @@ public class NbColonCommands {
                 offset = ce.getLine1();
             if(!goForward)
                 offset = -offset;
-            NbAppView av = (NbAppView)AppViews.relativeMruBuffer(offset);
+            NbAppView av = (NbAppView)AppViews.relativeMruAppView(offset);
             if(av != null && av.getTopComponent() != null) {
                 // don't want mru list to change
                 AppViews.keepMruAfterActivation(av);

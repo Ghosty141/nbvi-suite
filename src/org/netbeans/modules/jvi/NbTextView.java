@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -96,10 +97,6 @@ public class NbTextView extends SwingTextView
             searchResultsHighlighter = null;
         }
     }
-
-    private boolean isNomadic() {
-        return ViManager.getViFactory().isNomadic(editorPane, null);
-    }
     
     //
     // The viOptionBag interface
@@ -121,14 +118,6 @@ public class NbTextView extends SwingTextView
             prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
             SetColonCommand.syncAllInstances("w_p_nu");
         }
-    }
-    
-    @Override
-    public void activateOptions(ViTextView tv) {
-        super.activateOptions(tv);
-
-        if(G.dbgEditorActivation.getBoolean() && isNomadic())
-            System.err.println("ACTIVATING OPTIONS FOR NOMAD");
     }
     
     //
@@ -475,29 +464,28 @@ public class NbTextView extends SwingTextView
 
     @Override
     public void win_close_others(boolean forceit) {
-        Object[] o = AppViews.get(AppViews.ACTIVE, false);
-        List<NbAppView> l = (List<NbAppView>) o[0];
-        int idx = (Integer)o[1];
+        List<ViAppView> avs = AppViews.getList(AppViews.ACTIVE);
+        int idx = AppViews.indexOfCurrentAppView(avs);
 
-        if(l.size() <= 1 || idx < 0)
+
+        if(avs.size() <= 1 || idx < 0)
             return;
 
-        for (int i = 0; i < l.size(); i++) {
+        for (int i = 0; i < avs.size(); i++) {
             if(i != idx)
-                l.get(i).getTopComponent().close();
+                ((NbAppView)avs.get(i)).getTopComponent().close();
         }
     }
     
     @Override
     public void win_close(boolean freeBuf) {
-        NbAppView avClose = (NbAppView)ViManager.getViFactory()
-                .getAppView(this.editorPane);
+        NbAppView avClose = (NbAppView)getAppView();
 
         if(avClose == null)
             return;
         
         // activate the previously active TC
-        NbAppView avPrev = (NbAppView)AppViews.getMruBuffer(1);
+        NbAppView avPrev = (NbAppView)AppViews.getMruAppView(1);
         TopComponent prevTC = null;
         if(avPrev != null)
                 prevTC = avPrev.getTopComponent();

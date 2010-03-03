@@ -21,10 +21,14 @@
 package org.netbeans.modules.jvi;
 
 import com.raelity.jvi.ViAppView;
+import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.SwingFactory;
 import java.awt.EventQueue;
+import java.awt.Point;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.swing.JEditorPane;
 import org.netbeans.modules.editor.NbEditorUtilities;
@@ -55,18 +59,15 @@ public class NbAppView implements ViAppView
     private int wnum;
 
     private static int genWNum; // for the generation of the unique nums
-
-    private NbAppView(TopComponent tc, JEditorPane ep)
-    {
-        this.tc = tc;
-        this.ep = ep;
-        wnum = ++genWNum;
-    }
+    private static int genNomadNum; // give nomads a unique num
 
     private NbAppView(TopComponent tc, JEditorPane ep, boolean isNomad)
     {
-        this(tc, ep);
+        this.tc = tc;
+        this.ep = ep;
         this.isNomad = isNomad;
+        // give nomads negative numbers
+        wnum = isNomad ? --genNomadNum : ++genWNum;
     }
 
     public TopComponent getTopComponent()
@@ -94,6 +95,16 @@ public class NbAppView implements ViAppView
         return NbEditorUtilities.getFileObject(ep.getDocument()) == null;
     }
 
+    public boolean isShowing()
+    {
+        if(ep != null)
+            return ep.isShowing();
+        if(tc != null)
+            return tc.isShowing();
+        assert false;
+        return false;
+    }
+
     public int getWNum()
     {
         return wnum;
@@ -102,18 +113,72 @@ public class NbAppView implements ViAppView
     @Override
     public String toString()
     {
-        return ViManager.getFS().getDisplayFileName(this);
+        return String.format("%s focus(%s,%b)",
+                ViManager.getFS().getDisplayFileName(this),
+                tc != null ? tc.hasFocus() : "null",
+                ep != null ? ep.hasFocus() : "null");
+    }
+
+    public void sort(List<ViAppView> avs)
+    {
+        if(offsetTcToEp == 0) {
+            // There is a margin between a top component and the editor.
+            // Determine that offset so that when an AppView without and
+            // editor is encountered, the offset can be added to the tc.
+            for (ViAppView _av : avs) {
+                NbAppView av = (NbAppView)_av;
+                if(av.getEditor() != null && av.getTopComponent() != null)
+                    offsetTcToEp = av.getEditor().getLocationOnScreen().x
+                            - av.getTopComponent().getLocationOnScreen().x;
+            }
+        }
+        Collections.sort(avs);
+    }
+
+    public int compareTo(ViAppView o)
+    {
+        Point w1 = getLocation(this);
+        Point w2 = getLocation(o);
+
+        // if the x coords are with 25 then consider them
+        // to be aligned vertically. This is because the margin
+        // can be different for each editor
+        int rv;
+        if(Math.abs(w1.x - w2.x) > 25)
+            rv = w1.x - w2.x;
+        else
+            rv = w1.y - w2.y;
+        System.err.format("Comp rv %d\n    %s%s\n    %s%s\n",
+                rv, this, w1, o, w2);
+        return rv;
+    }
+
+    private static int offsetTcToEp;
+
+    private static Point getLocation(ViAppView av)
+    {
+        Point p;
+        if(av.getEditor() != null)
+            p = av.getEditor().getLocationOnScreen();
+        else {
+            p = ((NbAppView)av).getTopComponent().getLocationOnScreen();
+            p.x += offsetTcToEp;
+        }
+        return p;
     }
 
     /**
      * This may be called when the app view already exists for the tc,ep pair.
      * A huge portion of this code looks for inconsistencies.
      *
+     * The appView is registered with jVi with AppViews.open(...)
+     *
      * @param tc
      * @param ep
      */
-    static NbAppView updateAppViewForTC(TopComponent tc, JEditorPane ep) {
-        return updateAppViewForTC(tc, ep, false);
+    static NbAppView updateAppViewForTC(
+            String info, TopComponent tc, JEditorPane ep) {
+        return updateAppViewForTC(info, tc, ep, false);
     }
 
     private static String tag;
@@ -133,7 +198,7 @@ public class NbAppView implements ViAppView
      * @return
      */
     static NbAppView updateAppViewForTC(
-            TopComponent tc, JEditorPane ep, boolean isNomad)
+            String info, TopComponent tc, JEditorPane ep, boolean isNomad)
     {
         assert EventQueue.isDispatchThread();
 
@@ -219,6 +284,9 @@ public class NbAppView implements ViAppView
                     tc != null ? Module.cid(tc) : "",
                     ep != null ? Module.cid(ep) : "",
                     isNomad);
+
+        AppViews.open(av, info);
+
         return av;
     }
 
@@ -227,11 +295,32 @@ public class NbAppView implements ViAppView
         NbAppView av = (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
         assert av == null;
         if(av == null) {
-            av = new NbAppView(null, ep); // nomad by definition
+            av = new NbAppView(null, ep, true); // nomad by definition
             addTag("orphan");
         } else
             addTag("ERROR: orphan already");
 
         return av;
     }
+
+    static Set<NbAppView> fetchAvFromTC(TopComponent tc) { // NEEDSWORK: into av
+        @SuppressWarnings("unchecked")
+        Set<NbAppView> s = (Set<NbAppView>)tc
+                .getClientProperty(SwingFactory.PROP_AV);
+        if(s != null)
+            return s;
+        return Collections.emptySet();
+    }
+
+    static NbAppView fetchAvFromTC(TopComponent tc, JEditorPane ep) {
+        if(tc == null)
+            return (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
+        for (NbAppView av : fetchAvFromTC(tc)) {
+            if(av.getEditor() == ep)
+                return av;
+
+        }
+        return null;
+    }
+
 }

@@ -20,6 +20,7 @@
 
 package org.netbeans.modules.jvi.util;
 
+import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.manager.AppViews;
@@ -230,10 +231,9 @@ public class CcCompletion
         public void query(CompletionResultSet resultSet)
         {
             query = new ArrayList<ViCommandCompletionItem>();
-            int i = 0;
-            NbAppView av;
             Font font = getTxtFont();
-            while ((av = (NbAppView)AppViews.getTextBuffer(++i)) != null) {
+            for (ViAppView _av : AppViews.getList(AppViews.ACTIVE)) {
+                NbAppView av = (NbAppView)_av;
                 TopComponent tc = av.getTopComponent();
                 int wnum = av.getWNum();
                 int flags = 0;
@@ -241,29 +241,20 @@ public class CcCompletion
                     flags |= ITEM_SELECTED;
                 ImageIcon icon =
                         tc.getIcon() != null ? new ImageIcon(tc.getIcon()) : null;
-                // NEEDSWORK: why "== 1"
-                //Set<JEditorPane> jepSet = fetchEpFromTC(tc);
-                //Set<NbAppView> avSet = fetchAvFromTC(tc);
-                //String name = null;
-                //if(avSet.size() == 1) {
-                //    for (NbAppView av : avSet) {
-                //        Document doc = av.getEditor().getDocument();
-                //        if(NbEditorUtilities.getDataObject(doc).isModified())
-                //            flags |= ITEM_MODIFIED;
-                //        name = NbEditorUtilities.getFileObject(doc).getNameExt();
-                //    }
-                //}
-                Document doc = av.getEditor().getDocument();
-                if (NbEditorUtilities.getDataObject(doc).isModified())
-                    flags |= ITEM_MODIFIED;
-                String name = NbEditorUtilities.getFileObject(doc).getNameExt();
+                String name = null;
+                if(av.getEditor() != null) {
+                    Document doc = av.getEditor().getDocument();
+                    if (NbEditorUtilities.getDataObject(doc).isModified())
+                        flags |= ITEM_MODIFIED;
+                    name = NbEditorUtilities.getFileObject(doc).getNameExt();
+                }
                 if (name == null)
                     name = ViManager.getViFactory()
                             .getFS().getDisplayFileName(av);
-                query.add(new ViCommandCompletionItem(name,
-                                                      String.format("%02d", wnum),
-                                                      icon, false, flags, font,
-                                                      2)); // offset 2 is after "e#"
+                query.add(new ViCommandCompletionItem(
+                        name,
+                        String.format("%02d", wnum),
+                        icon, false, flags, font, 2)); // offset 2 is after "e#"
             }
             genResults(resultSet, "QUERY");
         }

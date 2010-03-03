@@ -21,7 +21,6 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.text.Line;
 import org.openide.util.actions.SystemAction;
-import org.openide.windows.TopComponent;
 
 public class NbFS extends abstractFS
 {
@@ -40,39 +39,60 @@ public class NbFS extends abstractFS
     }
 
     private static final String NULL_FO = "noname-null-FileObject";
-    private static final String NULL_ED = "noname-null-tv";
 
     @Override
     public String getDisplayFileName(ViAppView _av) {
         NbAppView av = (NbAppView)_av;
+        String s = null;
         if(av != null) {
             if(av.getTopComponent() != null) {
-                String s = av.getTopComponent().getDisplayName();
-                if(s != null)
-                    return s;
+                s = av.getTopComponent().getDisplayName();
             }
-            if(av.getEditor() != null) {
+            if(s == null && av.getEditor() != null) {
                 ViTextView tv = ViManager.getViFactory().getTextView(av);
-                if(tv != null) {
-                    String s = getDisplayFileName(tv.getBuffer());
-                    if(s.equals(NULL_FO))
-                        s = av.getEditor().getClass().getSimpleName();
-                    return s;
-                }
-                return NULL_ED;
+                if(tv != null)
+                    s = findName(tv.getBuffer());
+                if(s == null)
+                    s = findName(av.getEditor().getDocument());
+            }
+            if(s == null && av.getTopComponent() != null)
+                s = av.getTopComponent().getClass().getSimpleName();
+        }
+        if(s == null)
+            s = "screwy-AppView-missing-fields";
+        return s;
+    }
+
+    private String findName(ViBuffer buf)
+    {
+        String s = null;
+        if(buf != null)
+            s = findName((Document)buf.getDocument());
+        return s;
+    }
+
+    private String findName(Document doc)
+    {
+        String s = null;
+        if(doc != null) {
+            FileObject fo = NbEditorUtilities.getFileObject(doc);
+            if(fo != null)
+                s = fo.getNameExt();
+            if(s == null) {
+                Object o = doc.getProperty(Document.TitleProperty);
+                if(o != null)
+                    s = o.toString();
             }
         }
-        return "screwy-AppView";
+        return s;
     }
 
     @Override
     public String getDisplayFileName(ViBuffer buf) {
-        FileObject fo = null;
-        if(buf != null) {
-            Document doc = (Document) buf.getDocument();
-            fo = NbEditorUtilities.getFileObject(doc);
-        }
-        return fo != null ? fo.getNameExt() : NULL_FO;
+        String s = null;
+        if(buf != null)
+            s = findName((Document)buf.getDocument());
+        return s != null ? s : NULL_FO;
     }
 
     public boolean isModified(ViBuffer buf) {
@@ -140,25 +160,14 @@ public class NbFS extends abstractFS
         return true;
     }
 
-    // NEEDSWORK: get rid of this in favor of edit(ViAppView)
-    public void edit(ViTextView tv, boolean force, int i) {
-        TopComponent tc = null;
-        NbAppView av = (NbAppView)getAppViewByNumber(i);
-        if(av != null)
-            tc = av.getTopComponent();
-	if(tc == null) {
-	  Msg.emsg("No alternate file name to substitute for '#" + i + "'");
-	  return;
-	}
-	tc.requestActive();
-    }
-
-    public void edit(ViAppView _av)
+    public void edit(ViAppView _av, boolean force)
     {
         NbAppView av = (NbAppView)_av;
-        if(av.getTopComponent() != null)
+        if(av.getTopComponent() != null) {
             av.getTopComponent().requestActive();
-        else
+            if(av.getEditor() != null)
+                av.getEditor().requestFocusInWindow();
+        } else
             Msg.emsg("Can not edit " + getDisplayFileName(av));
     }
 

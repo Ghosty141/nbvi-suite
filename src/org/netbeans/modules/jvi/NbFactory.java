@@ -28,6 +28,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
+import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
 
 import java.util.Collections;
@@ -128,7 +129,7 @@ final public class NbFactory extends SwingFactory {
             //assert tc == null; // otherwise should have an app view by now
 
             // Hmm, create a nomad.
-            av = NbAppView.updateAppViewForTC(tc, ed, true);
+            av = NbAppView.updateAppViewForTC("NEW_TEXT_VIEW", tc, ed, true);
         }
         
         ViTextView tv = new NbTextView(ed);
@@ -145,7 +146,11 @@ final public class NbFactory extends SwingFactory {
         // Cursor is currently installed by ed kit
         // install cursor if neeeded
         if(isEnabled() && ! (ep.getCaret() instanceof ViCaret)) {
+            if(G.dbgEditorActivation.getBoolean()) {
+                System.err.println("setupCaret: INSTALLING ViCaret");
+            }
             installCaret(ep, new NbCaret());
+            Scheduler.register(editor); //NEEDSWORK: register should not public
         }
     }
     

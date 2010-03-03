@@ -29,6 +29,8 @@ import com.raelity.jvi.ViTextView;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.JEditorPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
@@ -53,6 +55,7 @@ public final class NbStatusDisplay implements ViStatusDisplay {
 
     // NOTE: StatusDisplayer.Message
     private static StatusDisplayer.Message sdMsg;
+    private static ChangeListener listener;
 
     // a few things for working with the netbeans status bar.
     private static Coloring red = new Coloring(null, Color.red, null);
@@ -68,6 +71,17 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     public NbStatusDisplay(ViTextView textView) {
         this.textView = textView;
         displayMode(""); // Start out in command mode
+        if(false) {
+            if(listener == null)
+                listener = new ChangeListener()
+                {
+                    public void stateChanged(ChangeEvent e)
+                    {
+                        StatusDisplayer sd = (StatusDisplayer)e.getSource();
+                    }
+                };
+            StatusDisplayer.getDefault().addChangeListener(listener);
+        }
     }
 
     private String modeString() {

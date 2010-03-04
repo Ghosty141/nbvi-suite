@@ -24,11 +24,10 @@ import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.SwingFactory;
+import java.awt.Component;
 import java.awt.EventQueue;
-import java.awt.Point;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.swing.JEditorPane;
 import org.netbeans.modules.editor.NbEditorUtilities;
@@ -119,53 +118,60 @@ public class NbAppView implements ViAppView
                 ep != null ? ep.hasFocus() : "null");
     }
 
-    public void sort(List<ViAppView> avs)
-    {
-        if(offsetTcToEp == 0) {
-            // There is a margin between a top component and the editor.
-            // Determine that offset so that when an AppView without and
-            // editor is encountered, the offset can be added to the tc.
-            for (ViAppView _av : avs) {
-                NbAppView av = (NbAppView)_av;
-                if(av.getEditor() != null && av.getTopComponent() != null)
-                    offsetTcToEp = av.getEditor().getLocationOnScreen().x
-                            - av.getTopComponent().getLocationOnScreen().x;
-            }
-        }
-        Collections.sort(avs);
-    }
+    // public void sort(List<ViAppView> avs)
+    // {
+    //     if(true) {
+    //         List<ViAppView> avs01 = ViManager.getFactory()
+    //                 .getWindowTreeBuilder(avs).processAppViews();
+    //         avs.clear();
+    //         avs.addAll(avs01);
+    //     } else {
+    //         if(offsetTcToEp == 0) {
+    //             // There is a margin between a top component and the editor.
+    //             // Determine that offset so that when an AppView without and
+    //             // editor is encountered, the offset can be added to the tc.
+    //             for (ViAppView _av : avs) {
+    //                 NbAppView av = (NbAppView)_av;
+    //                 if(av.getEditor() != null && av.getTopComponent() != null)
+    //                     offsetTcToEp = av.getEditor().getLocationOnScreen().x
+    //                             - av.getTopComponent().getLocationOnScreen().x;
+    //             }
+    //         }
+    //         Collections.sort(avs);
+    //     }
+    // }
 
-    public int compareTo(ViAppView o)
-    {
-        Point w1 = getLocation(this);
-        Point w2 = getLocation(o);
+    // public int compareTo(ViAppView o)
+    // {
+    //     Point w1 = getLocation(this);
+    //     Point w2 = getLocation(o);
 
-        // if the x coords are with 25 then consider them
-        // to be aligned vertically. This is because the margin
-        // can be different for each editor
-        int rv;
-        if(Math.abs(w1.x - w2.x) > 25)
-            rv = w1.x - w2.x;
-        else
-            rv = w1.y - w2.y;
-        System.err.format("Comp rv %d\n    %s%s\n    %s%s\n",
-                rv, this, w1, o, w2);
-        return rv;
-    }
+    //     // if the x coords are with 25 then consider them
+    //     // to be aligned vertically. This is because the margin
+    //     // can be different for each editor
+    //     int rv;
+    //     if(Math.abs(w1.x - w2.x) > 25)
+    //         rv = w1.x - w2.x;
+    //     else
+    //         rv = w1.y - w2.y;
+    //     System.err.format("Comp rv %d\n    %s%s\n    %s%s\n",
+    //             rv, this, w1, o, w2);
+    //     return rv;
+    // }
 
-    private static int offsetTcToEp;
+    // private static int offsetTcToEp;
 
-    private static Point getLocation(ViAppView av)
-    {
-        Point p;
-        if(av.getEditor() != null)
-            p = av.getEditor().getLocationOnScreen();
-        else {
-            p = ((NbAppView)av).getTopComponent().getLocationOnScreen();
-            p.x += offsetTcToEp;
-        }
-        return p;
-    }
+    // private static Point getLocation(ViAppView av)
+    // {
+    //     Point p;
+    //     if(av.getEditor() != null)
+    //         p = av.getEditor().getLocationOnScreen();
+    //     else {
+    //         p = ((NbAppView)av).getTopComponent().getLocationOnScreen();
+    //         p.x += offsetTcToEp;
+    //     }
+    //     return p;
+    // }
 
     /**
      * This may be called when the app view already exists for the tc,ep pair.
@@ -321,6 +327,19 @@ public class NbAppView implements ViAppView
 
         }
         return null;
+    }
+
+    static NbAppView getAppView(Component c)
+    {
+        NbAppView av = null;
+        if(c instanceof TopComponent) {
+            Set<NbAppView> avs = fetchAvFromTC((TopComponent)c);
+            if(avs.size() == 1)
+                av = avs.iterator().next();
+        } else {
+            av = (NbAppView)ViManager.getFactory().getAppView(c);
+        }
+        return av;
     }
 
 }

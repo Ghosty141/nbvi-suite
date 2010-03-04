@@ -28,10 +28,12 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
+import com.raelity.jvi.core.WindowTreeBuilder;
 import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.Stack;
@@ -89,6 +91,12 @@ final public class NbFactory extends SwingFactory {
     @Override
     public ViFS getFS() {
         return fs;
+    }
+
+    @Override
+    public WindowTreeBuilder getWindowTreeBuilder(List<ViAppView> avs)
+    {
+        return new NbWindowTreeBuilder(avs);
     }
 
     @Override

@@ -57,6 +57,8 @@ public class NbFS extends abstractFS
             }
             if(s == null && av.getTopComponent() != null)
                 s = av.getTopComponent().getClass().getSimpleName();
+            if(s == null && av.getEditor() != null)
+                s = av.getEditor().getClass().getSimpleName();
         }
         if(s == null)
             s = "screwy-AppView-missing-fields";

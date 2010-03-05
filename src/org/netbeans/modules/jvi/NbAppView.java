@@ -279,7 +279,7 @@ public class NbAppView implements ViAppView
         // set up the references to av from the JComponents
         if(ep != null)
             ep.putClientProperty(SwingFactory.PROP_AV, av);
-        if(av != null)
+        if(tc != null && av != null)
             s.add(av);
 
         if(Module.dbgAct.getBoolean())

@@ -34,7 +34,6 @@ import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
-import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -59,24 +58,13 @@ public class NbColonCommands {
     private static Logger LOG
             = Logger.getLogger(NbColonCommands.class.getName());
 
-    public static void init() {
-        setupCommands();
-    }
-
-    private NbColonCommands() {
-    }
-
-    /** Register some ":" commands */
-    static void setupCommands() {
-        ColonCommands.register("n", "next", ACTION_next);
-        ColonCommands.register("N", "Next", ACTION_Next);
-        ColonCommands.register("prev", "previous", ACTION_Next);
-        
+    public static void init()
+    {
         // goto editor tab
         ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
         ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
         ColonCommands.register("tabN", "tabNext", ACTION_tabprevious);
-    
+
         // next previous in current list
         delegate("cn","cnext", FsAct.JUMP_NEXT);
         delegate("cp","cprevious", FsAct.JUMP_PREV);
@@ -86,11 +74,11 @@ public class NbColonCommands {
         delegate("ln","lnext", FsAct.JUMP_NEXT);
         delegate("lp","lprevious", FsAct.JUMP_PREV);
         delegate("lN","lNext", FsAct.JUMP_PREV);
-        
+
         ColonCommands.register("gr","grep", ACTION_fu);
 
         ColonCommands.register("fixi","fiximports", ACTION_fiximports);
-        
+
         // Make
         ColonCommands.register("mak","make", new Make());
 
@@ -113,13 +101,16 @@ public class NbColonCommands {
         delegate("rfcon","rfconstant", FsAct.RF_INTRODUCE_CONSTANT);
         delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD);
         delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD);
-        
+
         /* run and debug are now make targets
         ColonCommands.register("run", "run",
         ColonCommands.register("deb", "debug",
          */
-        
+
         ColonCommands.register("tog", "toggle", toggleAction);
+    }
+
+    private NbColonCommands() {
     }
 
     static private void delegate(String abrev, String name, String actionPath) {
@@ -172,34 +163,6 @@ public class NbColonCommands {
                     doWhereUsed();
                 }
             });
-        }
-    }
-    
-    private static ColonAction ACTION_next = new Next(true);
-    private static ColonAction ACTION_Next = new Next(false);
-    
-    /** next/Next/previous */
-    static private class Next extends ColonAction { // NEEDSWORK: count
-        boolean goForward;
-        
-        Next(boolean goForward) {
-            this.goForward = goForward;
-        }
-        public void actionPerformed(ActionEvent e) {
-            ColonEvent ce = (ColonEvent)e;
-            int offset;
-            if(ce.getAddrCount() == 0)
-                offset = 1;
-            else
-                offset = ce.getLine1();
-            if(!goForward)
-                offset = -offset;
-            NbAppView av = (NbAppView)AppViews.relativeMruAppView(offset);
-            if(av != null && av.getTopComponent() != null) {
-                // don't want mru list to change
-                AppViews.keepMruAfterActivation(av);
-                av.getTopComponent().requestActive();
-            }
         }
     }
 

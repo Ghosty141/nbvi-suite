@@ -51,7 +51,8 @@ import org.openide.windows.OutputWriter;
  * @author erra
  */
 public class NbOutputStream extends OutputStreamAdaptor {
-    private static Logger LOG = Logger.getLogger(NbOutputStream.class.getName());
+    private static final
+            Logger LOG = Logger.getLogger(NbOutputStream.class.getName());
     String type;
     ViTextView tv;
     OutputWriter ow;

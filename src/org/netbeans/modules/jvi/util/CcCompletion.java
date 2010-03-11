@@ -66,7 +66,7 @@ import org.openide.ErrorManager;
 import org.openide.windows.TopComponent;
 
 /**
- * Colon Commmand code completion.
+ * Colon Command code completion.
  *
  * ViCommandCompletionProvider is registered in layer.xml
  *
@@ -74,7 +74,8 @@ import org.openide.windows.TopComponent;
  */
 public class CcCompletion
 {
-    private static Logger LOG = Logger.getLogger(CcCompletion.class.getName());
+    private static final
+            Logger LOG = Logger.getLogger(CcCompletion.class.getName());
 
     private static CodeComplDocListener ceDocListen;
     private static boolean ceInSubstitute;

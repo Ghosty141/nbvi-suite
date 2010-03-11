@@ -65,7 +65,7 @@ import org.openide.windows.WindowManager;
  */
 public class Module extends ModuleInstall
 {
-    private static Logger LOG = Logger.getLogger(Module.class.getName());
+    private static final Logger LOG = Logger.getLogger(Module.class.getName());
 
     private static NbFactory factory;
 
@@ -531,7 +531,7 @@ public class Module extends ModuleInstall
         return s.toString();
     }
     
-    private static final void tcDumpInfo(Object o, String tag)
+    private static void tcDumpInfo(Object o, String tag)
     {
         if(!G.dbgEditorActivation.getBoolean())
             return;

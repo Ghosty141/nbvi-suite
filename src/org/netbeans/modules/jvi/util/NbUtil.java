@@ -33,7 +33,7 @@ import org.openide.util.Lookup;
  */
 public class NbUtil
 {
-    private static Logger LOG = Logger.getLogger(NbUtil.class.getName());
+    private static final Logger LOG = Logger.getLogger(NbUtil.class.getName());
     /**
      *
      * :e# file name completion based on NB code completion

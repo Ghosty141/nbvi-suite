@@ -55,8 +55,8 @@ import org.openide.windows.TopComponentGroup;
 import org.openide.windows.WindowManager;
 
 public class NbColonCommands {
-    private static Logger LOG
-            = Logger.getLogger(NbColonCommands.class.getName());
+    private static final
+            Logger LOG = Logger.getLogger(NbColonCommands.class.getName());
 
     public static void init()
     {

@@ -203,7 +203,7 @@ public class KeyBindings {
      * @param ep the edtior pane.
      * @return a best guess defaultKeytypedAction.
      */
-    static final Action getDefaultKeyAction(JEditorPane ep)
+    static Action getDefaultKeyAction(JEditorPane ep)
     {
         Action a = epToDefaultKeyAction.get(ep);
         if (a == null) {
@@ -213,7 +213,7 @@ public class KeyBindings {
         return a;
     }
 
-    private static final void putDefaultKeyAction(JEditorPane ep, Action a)
+    private static void putDefaultKeyAction(JEditorPane ep, Action a)
     {
         epToDefaultKeyAction.put(ep, a);
         // Sometimes the ep when install action has the wrong default KTA
@@ -223,7 +223,7 @@ public class KeyBindings {
             kitToDefaultKeyAction.put(kit, a);
     }
 
-    public static final void checkCaret(JEditorPane ep)
+    public static void checkCaret(JEditorPane ep)
     {
         assert knownEditors.containsKey(ep);
         if (!Module.jViEnabled())
@@ -350,7 +350,7 @@ public class KeyBindings {
             // If interested see editor.completion/src/org/netbeans/modules
             //                      /editor/completion/CompletionScrollPane
             synchronized (mapJvi) {
-                if (mapJvi.size() == 0) {
+                if (mapJvi.isEmpty()) {
                     // If needed, build jvi bindings map.
                     List<JTextComponent.KeyBinding> l =
                             KeyBinding.getBindingsList();
@@ -410,20 +410,20 @@ public class KeyBindings {
                 return;
             Map<Collection<KeyStroke>, MultiKeyBinding> mapOrig =
                     origMaps.get(createKey(mimePath, profile, defaults));
-            synchronized (mapJvi) {
-                //
-                // NEEDSWORK: the map doesn't have the jvi keybindings YET
-                //
-                // for(MultiKeyBinding kb : mapJvi.values()) {
-                //     MultiKeyBinding curKb = map.get(kb.getkeyStrokeList());
-                //     if(curKb == null)
-                //     if(!curKb.getActionName().equals(kb.getActionname()))
-                //     // assert curKb != null : "lost binding";
-                //     // assert curkb.getActionName().equals(kb.getActionName())
-                //     //                         : "changed";
-                //     map.remove(curKb.getKeystrokeList());
-                // }
-            }
+            //synchronized (mapJvi) {
+            //    //
+            //    // NEEDSWORK: the map doesn't have the jvi keybindings YET
+            //    //
+            //    // for(MultiKeyBinding kb : mapJvi.values()) {
+            //    //     MultiKeyBinding curKb = map.get(kb.getkeyStrokeList());
+            //    //     if(curKb == null)
+            //    //     if(!curKb.getActionName().equals(kb.getActionname()))
+            //    //     // assert curKb != null : "lost binding";
+            //    //     // assert curkb.getActionName().equals(kb.getActionName())
+            //    //     //                         : "changed";
+            //    //     map.remove(curKb.getKeystrokeList());
+            //    // }
+            //}
             if (mapOrig != null)
                 map.putAll(mapOrig);
             if (Module.isDbgNb())

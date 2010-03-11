@@ -57,7 +57,7 @@ import static com.raelity.jvi.core.Constants.*;
  * @author erra
  */
 public class NbBuffer extends SwingBuffer {
-    private static Logger LOG = Logger.getLogger(NbBuffer.class.getName());
+    private static final Logger LOG = Logger.getLogger(NbBuffer.class.getName());
     private UndoRedo.Manager undoRedo;
 
     private static Method beginUndo;

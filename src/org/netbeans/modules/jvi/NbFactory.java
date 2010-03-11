@@ -60,7 +60,7 @@ import org.openide.windows.TopComponent;
 
 final public class NbFactory extends SwingFactory {
 
-    private static Logger LOG = Logger.getLogger(NbFactory.class.getName());
+    private static final Logger LOG = Logger.getLogger(NbFactory.class.getName());
     
     NbFS fs = new NbFS();
     

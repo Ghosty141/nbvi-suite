@@ -50,7 +50,7 @@
                 <attr name="displayName" stringvalue="jVi"/>
                 <!--<attr name="displayName" bundlevalue="your.pkg.Bundle#key"/>-->
                 <attr name="iconBase"
-                      stringvalue="org/netbeans/modules/jvi/jViLogoSimple.png"/>
+                      stringvalue="org/netbeans/modules/jvi/resources/jViLogoSimple.png"/>
                 <attr name="noIconInMenu" boolvalue="true"/>
                 <attr name="asynchronous" boolvalue="false"/>
             </file>
@@ -59,13 +59,20 @@
 
     <folder name="OptionsDialog">
         <file name="jViConfigOptionsCategory.instance">
-            <attr name="categoryName" bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Name_jViConfig"/>
-            <attr name="controller" newvalue="org.netbeans.modules.jvi.jViOptionsPanelController"/>
-            <attr name="iconBase" stringvalue="org/netbeans/modules/jvi/jViLogoSimple32.png"/>
-            <attr name="instanceCreate" methodvalue="org.netbeans.spi.options.OptionsCategory.createCategory"/>
-            <attr name="keywords" bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Keywords_jViConfig"/>
-            <attr name="keywordsCategory" stringvalue="jViConfig"/>
-            <attr name="title" bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Title_jViConfig"/>
+            <attr name="categoryName"
+                  bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Name_jViConfig"/>
+            <attr name="controller"
+                  newvalue="org.netbeans.modules.jvi.jViOptionsPanelController"/>
+            <attr name="iconBase"
+                  stringvalue="org/netbeans/modules/jvi/resources/jViLogoSimple32.png"/>
+            <attr name="instanceCreate"
+                  methodvalue="org.netbeans.spi.options.OptionsCategory.createCategory"/>
+            <attr name="keywords"
+                  bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Keywords_jViConfig"/>
+            <attr name="keywordsCategory"
+                  stringvalue="jViConfig"/>
+            <attr name="title"
+                  bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Title_jViConfig"/>
         </file>
     </folder>
 

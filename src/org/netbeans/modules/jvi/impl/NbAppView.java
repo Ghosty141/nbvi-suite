@@ -18,7 +18,7 @@
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.manager.AppViews;
@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JEditorPane;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.Module;
 import org.openide.windows.TopComponent;
 
 /**

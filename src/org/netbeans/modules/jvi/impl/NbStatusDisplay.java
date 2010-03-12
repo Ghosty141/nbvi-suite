@@ -18,7 +18,7 @@
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;

@@ -17,7 +17,7 @@
  *
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.options.OptionsBean;
 import com.raelity.jvi.manager.ViManager;
@@ -25,6 +25,7 @@ import com.raelity.jvi.swing.OptionsPanel;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import org.netbeans.modules.jvi.Module;
 
 public class NbOptionsNode extends OptionsPanel {
 

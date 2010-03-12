@@ -7,7 +7,7 @@
  * and open the template in the editor.
  */
 
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.swing.OpsBase;
@@ -18,6 +18,7 @@ import javax.swing.text.EditorKit;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.ext.ExtKit;
 import org.netbeans.modules.editor.NbEditorKit;
+import org.netbeans.modules.jvi.KeyBindings;
 
 /**
  *

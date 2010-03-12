@@ -1,4 +1,4 @@
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
@@ -44,6 +44,8 @@ import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.FsAct;
+import org.netbeans.modules.jvi.Module;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeListener;
 import org.netbeans.spi.editor.highlighting.HighlightsLayer;

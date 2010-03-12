@@ -1,5 +1,7 @@
 package org.netbeans.modules.jvi;
 
+import org.netbeans.modules.jvi.impl.NbAppView;
+import org.netbeans.modules.jvi.impl.NbFactory;
 import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.options.BooleanOption;
 import com.raelity.jvi.core.ColonCommands;

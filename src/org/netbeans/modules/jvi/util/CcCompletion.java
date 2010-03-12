@@ -56,7 +56,7 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
-import org.netbeans.modules.jvi.NbAppView;
+import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;

@@ -20,6 +20,8 @@
 
 package org.netbeans.modules.jvi;
 
+import org.netbeans.modules.jvi.impl.NbFactory;
+import org.netbeans.modules.jvi.impl.NbCaret;
 import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.manager.ViManager;

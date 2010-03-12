@@ -17,7 +17,7 @@
  *
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.core.Msg;
@@ -51,6 +51,8 @@ import javax.swing.text.Position;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.FsAct;
+import org.netbeans.modules.jvi.Module;
 import org.netbeans.modules.jvi.util.CcCompletion;
 import org.netbeans.modules.jvi.util.NbUtil;
 import org.openide.text.Line;

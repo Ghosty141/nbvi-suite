@@ -1,5 +1,5 @@
 
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.ViCaretStyle;

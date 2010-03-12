@@ -28,6 +28,7 @@
  */
 package org.netbeans.modules.jvi;
 
+import org.netbeans.modules.jvi.impl.NbTextView;
 import com.raelity.jvi.core.AbbrevLookup;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonAction;

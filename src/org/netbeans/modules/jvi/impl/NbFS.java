@@ -1,4 +1,4 @@
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Msg;

@@ -7,7 +7,7 @@
  * and open the template in the editor.
  */
 
-package org.netbeans.modules.jvi;
+package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -45,6 +45,7 @@ import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.api.Reformat;
+import org.netbeans.modules.jvi.JViOptionWarning;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;

@@ -23,6 +23,7 @@
  */
 package org.netbeans.modules.jvi;
 
+import org.netbeans.modules.jvi.impl.NbOptionsNode;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.OptionsPanel;
 import java.awt.BorderLayout;

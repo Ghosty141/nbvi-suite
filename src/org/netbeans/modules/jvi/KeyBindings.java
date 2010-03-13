@@ -20,6 +20,11 @@
 
 package org.netbeans.modules.jvi;
 
+import static org.netbeans.modules.jvi.Module.earlyInit;
+import static org.netbeans.modules.jvi.Module.MOD;
+import static org.netbeans.modules.jvi.Module.jViEnabled;
+import static org.netbeans.modules.jvi.Module.cid;
+import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import org.netbeans.modules.jvi.impl.NbCaret;
 import com.raelity.jvi.ViCaret;
@@ -75,8 +80,8 @@ public class KeyBindings {
 
     static void enableKeyBindings()
     {
-        if(Module.isDbgNb())
-            System.err.println(Module.MOD + " runJViEnable knownJEP: "
+        if(dbgNb())
+            System.err.println(MOD + " runJViEnable knownJEP: "
                     + knownEditors.size());
 
         KeyBindings.updateKeymap();
@@ -90,8 +95,8 @@ public class KeyBindings {
 
     static void disableKeyBindings()
     {
-        if(Module.isDbgNb())
-            System.err.println(Module.MOD + " runJViDisable knownJEP: "
+        if(dbgNb())
+            System.err.println(MOD + " runJViDisable knownJEP: "
                     + knownEditors.size());
 
         // restore the carets
@@ -100,7 +105,7 @@ public class KeyBindings {
             if(c01 != null) {
                 if(ep.getCaret() instanceof NbCaret) {
                     NbFactory.installCaret(ep, c01);
-                    if(Module.isDbgNb()) {
+                    if(dbgNb()) {
                         System.err.println("restore caret: "
                                 + ViManager.getFactory().getFS()
                                   .getDisplayFileName(
@@ -111,7 +116,7 @@ public class KeyBindings {
             }
         }
         if(editorToCaret.size() > 0) {
-            System.err.println(Module.MOD + "restore caret: "
+            System.err.println(MOD + "restore caret: "
                 + "HUH? editorToCaret size: " + editorToCaret.size());
         }
 
@@ -151,7 +156,7 @@ public class KeyBindings {
     static void updateKeymap()
     {
         if (KB_INJECTOR != null) {
-            if (Module.isDbgNb())
+            if (dbgNb())
                 System.err.println("Injector: updateKeymap: ");
             KB_INJECTOR.forceKeymapRefresh();
         } // else no keymap has been loaded yet
@@ -184,28 +189,28 @@ public class KeyBindings {
             ep.getKeymap().
                     setDefaultAction(((NbFactory)ViManager.getFactory())
                     .createCharAction(DefaultEditorKit.defaultKeyTypedAction));
-            if (Module.isDbgNb())
-                System.err.println(Module.MOD + "capture: "
-                        + Module.cid(ep.getEditorKit())
-                        + " " + Module.cid(ep) + " action: "
+            if (dbgNb())
+                System.err.println(MOD + "capture: "
+                        + cid(ep.getEditorKit())
+                        + " " + cid(ep) + " action: "
                         + a.getClass().getSimpleName());
         }
-        else if (Module.isDbgNb())
-            System.err.println(Module.MOD + "ALREADY DKTA: "
-                    + Module.cid(ep) + " action: "
+        else if (dbgNb())
+            System.err.println(MOD + "ALREADY DKTA: "
+                    + cid(ep) + " action: "
                     + a.getClass().getSimpleName());
     }
 
     /**
-     * Find NB's DefaultKeyTypedAction for the edtior pane, or one for
-     * the associted editor kit if the JEP doesn't have one.
+     * Find NB's DefaultKeyTypedAction for the editor pane, or one for
+     * the associated editor kit if the JEP doesn't have one.
      *
      * Turns out only need to save per EditorKit
      *
-     * @param ep the edtior pane.
+     * @param ep the editor pane.
      * @return a best guess defaultKeytypedAction.
      */
-    static Action getDefaultKeyAction(JEditorPane ep)
+    public static Action getDefaultKeyAction(JEditorPane ep)
     {
         Action a = epToDefaultKeyAction.get(ep);
         if (a == null) {
@@ -228,13 +233,13 @@ public class KeyBindings {
     public static void checkCaret(JEditorPane ep)
     {
         assert knownEditors.containsKey(ep);
-        if (!Module.jViEnabled())
+        if (!jViEnabled())
             return;
         if (!(ep.getCaret() instanceof ViCaret)) {
             if (editorToCaret.get(ep) == null) {
                 editorToCaret.put(ep, ep.getCaret());
-                if (Module.isDbgNb())
-                    System.err.println(Module.MOD + "capture caret");
+                if (dbgNb())
+                    System.err.println(MOD + "capture caret");
             }
             ViManager.getFactory().setupCaret(ep);
         }
@@ -270,15 +275,15 @@ public class KeyBindings {
         {
             super("Keybindings");
             KB_INJECTOR = this;
-            Module.earlyInit();
+            earlyInit();
             KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
-            if (Module.isDbgNb())
+            if (dbgNb())
                 System.err.println("~~~ KeybindingsInjector: " + this);
         }
 
         public void propertyChange(PropertyChangeEvent evt)
         {
-            if (Module.isDbgNb())
+            if (dbgNb())
                 System.err.println("Injector: change: " + evt.getPropertyName());
             if (evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS))
                 // the bindings have changed
@@ -287,7 +292,7 @@ public class KeyBindings {
 
         void forceKeymapRefresh()
         {
-            if (Module.isDbgNb())
+            if (dbgNb())
                 System.err.println("Injector: forceKeymapRefresh: ");
             synchronized (mapJvi) {
                 mapJvi.clear();
@@ -328,7 +333,7 @@ public class KeyBindings {
                               MimePath mimePath, String profile,
                               boolean defaults) throws IOException
         {
-            if (!Module.jViEnabled())
+            if (!jViEnabled())
                 return;
             String key = createKey(mimePath, profile, defaults);
             Map<Collection<KeyStroke>, MultiKeyBinding> mapOrig =
@@ -367,13 +372,13 @@ public class KeyBindings {
                                                    KP_UP);
                     mapJvi.put(KP_DOWN.getKeyStrokeList(),
                                                    KP_DOWN);
-                    if (Module.isDbgNb())
+                    if (dbgNb())
                         checkBinding("mapJvi", mapJvi);
-                    if (Module.isDbgNb())
+                    if (dbgNb())
                         System.err.println("Injector: build jVi map. size " +
                                 mapJvi.size());
                 }
-                if (Module.isDbgNb())
+                if (dbgNb())
                     checkBinding("mapOrig", map); // (of either mulit or single key binding) is
                 // a jvi key, then save the NB binding for use
                 // in beforeSave and remove it from map.
@@ -391,7 +396,7 @@ public class KeyBindings {
                         it.remove();
                     }
                 }
-                if (Module.isDbgNb())
+                if (dbgNb())
                     System.err.println("Injector: afterLoad: " + "mimePath \'" +
                             mimePath + "\' profile \'" + profile + "\' defaults \'" +
                             defaults + "\' orig map size: " + map.size());
@@ -408,7 +413,7 @@ public class KeyBindings {
         {
             // NEEDSWORK: don't think this is correct
             //              consider if jvi is disabled afterLoad and beforeSave
-            if (!Module.jViEnabled())
+            if (!jViEnabled())
                 return;
             Map<Collection<KeyStroke>, MultiKeyBinding> mapOrig =
                     origMaps.get(createKey(mimePath, profile, defaults));
@@ -428,7 +433,7 @@ public class KeyBindings {
             //}
             if (mapOrig != null)
                 map.putAll(mapOrig);
-            if (Module.isDbgNb())
+            if (dbgNb())
                 System.err.println("Injector: beforeSave: " + "mimePath \'" +
                         mimePath + "\' profile \'" + profile + "\' defaults \'" +
                         defaults + "\' orig map size: " + map.size());
@@ -448,16 +453,20 @@ public class KeyBindings {
         public void actionPerformed(ActionEvent e)
         {
             addKnownEditor((JEditorPane)e.getSource());
-            if (!Module.jViEnabled())
+            if (!jViEnabled())
                 return;
             JEditorPane ep = (JEditorPane)e.getSource();
-            if (Module.isDbgNb())
-                System.err.printf(Module.MOD + "kit installed: %s into %s\n",
+            if (dbgNb())
+                System.err.printf(MOD + "kit installed: %s into %s\n",
                                   ep.getEditorKit().getClass().getSimpleName(),
-                                  Module.cid(ep));
+                                  cid(ep));
             captureDefaultKeyTypedActionAndEtc(ep);
             // Make sure the nomadic editors have the right cursor.
             checkCaret(ep);
         }
+    }
+
+    private KeyBindings()
+    {
     }
 }

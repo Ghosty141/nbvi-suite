@@ -538,7 +538,7 @@ public class NbTextView extends SwingTextView
         //if(h.name == SEARCH_RESULTS_LAYER)
         //    return false;
 
-        return Module.dbgHL.getBoolean();
+        return Module.dbgHL();
     }
 
     private void hookupHighlighter(String name, BlocksHighlighter h) {
@@ -643,7 +643,7 @@ public class NbTextView extends SwingTextView
 
             FileObject fo = NbEditorUtilities.getFileObject(
                     context.getDocument());
-            if(Module.dbgHL.getBoolean())
+            if(Module.dbgHL())
                 System.err.println("Highlight Factory: "
                         + (fo != null ? fo.getNameExt() : ""));
 

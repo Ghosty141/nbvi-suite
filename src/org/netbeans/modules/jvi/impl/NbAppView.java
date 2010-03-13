@@ -183,7 +183,7 @@ public class NbAppView implements ViAppView
      * @param tc
      * @param ep
      */
-    static NbAppView updateAppViewForTC(
+    public static NbAppView updateAppViewForTC(
             String info, TopComponent tc, JEditorPane ep) {
         return updateAppViewForTC(info, tc, ep, false);
     }
@@ -204,7 +204,7 @@ public class NbAppView implements ViAppView
      * @param isNomad only used if appview is created
      * @return
      */
-    static NbAppView updateAppViewForTC(
+    public static NbAppView updateAppViewForTC(
             String info, TopComponent tc, JEditorPane ep, boolean isNomad)
     {
         assert EventQueue.isDispatchThread();
@@ -226,7 +226,7 @@ public class NbAppView implements ViAppView
             if(ep == null) {
                 // if there's not an editor, then this tc has just been opened
                 // and nothing has been assigned to it.
-                assert s.size() == 0;
+                assert s.isEmpty();
                 for (NbAppView _av : s) {
                     if(_av.getEditor() == null) {
                         av = _av;
@@ -283,7 +283,7 @@ public class NbAppView implements ViAppView
         if(tc != null && av != null)
             s.add(av);
 
-        if(Module.dbgAct.getBoolean())
+        if(Module.dbgAct())
             System.err.printf(
                     "updateAppView: (%s) %s tc '%s' ep '%s' nad %b\n",
                     tag,
@@ -310,7 +310,7 @@ public class NbAppView implements ViAppView
         return av;
     }
 
-    static Set<NbAppView> fetchAvFromTC(TopComponent tc) { // NEEDSWORK: into av
+    public static Set<NbAppView> fetchAvFromTC(TopComponent tc) { // NEEDSWORK: into av
         @SuppressWarnings("unchecked")
         Set<NbAppView> s = (Set<NbAppView>)tc
                 .getClientProperty(SwingFactory.PROP_AV);
@@ -319,7 +319,7 @@ public class NbAppView implements ViAppView
         return Collections.emptySet();
     }
 
-    static NbAppView fetchAvFromTC(TopComponent tc, JEditorPane ep) {
+    public static NbAppView fetchAvFromTC(TopComponent tc, JEditorPane ep) {
         if(tc == null)
             return (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
         for (NbAppView av : fetchAvFromTC(tc)) {

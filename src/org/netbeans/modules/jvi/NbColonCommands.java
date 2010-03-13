@@ -28,6 +28,7 @@
  */
 package org.netbeans.modules.jvi;
 
+import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbTextView;
 import com.raelity.jvi.core.AbbrevLookup;
 import com.raelity.jvi.core.ColonCommands;
@@ -330,7 +331,7 @@ public class NbColonCommands {
                         + " " + mkThingDesc()[mkThing] + "\"");
                 fError = true;
             }
-            if(Module.dbgNb.getBoolean()) {
+            if(dbgNb()) {
                 System.err.println( "\"make " + mkOpDesc()[mkOp]
                         + " " + mkThingDesc()[mkThing] + "\"");
             }

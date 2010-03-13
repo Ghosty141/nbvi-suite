@@ -83,9 +83,21 @@ public class Module extends ModuleInstall
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
     public static final String DBG_HL = "DebugNbHilight";
-    static BooleanOption dbgNb;
-    static BooleanOption dbgAct;
-    static BooleanOption dbgHL;
+    private static BooleanOption dbgNb;
+    private static BooleanOption dbgAct;
+    private static BooleanOption dbgHL;
+
+    public static boolean dbgNb() {
+        return dbgNb != null && dbgNb.getBoolean();
+    }
+    public static boolean dbgAct()
+    {
+        return dbgAct != null && dbgAct.getBoolean();
+    }
+    public static boolean dbgHL()
+    {
+        return dbgHL != null && dbgHL.getBoolean();
+    }
 
     public static final String HACK_CC = "NB6.7 Code Completion";
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
@@ -144,10 +156,6 @@ public class Module extends ModuleInstall
         return jViEnabled;
     }
 
-    public static boolean isDbgNb() {
-        return dbgNb != null && dbgNb.getBoolean();
-    }
-
     /** @return the module specific preferences.
      */
     private static Preferences getModulePreferences() {
@@ -164,7 +172,7 @@ public class Module extends ModuleInstall
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
-        if (isDbgNb()) {
+        if (dbgNb()) {
             System.err.println(MOD + "***** restored *****");
         }
 
@@ -224,7 +232,8 @@ public class Module extends ModuleInstall
         });
     }
 
-    static void setShutdownHook(Runnable hook) {
+    public static void setShutdownHook(Runnable hook) {
+        assert shutdownHook == null;
         shutdownHook = hook;
     }
 
@@ -267,7 +276,7 @@ public class Module extends ModuleInstall
                 return;
             jViEnabled = false;
 
-            if(isDbgNb())
+            if(dbgNb())
                 AppViews.dump(System.err);
 
             JViOptionWarning.clear();
@@ -588,7 +597,7 @@ public class Module extends ModuleInstall
      * @param editorPane
      * @return
      */
-    static TopComponent getKnownTopComponent(JEditorPane editorPane)
+    public static TopComponent getKnownTopComponent(JEditorPane editorPane)
     {
         Set<TopComponent> setTC = TopComponent.getRegistry().getOpened();
         TopComponent tc = null;

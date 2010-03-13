@@ -203,7 +203,7 @@ public class JViOptionWarning {
      * <br/>
      * Not using swing timer to insure no event thread interactions.
      */
-    static void setInternalAction(boolean enable) {
+    public static void setInternalAction(boolean enable) {
         synchronized(isInternalSetting) {
             if(enable) {
                 isInternalSetting.setValue(true);

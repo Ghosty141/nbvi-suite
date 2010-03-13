@@ -66,7 +66,7 @@ final public class NbFactory extends SwingFactory {
     
     NbFS fs = new NbFS();
     
-    NbFactory() {
+    public NbFactory() {
         super();
     }
 
@@ -165,7 +165,7 @@ final public class NbFactory extends SwingFactory {
     }
     
     // NEEDSWORK: put installCaret in factory?
-    static void installCaret(JEditorPane ep, Caret newCaret) {
+    public static void installCaret(JEditorPane ep, Caret newCaret) {
         Caret oldCaret = ep.getCaret(); // should never be null
         int offset = 0;
         int blinkRate = 400;
@@ -182,7 +182,7 @@ final public class NbFactory extends SwingFactory {
         ep.setCaret(newCaret);
         if(ep.getDocument() instanceof BaseDocument) {
             // If the caret is installed too early the following gets an
-            // exception trying to case PlanDocument to BaseDocument
+            // exception trying to cast PlanDocument to BaseDocument
             newCaret.setDot(offset);
         }
         newCaret.setBlinkRate(blinkRate);

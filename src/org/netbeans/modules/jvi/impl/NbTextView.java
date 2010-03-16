@@ -137,9 +137,9 @@ public class NbTextView extends SwingTextView
     }
 
     @Override
-    public int getRequiredDisplayLines()
+    public int getRequiredVpLines()
     {
-        int nLines = getViewLines();
+        int nLines = getVpLines();
         if(ViManager.getHackFlag(Module.HACK_SCROLL))
             nLines = nLines / 2;
         return nLines;
@@ -211,8 +211,8 @@ public class NbTextView extends SwingTextView
         int line; // Set to the line number of new line, must be > 1
         if(op == NLOP.NL_FORWARD) {
             // add line after the current line
-            offset = getBufferLineOffset(
-                    getCoordLine(w_cursor.getLine()) + 1);
+            offset = getDocLineOffset(
+                    getViewLine(w_cursor.getLine()) + 1);
             if(offset > getBuffer().getLength()) {
                 afterEOF = true;
                 line = 0; // dont' care
@@ -457,11 +457,6 @@ public class NbTextView extends SwingTextView
     @Override
     public void win_split(int n) {
         super.win_split(n);
-    }
-    
-    @Override
-    public void win_goto(int n) {
-        super.win_goto(n);
     }
 
     @Override

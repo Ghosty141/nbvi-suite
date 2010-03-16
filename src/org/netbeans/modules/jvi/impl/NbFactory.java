@@ -141,8 +141,10 @@ final public class NbFactory extends SwingFactory {
             // Hmm, create a nomad.
             av = NbAppView.updateAppViewForTC("NEW_TEXT_VIEW", tc, ed, true);
         }
-        
-        ViTextView tv = new NbTextView(ed);
+
+        SwingTextView tv = new NbTextView(ed);
+        ViewMap vm = new SwingViewMapSwitcher(tv);
+        tv.setViewMap(vm);
         return tv;
     }
     

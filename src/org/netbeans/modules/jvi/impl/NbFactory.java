@@ -143,7 +143,7 @@ final public class NbFactory extends SwingFactory {
         }
 
         SwingTextView tv = new NbTextView(ed);
-        ViewMap vm = new SwingViewMapSwitcher(tv);
+        LogicalLineMap vm = new SwingViewMapSwitcher(tv);
         tv.setViewMap(vm);
         return tv;
     }

@@ -212,7 +212,7 @@ public class NbTextView extends SwingTextView
         if(op == NLOP.NL_FORWARD) {
             // add line after the current line
             offset = getDocLineOffset(
-                    getViewLine(w_cursor.getLine()) + 1);
+                    getLogicalLine(w_cursor.getLine()) + 1);
             if(offset > getBuffer().getLength()) {
                 afterEOF = true;
                 line = 0; // dont' care

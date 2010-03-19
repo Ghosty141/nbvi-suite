@@ -186,12 +186,12 @@ public class NbTextView extends SwingTextView
      * </p>
      */
     @Override
-    public boolean openNewLine(NLOP op) {
+    public boolean openNewLine(DIR op) {
         if ( !isEditable() ) {
             Util.vim_beep();
             return false;
         }
-        if(op == NLOP.NL_BACKWARD && w_cursor.getLine() == 1) {
+        if(op == DIR.BACKWARD && w_cursor.getLine() == 1) {
             // Special case if BACKWARD and at first line of document.
             // set the caret position to 0 so that insert line on first line
             // works as well, set position just before new line of first line
@@ -209,7 +209,7 @@ public class NbTextView extends SwingTextView
         int offset; // First set to after \n and check if after EOF
         boolean afterEOF = false;
         int line; // Set to the line number of new line, must be > 1
-        if(op == NLOP.NL_FORWARD) {
+        if(op == DIR.FORWARD) {
             // add line after the current line
             offset = getDocLineOffset(
                     getLogicalLine(w_cursor.getLine()) + 1);

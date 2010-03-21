@@ -21,7 +21,7 @@
 package org.netbeans.modules.jvi.util;
 
 import com.raelity.jvi.lib.MutableInt;
-import com.raelity.jvi.swing.LogicalLineMap;
+import com.raelity.jvi.swing.LineMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -39,33 +39,18 @@ import org.netbeans.modules.jvi.impl.NbTextView;
  *
  * @author Ernie Rael <err at raelity.com>
  */
-public class FoldLineMap implements LogicalLineMap
+public class LineMapFoldNoWrap implements LineMap
 {
     private NbTextView tv;
     private FoldHierarchy fh;
     private boolean valid;
     private ClosedFold[] fs;
 
-    public FoldLineMap(NbTextView tv)
+    public LineMapFoldNoWrap(NbTextView tv)
     {
         this.tv = tv;
         fh = FoldHierarchy.get(tv.getEditorComponent());
         setupListeners();
-    }
-
-    public boolean isFontFixed()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public boolean isFontFixedHeight()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public boolean isFontFixedWidth()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public boolean isFolding()

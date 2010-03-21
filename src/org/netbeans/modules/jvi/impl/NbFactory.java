@@ -54,7 +54,7 @@ import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.FsAct;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.modules.jvi.util.CcCompletion;
-import org.netbeans.modules.jvi.util.FoldLineMap;
+import org.netbeans.modules.jvi.util.LineMapFoldNoWrap;
 import org.netbeans.modules.jvi.util.NbUtil;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
@@ -147,8 +147,8 @@ final public class NbFactory extends SwingFactory {
         //vmNoFolding = new SwingViewMapNoFolding(tv);
         //vmFontFixed = new SwingViewMapFontFixed(tv);
         //LogicalLineMap lm = new FoldLineMap(tv);
-        LogicalLineMap lm = new SwingViewMapSwitcher(
-                new SwingViewMapNoFolding(tv), new FoldLineMap(tv));
+        LineMap lm = new SwingLineMapSwitcher(
+                new LineMapNoFoldingNoWrap(tv), new LineMapFoldNoWrap(tv));
         tv.setLineMap(lm);
         return tv;
     }

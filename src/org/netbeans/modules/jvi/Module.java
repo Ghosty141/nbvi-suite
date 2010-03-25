@@ -110,13 +110,18 @@ public class Module extends ModuleInstall
 
     private static Runnable shutdownHook;
 
+    private static boolean didInit;
     @ServiceProvider(service=ViInitialization.class, path="jVi/init")
     public static class Init implements ViInitialization
     {
-      public void init()
-      {
-        Module.init();
-      }
+        @Override
+        public void init()
+        {
+            if(didInit)
+                return;
+            Module.init();
+            didInit = true;
+        }
     }
 
     private static void init()
@@ -140,16 +145,7 @@ public class Module extends ModuleInstall
 
     public static String cid(Object o)
     {
-        if (o == null)
-            return "(null)";
-        return o.getClass().getSimpleName() + "@" + id(o);
-    }
-
-    public static String id(Object o)
-    {
-        if (o == null)
-            return "(null)";
-        return Integer.toHexString(System.identityHashCode(o));
+        return ViManager.cid(o);
     }
 
     public static boolean jViEnabled() {

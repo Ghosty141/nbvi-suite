@@ -237,7 +237,6 @@ public class LineMapFoldNoWrap implements LineMap
         build(fh.getRootFold(), fl);
         fs = fl.toArray(new ClosedFold[0]);
         valid = true;
-        System.err.println(this.toString()); //******************************
     }
 
     private void build(Fold parent, List<ClosedFold> fl)
@@ -256,6 +255,7 @@ public class LineMapFoldNoWrap implements LineMap
     @Override
     public String toString()
     {
+        build();
         StringBuilder sb = new StringBuilder();
         sb.append("FoldLineMap{valid=").append(valid).append('\n');
         for (ClosedFold closedFold : fs) {

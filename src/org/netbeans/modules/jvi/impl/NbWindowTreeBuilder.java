@@ -102,14 +102,15 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
     protected Node createSplitNode(Component peer, List<Node> children)
     {
         if(children.size() >= 2) {
-            final boolean isLeftRight = Node.calcOrientation(
+            final boolean isLeftRight = calcOrientation(
                     children.get(0), children.get(1)) == Orientation.LEFT_RIGHT;
             Collections.sort(children, new Comparator<Node>()
                 {
+                    @Override
                     public int compare(Node n01, Node n02)
                     {
-                        Point p1 = n01.getPeer().getLocationOnScreen();
-                        Point p2 = n02.getPeer().getLocationOnScreen();
+                        Point p1 = getLocation(n01);
+                        Point p2 = getLocation(n02);
                         return isLeftRight ? p1.x - p2.x : p1.y - p2.y;
                     }
                 });

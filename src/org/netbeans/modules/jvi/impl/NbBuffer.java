@@ -63,7 +63,6 @@ public class NbBuffer extends SwingBuffer {
 
     private static Method beginUndo;
     private static Method endUndo;
-    private static Method commitUndo;
 
 //    private CompoundEdit compoundEdit;
 //    private static Method undoRedoFireChangeMethod;
@@ -87,13 +86,10 @@ public class NbBuffer extends SwingBuffer {
                                                              (Class<?>[])null);
                 endUndo = UndoRedo.Manager.class.getMethod("endUndoGroup",
                                                            (Class<?>[])null);
-                commitUndo = UndoRedo.Manager.class.getMethod("commitUndoGroup",
-                                                              (Class<?>[])null);
             } catch (NoSuchMethodException ex) { }
-            if(commitUndo == null || endUndo == null || commitUndo == null) {
+            if(beginUndo == null || endUndo == null) {
                 beginUndo = null;
                 endUndo = null;
-                commitUndo = null;
             }
         }
     }

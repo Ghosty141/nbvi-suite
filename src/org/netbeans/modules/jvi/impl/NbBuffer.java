@@ -105,10 +105,7 @@ public class NbBuffer extends SwingBuffer {
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
         // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType = NbEditorUtilities.getMimeType(
-                ((JTextComponent)tv.getEditorComponent()));
-        Preferences prefs = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(Preferences.class);
+        Preferences prefs = ((NbTextView)tv).getPreferences();
 
         JViOptionWarning.setInternalAction(true);
         try {

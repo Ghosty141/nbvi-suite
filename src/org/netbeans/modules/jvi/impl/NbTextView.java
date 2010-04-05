@@ -1,5 +1,7 @@
 package org.netbeans.modules.jvi.impl;
 
+import org.netbeans.api.editor.mimelookup.MimePath;
+import org.openide.util.Lookup;
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
@@ -20,6 +22,7 @@ import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -66,13 +69,22 @@ import static com.raelity.jvi.core.Constants.*;
 public class NbTextView extends SwingTextView
 {
 
+    // Line numbers is a global in NB, not per window
+    //private static boolean nuOption;      // whatever NB does...
+    //private static boolean listOption;    // whatever NB does...
+    private static boolean wrapOption;
+    private static boolean lbrOption;
+
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
 
         // since NB insists that this is a shared variable
         // set the common value
-        w_p_nu = showLineNumbers;
+        //w_p_nu = nuOption;
+        //w_p_list = listOption;
+        w_p_wrap = wrapOption;
+        w_p_lbr = lbrOption;
     }
     
     @Override
@@ -80,6 +92,7 @@ public class NbTextView extends SwingTextView
         super.startup();
         
         getBuffer().getDocument().render(new Runnable() {
+            @Override
             public void run() {
                 hookupHighlighter(VISUAL_MODE_LAYER, MyHl.getVisual(editorPane));
                 hookupHighlighter(SEARCH_RESULTS_LAYER, MyHl.getSearch(editorPane));
@@ -99,27 +112,81 @@ public class NbTextView extends SwingTextView
             searchResultsHighlighter = null;
         }
     }
+
+    @Override
+    public void activateOptions(ViTextView tv)
+    {
+        super.activateOptions(tv);
+        setWrapPref();
+    }
     
     //
     // The viOptionBag interface
     //
     
-    // Line numbers is a global in NB, not per window
-    private static boolean showLineNumbers;
-    
     @Override
     public void viOptionSet(ViTextView tv, String name) {
         super.viOptionSet(tv, name);
 
+        assert this == tv;
+        Preferences prefs = getPreferences();
+
+        boolean syncAll = true; // global option in NB // NEEDSWORK:
+
         if("w_p_nu".equals(name)) {
-            showLineNumbers = w_p_nu;
-            String mimeType = NbEditorUtilities
-                    .getMimeType(((JEditorPane)tv.getEditorComponent()));
-            Preferences prefs = MimeLookup.getLookup(mimeType)
-                    .lookup(Preferences.class);
+            //nuOption = w_p_nu;
             prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
-            SetColonCommand.syncAllInstances("w_p_nu");
+        } else if("w_p_list".equals(name)) {
+            //listOption = w_p_list;
+            prefs.putBoolean(SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
+                             w_p_list);
+        } else if("w_p_wrap".equals(name)) {
+            wrapOption = w_p_wrap;
+            syncAll = false;
+            setWrapPref();
+        } else if("w_p_lbr".equals(name)) {
+            lbrOption = w_p_lbr;
+            syncAll = false;
+            setWrapPref();
         }
+
+        if(syncAll)
+            SetColonCommand.syncAllInstances(name);
+    }
+
+    private void setWrapPref()
+    {
+        Preferences prefs = getPreferences();
+        String s = !w_p_wrap ? "none" : w_p_lbr ? "words" : "chars";
+        prefs.put(SimpleValueNames.TEXT_LINE_WRAP, s);
+        EventQueue.invokeLater(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                getEditorComponent().getDocument()
+                    .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
+
+                //for(JTextComponent jtc : EditorRegistry.componentList()) {
+                //    if (jtc != getEditorComponent()) {
+                //        jtc.getDocument()
+                //            .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
+                //    }
+                //}
+            }
+        });
+    }
+
+    Preferences getPreferences() {
+        String mimeType = NbEditorUtilities
+                .getMimeType(((JEditorPane)getEditorComponent()));
+        return MimeLookup.getLookup(mimeType).lookup(Preferences.class);
+    }
+
+    /** taken from org.netbeans.modules.editor.lib2.actions */
+    static Preferences getGlobalPreferences() {
+        Lookup globalMimeLookup = MimeLookup.getLookup(MimePath.EMPTY);
+        return (globalMimeLookup != null) ? globalMimeLookup.lookup(Preferences.class) : null;
     }
     
     //
@@ -982,4 +1049,5 @@ public class NbTextView extends SwingTextView
         }
         System.err.println("");
     }
+
 }

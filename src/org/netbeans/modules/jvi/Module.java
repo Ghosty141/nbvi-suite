@@ -276,6 +276,8 @@ public class Module extends ModuleInstall
                 AppViews.dump(System.err);
 
             JViOptionWarning.clear();
+
+            KeyBindings.disableKeyBindings();
         }
     }
     

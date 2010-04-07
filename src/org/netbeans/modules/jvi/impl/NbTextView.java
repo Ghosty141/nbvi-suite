@@ -128,11 +128,11 @@ public class NbTextView extends SwingTextView
                     SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
         } else if("w_p_wrap".equals(name)) {
             // vim wants per textView, NB supports per buf
-            SetColonCommand.syncTextViewInstances(name, getBuffer());
+            SetColonCommand.syncTextViewInstances(name, this);
             setWrapPref();
         } else if("w_p_lbr".equals(name)) {
             // vim wants per textView, NB supports per buf
-            SetColonCommand.syncTextViewInstances(name, getBuffer());
+            SetColonCommand.syncTextViewInstances(name, this);
             setWrapPref();
         }
     }

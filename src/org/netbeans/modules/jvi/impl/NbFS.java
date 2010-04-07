@@ -162,15 +162,21 @@ public class NbFS extends abstractFS
         return true;
     }
 
-    public void edit(ViAppView _av, boolean force)
+    @Override
+    public boolean edit(ViAppView _av, boolean force)
     {
         NbAppView av = (NbAppView)_av;
+        boolean ok = false;
         if(av.getTopComponent() != null) {
             av.getTopComponent().requestActive();
+            ok = true;
             if(av.getEditor() != null)
-                av.getEditor().requestFocusInWindow();
+                ok = av.getEditor().requestFocusInWindow();
+        } else if(av.getEditor() != null) {
+                ok = av.getEditor().requestFocusInWindow();
         } else
             Msg.emsg("Can not edit " + getDisplayFileName(av));
+        return ok;
     }
 
     /** Edit a File */

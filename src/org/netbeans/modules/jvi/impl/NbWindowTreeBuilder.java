@@ -101,9 +101,10 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
     @Override
     protected Node createSplitNode(Component peer, List<Node> children)
     {
+        Orientation orientation = calcSplitterOrientation(
+                            peer, children.get(0), children.get(1));
         if(children.size() >= 2) {
-            final boolean isLeftRight = calcOrientation(
-                    children.get(0), children.get(1)) == Orientation.LEFT_RIGHT;
+            final boolean isLeftRight = orientation == Orientation.LEFT_RIGHT;
             Collections.sort(children, new Comparator<Node>()
                 {
                     @Override
@@ -115,14 +116,15 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
                     }
                 });
         }
-        return new MyNode(peer, children);
+        return new MyNode(orientation, peer, children);
     }
 
     protected class MyNode extends Node {
 
-        public MyNode(Component peer, List<Node> children)
+        public MyNode(
+                Orientation orientation, Component peer, List<Node> children)
         {
-            super(peer, children);
+            super(orientation, peer, children);
         }
 
         public MyNode(Component peer)

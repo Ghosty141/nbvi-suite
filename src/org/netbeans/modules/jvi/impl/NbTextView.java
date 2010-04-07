@@ -47,6 +47,7 @@ import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import org.netbeans.modules.jvi.FsAct;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
@@ -69,22 +70,9 @@ import static com.raelity.jvi.core.Constants.*;
 public class NbTextView extends SwingTextView
 {
 
-    // Line numbers is a global in NB, not per window
-    //private static boolean nuOption;      // whatever NB does...
-    //private static boolean listOption;    // whatever NB does...
-    private static boolean wrapOption;
-    private static boolean lbrOption;
-
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
-
-        // since NB insists that this is a shared variable
-        // set the common value
-        //w_p_nu = nuOption;
-        //w_p_list = listOption;
-        w_p_wrap = wrapOption;
-        w_p_lbr = lbrOption;
     }
     
     @Override
@@ -129,34 +117,30 @@ public class NbTextView extends SwingTextView
         super.viOptionSet(tv, name);
 
         assert this == tv;
-        Preferences prefs = getPreferences();
-
-        boolean syncAll = true; // global option in NB // NEEDSWORK:
 
         if("w_p_nu".equals(name)) {
-            //nuOption = w_p_nu;
-            prefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
+            // global affect, just do it
+            CodeStylePreferences.get((Document)null).getPreferences().putBoolean(
+                    SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
         } else if("w_p_list".equals(name)) {
-            //listOption = w_p_list;
-            prefs.putBoolean(SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
-                             w_p_list);
+            // global affect, just do it
+            CodeStylePreferences.get((Document)null).getPreferences().putBoolean(
+                    SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
         } else if("w_p_wrap".equals(name)) {
-            wrapOption = w_p_wrap;
-            syncAll = false;
+            // vim wants per textView, NB supports per buf
+            SetColonCommand.syncTextViewInstances(name, getBuffer());
             setWrapPref();
         } else if("w_p_lbr".equals(name)) {
-            lbrOption = w_p_lbr;
-            syncAll = false;
+            // vim wants per textView, NB supports per buf
+            SetColonCommand.syncTextViewInstances(name, getBuffer());
             setWrapPref();
         }
-
-        if(syncAll)
-            SetColonCommand.syncAllInstances(name);
     }
 
     private void setWrapPref()
     {
-        Preferences prefs = getPreferences();
+        Preferences prefs = CodeStylePreferences.get(
+                getEditorComponent().getDocument()).getPreferences();
         String s = !w_p_wrap ? "none" : w_p_lbr ? "words" : "chars";
         prefs.put(SimpleValueNames.TEXT_LINE_WRAP, s);
         EventQueue.invokeLater(new Runnable()
@@ -164,31 +148,13 @@ public class NbTextView extends SwingTextView
             @Override
             public void run()
             {
+                // NOTE: not spinning through the editor registry
                 getEditorComponent().getDocument()
                     .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
-
-                //for(JTextComponent jtc : EditorRegistry.componentList()) {
-                //    if (jtc != getEditorComponent()) {
-                //        jtc.getDocument()
-                //            .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
-                //    }
-                //}
             }
         });
     }
 
-    Preferences getPreferences() {
-        String mimeType = NbEditorUtilities
-                .getMimeType(((JEditorPane)getEditorComponent()));
-        return MimeLookup.getLookup(mimeType).lookup(Preferences.class);
-    }
-
-    /** taken from org.netbeans.modules.editor.lib2.actions */
-    static Preferences getGlobalPreferences() {
-        Lookup globalMimeLookup = MimeLookup.getLookup(MimePath.EMPTY);
-        return (globalMimeLookup != null) ? globalMimeLookup.lookup(Preferences.class) : null;
-    }
-    
     //
     // The viTextView interface
     //

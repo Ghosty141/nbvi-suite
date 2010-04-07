@@ -9,6 +9,7 @@
 
 package org.netbeans.modules.jvi.impl;
 
+import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Misc;
@@ -104,8 +105,8 @@ public class NbBuffer extends SwingBuffer {
     @Override
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
-        // String mimeType = tv.getEditorComponent().getContentType();
-        Preferences prefs = ((NbTextView)tv).getPreferences();
+        Preferences prefs = CodeStylePreferences.get(
+                getDocument()).getPreferences();
 
         JViOptionWarning.setInternalAction(true);
         try {

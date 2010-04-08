@@ -34,6 +34,7 @@ import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
 import com.raelity.jvi.swing.SwingFactory;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -47,16 +48,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
+import javax.swing.text.Keymap;
 import javax.swing.text.TextAction;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
+import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -234,7 +238,72 @@ public class KeyBindings {
             System.err.println(MOD + "ALREADY DKTA: "
                     + cid(ep) + " action: "
                     + a.getClass().getSimpleName());
+        fixupKeypadKeys(ep);
     }
+
+    private static void fixupKeypadKeys(JTextComponent ep)
+    {
+        Keymap km = ep.getKeymap();
+
+        // for(int i = 0; i < fixupActions.length; i++) {
+        //     String actionName = (String)fixupActions[i];
+        //     KeyStroke ks = (KeyStroke)fixupActions[++i];
+
+        //     Action jviAction = km.getAction(ks);
+        //     if(!(jviAction instanceof SwingFactory.EnqueKeyAction))
+        //         continue;
+        //     ActionMap am = ep.getActionMap();
+        //     Action ac = am.get(actionName);
+        //     am.put(actionName, jviAction);
+        // }
+
+        for(int i = 0; i < fixupStrokes.length; i++) {
+            KeyStroke ks = fixupStrokes[i];
+            KeyStroke kp_ks = fixupStrokes[++i];
+            Action a = km.getAction(ks);
+            if(!(a instanceof SwingFactory.EnqueKeyAction))
+                continue;
+            km.addActionForKeyStroke(kp_ks, a);
+            System.err.println(""+a); //***************************************
+        }
+    }
+
+    // private static Object[] fixupActions = new Object[] {
+    //     BaseKit.forwardAction,
+    //     KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0),
+    //     BaseKit.backwardAction,
+    //     KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0),
+    //     MORE TO ADD IF EVER USE THIS
+    // };
+
+    private static KeyStroke[] fixupStrokes = new KeyStroke[] {
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0),
+
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.CTRL_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, InputEvent.CTRL_DOWN_MASK),
+
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_DOWN_MASK),
+        KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, InputEvent.SHIFT_DOWN_MASK),
+    };
 
     /**
      * Find NB's DefaultKeyTypedAction for the editor pane, or one for
@@ -305,6 +374,7 @@ public class KeyBindings {
         Map<String, Map<Collection<KeyStroke>, MultiKeyBinding>> origMaps =
                 new HashMap<String, Map<Collection<KeyStroke>, MultiKeyBinding>>();
 
+        @SuppressWarnings("LeakingThisInConstructor")
         public KeybindingsInjector()
         {
             super("Keybindings");
@@ -347,7 +417,7 @@ public class KeyBindings {
                         mkb.getKeyStroke(0).
                         equals(KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0)))
                     match += "KEY-MATCH: ";
-                if (!match.equals(""))
+                if (!match.isEmpty())
                     System.err.println("UP-BINDING: " + tag + ": " + match +
                             "key: " + mkb.getKeyStroke(0) + " " + "action: " +
                             mkb.getActionName());

@@ -28,6 +28,7 @@ import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import org.netbeans.modules.jvi.impl.NbCaret;
 import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.ViInitialization;
 import com.raelity.jvi.ViOutputStream;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.swing.KeyBinding;
@@ -57,6 +58,7 @@ import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
@@ -78,10 +80,42 @@ public class KeyBindings {
     private static Map<JEditorPane, Object> knownEditors =
             new WeakHashMap<JEditorPane, Object>();
 
+    private static boolean didInit;
+    @ServiceProvider(service=ViInitialization.class, path="jVi/init")
+    public static class Init implements ViInitialization
+    {
+        @Override
+        public void init()
+        {
+            if(didInit)
+                return;
+            KeyBindings.init();
+            didInit = true;
+        }
+    }
+    private static void init()
+    {
+        PropertyChangeListener pcl = new PropertyChangeListener()
+        {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                if (dbgNb())
+                    System.err.println("Injector: change: "
+                            + evt.getPropertyName());
+                if (evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS))
+                    // the bindings have changed
+                    enableKeyBindings();
+            }
+        };
+        KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, pcl);
+    }
+
+    /** updates the keymap and restores DKTA and caret */
     static void enableKeyBindings()
     {
         if(dbgNb())
-            System.err.println(MOD + " runJViEnable knownJEP: "
+            System.err.println(MOD + " enableKeyBindings knownJEP: "
                     + knownEditors.size());
 
         KeyBindings.updateKeymap();
@@ -96,7 +130,7 @@ public class KeyBindings {
     static void disableKeyBindings()
     {
         if(dbgNb())
-            System.err.println(MOD + " runJViDisable knownJEP: "
+            System.err.println(MOD + " disableKeyBindings knownJEP: "
                     + knownEditors.size());
 
         // restore the carets
@@ -120,7 +154,7 @@ public class KeyBindings {
                 + "HUH? editorToCaret size: " + editorToCaret.size());
         }
 
-        updateKeymap();
+        KeyBindings.updateKeymap();
     }
 
     static void dumpKit()
@@ -153,6 +187,7 @@ public class KeyBindings {
         return knownEditors.remove(ep) != null;
     }
 
+    /** EXPECTED THAT forceKeymapRefresh DOES NOT RETUN UNTILL ALL KEYMAPS DONE*/
     static void updateKeymap()
     {
         if (KB_INJECTOR != null) {
@@ -256,8 +291,7 @@ public class KeyBindings {
      * http://www.netbeans.org/issues/show_bug.cgi?id=90403
      */
     public static final class KeybindingsInjector
-    extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
-            implements PropertyChangeListener
+            extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
     {
         private static final MultiKeyBinding KP_UP =
                 new MultiKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0),
@@ -276,18 +310,8 @@ public class KeyBindings {
             super("Keybindings");
             KB_INJECTOR = this;
             earlyInit();
-            KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, this);
             if (dbgNb())
                 System.err.println("~~~ KeybindingsInjector: " + this);
-        }
-
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-            if (dbgNb())
-                System.err.println("Injector: change: " + evt.getPropertyName());
-            if (evt.getPropertyName().equals(KeyBinding.KEY_BINDINGS))
-                // the bindings have changed
-                forceKeymapRefresh();
         }
 
         void forceKeymapRefresh()
@@ -298,6 +322,8 @@ public class KeyBindings {
                 mapJvi.clear();
             }
             notifyChanges();
+            if (dbgNb())
+                System.err.println("Injector: forceKeymapRefresh: done");
         }
 
         private String createKey(MimePath mimePath, String profile,

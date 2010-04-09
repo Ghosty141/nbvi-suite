@@ -59,7 +59,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
     String fnTag;
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
-    NewOutputListenerImpl outputListener;
+    ///// NewOutputListenerImpl outputListener;
 
     static int nOpen;
     static boolean checkOpenClose = true;
@@ -148,7 +148,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
         ow.close();
         ow = null;
         tv = null;
-        outputListener = null;
+        ///// outputListener = null;
         checkClose();
     }
 
@@ -209,45 +209,45 @@ public class NbOutputStream extends OutputStreamAdaptor {
         }
     }
 
-    private OutputListener getNewOutputListener(
-            ViTextView tv, int line, int col, int length) {
-        if(outputListener == null || outputListener.tv != tv) {
-            outputListener = new NewOutputListenerImpl(tv);
-        }
-        return outputListener;
-    }
+    ///// private OutputListener getNewOutputListener(
+    /////         ViTextView tv, int line, int col, int length) {
+    /////     if(outputListener == null || outputListener.tv != tv) {
+    /////         outputListener = new NewOutputListenerImpl(tv);
+    /////     }
+    /////     return outputListener;
+    ///// }
     
     //
     // current way, with one listener per line, allows the hyperlink to
     // position you directly on the matched string, the col within the line.
     //
-    private static class NewOutputListenerImpl implements OutputListener {
-        ViTextView tv;
-        //int col;
-        
-        NewOutputListenerImpl(ViTextView tv/*, int col*/) {
-            this.tv = tv;
-        }
+    ///// private static class NewOutputListenerImpl implements OutputListener {
+    /////     ViTextView tv;
+    /////     //int col;
+    /////
+    /////     NewOutputListenerImpl(ViTextView tv/*, int col*/) {
+    /////         this.tv = tv;
+    /////     }
 
-        public void outputLineAction(OutputEvent outputEvent) {
-            int line = 0;
-            // line = parse outputEvent.getLine();
-            Line nbLine = NbEditorUtilities.getLine(
-                    ((Document)tv.getBuffer().getDocument()),
-                    tv.getBuffer().getLineStartOffset(line),
-                    false);
-            nbLine.show(Line.ShowOpenType.OPEN,
-                        Line.ShowVisibilityType.FRONT,
-                        0);
-            // Adjust to first non-blank on line
-        }
+    /////     public void outputLineAction(OutputEvent outputEvent) {
+    /////         int line = 0;
+    /////         // line = parse outputEvent.getLine();
+    /////         Line nbLine = NbEditorUtilities.getLine(
+    /////                 ((Document)tv.getBuffer().getDocument()),
+    /////                 tv.getBuffer().getLineStartOffset(line),
+    /////                 false);
+    /////         nbLine.show(Line.ShowOpenType.OPEN,
+    /////                     Line.ShowVisibilityType.FRONT,
+    /////                     0);
+    /////         // Adjust to first non-blank on line
+    /////     }
 
-        public void outputLineCleared(OutputEvent outputEvent) {
-        }
+    /////     public void outputLineCleared(OutputEvent outputEvent) {
+    /////     }
 
-        public void outputLineSelected(OutputEvent outputEvent) {
-        }
-    }
+    /////     public void outputLineSelected(OutputEvent outputEvent) {
+    /////     }
+    ///// }
 
     private static class BrowserHook implements OutputListener {
         private String link;

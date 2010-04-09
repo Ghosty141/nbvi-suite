@@ -153,6 +153,7 @@ final public class NbFactory extends SwingFactory {
         return tv;
     }
     
+    @Override
     protected Buffer createBuffer(ViTextView tv) {
         return new NbBuffer(tv);
     }
@@ -331,7 +332,7 @@ final public class NbFactory extends SwingFactory {
             
             Tag tag = tagStack.get(iActiveTag);
             tag.fromLine.show(Line.ShowOpenType.OPEN,
-                              Line.ShowVisibilityType.FRONT,
+                              Line.ShowVisibilityType.FOCUS,
                               calcColumnOffset(tag.fromDoc,
                                                tag.fromPosition.getOffset()));
             break;
@@ -357,7 +358,7 @@ final public class NbFactory extends SwingFactory {
             // modify the tag entry to reflect where we're coming from
             fillTagFrom(tag, G.curwin);
             tag.toLine.show(Line.ShowOpenType.OPEN,
-                            Line.ShowVisibilityType.FRONT,
+                            Line.ShowVisibilityType.FOCUS,
                             calcColumnOffset(tag.toDoc,
                                              tag.toPosition.getOffset()));
             break;

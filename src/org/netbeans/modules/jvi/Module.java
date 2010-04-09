@@ -542,7 +542,7 @@ public class Module extends ModuleInstall
     
     private static void tcDumpInfo(Object o, String tag)
     {
-        if(!G.dbgEditorActivation.getBoolean())
+        if(!dbgAct())
             return;
         if(!(o instanceof TopComponent))
             return;

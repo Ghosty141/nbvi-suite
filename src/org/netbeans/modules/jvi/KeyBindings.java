@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
-import javax.swing.ActionMap;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.text.Caret;
@@ -60,7 +59,6 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
-import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -241,6 +239,18 @@ public class KeyBindings {
         fixupKeypadKeys(ep);
     }
 
+    // jVi binds VK_UP/DOWN, it doesn't bind VK_KP_UP/DOWN (but they
+    // work as they should). However, NB code completion searches for
+    // "caret-up" action and uses its keybindings for up in the code
+    // completion list. CodeCompletion doesn't find VK_UP, it does find
+    // VK_KP_UP so it binds that and VK_UP doesn't work in code
+    // completion list. If code completion doesn't find anything, it
+    // binds to its default, which is VK_UP. So here we also bind to
+    // VK_KP_UP, so CC finds no bindings for "caret-up" and defaults
+    // to VK_UP.(This means that VK_KP_UP won't work, sigh.)
+    // If interested see editor.completion/src/org/netbeans/modules
+    //                      /editor/completion/CompletionScrollPane
+
     private static void fixupKeypadKeys(JTextComponent ep)
     {
         Keymap km = ep.getKeymap();
@@ -362,12 +372,6 @@ public class KeyBindings {
     public static final class KeybindingsInjector
             extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
     {
-        private static final MultiKeyBinding KP_UP =
-                new MultiKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0),
-                                    "ViUpKey");
-        private static final MultiKeyBinding KP_DOWN =
-                new MultiKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN,
-                                                           0), "ViDownKey");
         // rebuilt/updated when the jvi bindings change
         private static final Map<Collection<KeyStroke>, MultiKeyBinding> mapJvi =
                 new HashMap<Collection<KeyStroke>, MultiKeyBinding>();
@@ -405,25 +409,6 @@ public class KeyBindings {
             return key;
         }
 
-        private void checkBinding(String tag,
-                                  Map<Collection<KeyStroke>, MultiKeyBinding> map)
-        {
-            for (MultiKeyBinding mkb : map.values()) {
-                String match = "";
-                if ("caret-up".equals(mkb.getActionName()))
-                    match += "ACTION-MATCH: ";
-                if (mkb.getKeyStroke(0).
-                        equals(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)) ||
-                        mkb.getKeyStroke(0).
-                        equals(KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, 0)))
-                    match += "KEY-MATCH: ";
-                if (!match.isEmpty())
-                    System.err.println("UP-BINDING: " + tag + ": " + match +
-                            "key: " + mkb.getKeyStroke(0) + " " + "action: " +
-                            mkb.getActionName());
-            }
-        }
-
         @Override
         public void afterLoad(Map<Collection<KeyStroke>, MultiKeyBinding> map,
                               MimePath mimePath, String profile,
@@ -441,17 +426,6 @@ public class KeyBindings {
                 mapOrig.clear(); // NEEDSWORK: is this the right thing?
                 // NEEDSWORK: is this the right thing?
             origMaps.put(key, mapOrig);
-            // jVi binds VK_UP/DOWN, it doesn't bind VK_KP_UP/DOWN (but they
-            // work as they should). However, NB code completion searches for
-            // "caret-up" action and uses its keybindings for up in the code
-            // completion list. CodeCompletion doesn't find VK_UP, it does find
-            // VK_KP_UP so it binds that and VK_UP doesn't work in code
-            // completion list. If code completion doesn't find anything, it
-            // binds to its default, which is VK_UP. So here we also bind to
-            // VK_KP_UP, so CC finds no bindings for "caret-up" and defaults
-            // to VK_UP.(This means that VK_KP_UP won't work, sigh.)
-            // If interested see editor.completion/src/org/netbeans/modules
-            //                      /editor/completion/CompletionScrollPane
             synchronized (mapJvi) {
                 if (mapJvi.isEmpty()) {
                     // If needed, build jvi bindings map.
@@ -463,21 +437,12 @@ public class KeyBindings {
                         mapJvi.put(mkb.getKeyStrokeList(),
                                                        mkb);
                     }
-                    // NEEDSWORK: cleanup
-                    mapJvi.put(KP_UP.getKeyStrokeList(),
-                                                   KP_UP);
-                    mapJvi.put(KP_DOWN.getKeyStrokeList(),
-                                                   KP_DOWN);
-                    if (dbgNb())
-                        checkBinding("mapJvi", mapJvi);
+
                     if (dbgNb())
                         System.err.println("Injector: build jVi map. size " +
                                 mapJvi.size());
                 }
-                if (dbgNb())
-                    checkBinding("mapOrig", map); // (of either mulit or single key binding) is
-                // a jvi key, then save the NB binding for use
-                // in beforeSave and remove it from map.
+
                 List<KeyStroke> ksl =
                         new ArrayList<KeyStroke>();
                 ksl.add(null);
@@ -498,8 +463,6 @@ public class KeyBindings {
                             defaults + "\' orig map size: " + map.size());
                 map.putAll(mapJvi);
             }
-            //hackCaptureCheckLater(); // check all opened TC's ep's.
-            //hackCaptureCheckLater(); // check all opened TC's ep's.
         }
 
         @Override

@@ -25,8 +25,6 @@ import static org.netbeans.modules.jvi.Module.MOD;
 import static org.netbeans.modules.jvi.Module.jViEnabled;
 import static org.netbeans.modules.jvi.Module.cid;
 import static org.netbeans.modules.jvi.Module.dbgNb;
-import org.netbeans.modules.jvi.impl.NbFactory;
-import org.netbeans.modules.jvi.impl.NbCaret;
 import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.ViInitialization;
 import com.raelity.jvi.ViOutputStream;
@@ -48,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.text.Caret;
@@ -59,7 +58,10 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
+import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
+import org.netbeans.modules.jvi.impl.NbCaret;
+import org.netbeans.modules.jvi.impl.NbFactory;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -239,53 +241,68 @@ public class KeyBindings {
         fixupKeypadKeys(ep);
     }
 
-    // jVi binds VK_UP/DOWN, it doesn't bind VK_KP_UP/DOWN (but they
-    // work as they should). However, NB code completion searches for
-    // "caret-up" action and uses its keybindings for up in the code
-    // completion list. CodeCompletion doesn't find VK_UP, it does find
-    // VK_KP_UP so it binds that and VK_UP doesn't work in code
-    // completion list. If code completion doesn't find anything, it
-    // binds to its default, which is VK_UP. So here we also bind to
-    // VK_KP_UP, so CC finds no bindings for "caret-up" and defaults
-    // to VK_UP.(This means that VK_KP_UP won't work, sigh.)
+    //
+    // Fixup the bindings and actionMap for the component
+    //
+    // Add bindings for the VK_KP_* that correspond to the regular (non-KP)
+    // bindings. jVi does not bind them.
+    //
+    // As a fix for some jVi issues, hint widgets in NB6.9 uses
+    // textComponent ActionMap rather than EditorKit actionMap.
+    // So for actionNames corresponding to some standard BaseKit names add
+    // name-->jviAction to ActionMap. So hint/codecompletion code
+    // can get the keystrokes associated with an actionName and bind those
+    // keystrokes in the hint widgets. For Example, find the keystrokes
+    // assoc'd with BaseKit.forwardAction.
+    //
     // If interested see editor.completion/src/org/netbeans/modules
     //                      /editor/completion/CompletionScrollPane
-
+    //
     private static void fixupKeypadKeys(JTextComponent ep)
     {
         Keymap km = ep.getKeymap();
 
-        // for(int i = 0; i < fixupActions.length; i++) {
-        //     String actionName = (String)fixupActions[i];
-        //     KeyStroke ks = (KeyStroke)fixupActions[++i];
+        for(int i = 0; i < fixupActions.length; i++) {
+            String actionName = (String)fixupActions[i];
+            KeyStroke ks = (KeyStroke)fixupActions[++i];
 
-        //     Action jviAction = km.getAction(ks);
-        //     if(!(jviAction instanceof SwingFactory.EnqueKeyAction))
-        //         continue;
-        //     ActionMap am = ep.getActionMap();
-        //     Action ac = am.get(actionName);
-        //     am.put(actionName, jviAction);
-        // }
+            Action jviAction = km.getAction(ks);
+            if(!(jviAction instanceof SwingFactory.EnqueKeyAction))
+                continue;
+            ep.getActionMap().put(actionName, jviAction);
+        }
 
         for(int i = 0; i < fixupStrokes.length; i++) {
             KeyStroke ks = fixupStrokes[i];
             KeyStroke kp_ks = fixupStrokes[++i];
+
             Action a = km.getAction(ks);
             if(!(a instanceof SwingFactory.EnqueKeyAction))
                 continue;
             km.addActionForKeyStroke(kp_ks, a);
-            System.err.println(""+a); //***************************************
         }
     }
 
-    // private static Object[] fixupActions = new Object[] {
-    //     BaseKit.forwardAction,
-    //     KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0),
-    //     BaseKit.backwardAction,
-    //     KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0),
-    //     MORE TO ADD IF EVER USE THIS
-    // };
+    private static Object[] fixupActions = new Object[] {
+        BaseKit.upAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0),
+        BaseKit.downAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0),
+        BaseKit.pageDownAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0),
+        BaseKit.pageUpAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0),
+        BaseKit.beginLineAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0),
+        BaseKit.endLineAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_END, 0),
+        BaseKit.forwardAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0),
+        BaseKit.backwardAction,
+        KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0),
+    };
 
+    // fixStrokes is used in pairs
     private static KeyStroke[] fixupStrokes = new KeyStroke[] {
         KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0),
         KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, 0),
@@ -509,6 +526,7 @@ public class KeyBindings {
             putValue(BaseAction.NO_KEYBINDING, Boolean.TRUE);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e)
         {
             addKnownEditor((JEditorPane)e.getSource());

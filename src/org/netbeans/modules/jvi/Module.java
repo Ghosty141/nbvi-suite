@@ -303,6 +303,7 @@ public class Module extends ModuleInstall
         //
         ColonCommands.register("topcomponentDump", "topcomponentDump",
             new ActionListener() {
+                @SuppressWarnings("UseOfSystemOutOrSystemErr")
                 public void actionPerformed(ActionEvent e) {
                     Set<TopComponent> s = TopComponent.getRegistry().getOpened();
                     System.err.println("TopComponents:");
@@ -324,10 +325,16 @@ public class Module extends ModuleInstall
         );
         ColonCommands.register("checkFsActList", "checkFsActList",
             new ActionListener() {
+                @SuppressWarnings("UseOfSystemOutOrSystemErr")
+                @Override
                 public void actionPerformed(ActionEvent e) {
-                    for (String act : FsAct.getFsActList()) {
-                        if(fetchFileSystemAction(act) == null) {
-                            System.err.println("Not found: " + act);
+                    for(FsAct fsAct : FsAct.values()) {
+                        String path = fsAct.path();
+                        System.err.println("checkFsAct: "+fsAct.name()+" "+ path);
+                        if(path == null)
+                            continue;
+                        if(fetchFileSystemAction(fsAct) == null) {
+                            System.err.println("\tNot found by getTheObject");
                         }
                     }
 
@@ -347,24 +354,9 @@ public class Module extends ModuleInstall
         });
          */
     }
-
-    /**
-     * This class delegates an action to an Action which is found
-     * in the file system.
-     */
-    public static class DelegateFileSystemAction implements ActionListener {
-        String actionPath;
-        DelegateFileSystemAction(String actionPath) {
-            this.actionPath = actionPath;
-        }
-        
-        public void actionPerformed(ActionEvent e) {
-            execFileSystemAction(actionPath, e);
-        }
-    }
     
-    public static void execFileSystemAction(String path, ActionEvent e) {
-        Action act = fetchFileSystemAction(path);
+    public static void execFileSystemAction(FsAct fsAct, ActionEvent e) {
+        Action act = fetchFileSystemAction(fsAct);
         if(act != null && act.isEnabled())
             act.actionPerformed(e);
         else
@@ -375,45 +367,23 @@ public class Module extends ModuleInstall
      * Check if it is a SystemAction, if not then try to create it.
      * @return an Action, null if couldn't get or create one
      */
-    public static Action fetchFileSystemAction(String path) {
-        if(ViManager.isDebugAtHome() && !FsAct.getFsActList().contains(path)) {
-            ViManager.dumpStack("unlisted action");
-        }
-        FileObject fo = FileUtil.getConfigFile(path);
-        if(fo == null)
-            return null;
-
-        InstanceCookie ck = null;
+    public static Action fetchFileSystemAction(FsAct fsAct)
+    {
+        String path = fsAct.path();
         Action act = null;
         try {
-            ck = DataObject.find(fo).getCookie(InstanceCookie.class);
-        } catch (DataObjectNotFoundException ex) { }
-        if(ck != null) {
-            try {
-                if(SystemAction.class.isAssignableFrom(ck.instanceClass())) {
-                    @SuppressWarnings("unchecked")
-                    Class<SystemAction> sa
-                            = (Class<SystemAction>)ck.instanceClass();
-                    act = SystemAction.get(sa);
-                }
-            } catch (Exception ex) { }
-            if(act == null) {
-                // if its not a SystemAction try creating one
-                Object o = null;
-                try {
-                    o = ck.instanceCreate();
-                } catch (Exception ex) { }
+            FileObject fo = FileUtil.getConfigFile(path);
+            if(fo != null) {
+                Object o = DataObject.find(fo).getLookup().
+                            lookup(InstanceCookie.class).instanceCreate();
                 if(o instanceof Action)
-                    act = (Action) o;
-                // else if(o instanceof MainMenuAction) {
-                //     MainMenuAction mma = (MainMenuAction)o;
-                //     act = mma
-                // }
+                    act = (Action)o;
             }
+        } catch(Exception ex) {
+            LOG.log(Level.SEVERE, null, ex);
         }
         return act;
     }
-
     
     //////////////////////////////////////////////////////////////////////
     //

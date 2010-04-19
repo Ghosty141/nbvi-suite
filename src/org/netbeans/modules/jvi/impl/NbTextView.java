@@ -436,19 +436,19 @@ public class NbTextView extends SwingTextView
     
     @Override
     public void anonymousMark(MARKOP op, int count) {
-        String actName = null;
+        FsAct fsAct = null;
         switch(op) {
             case TOGGLE:
-                actName = FsAct.BM_TOGGLE;
+                fsAct = FsAct.BM_TOGGLE;
                 break;
             case NEXT:
-                actName = FsAct.BM_NEXT;
+                fsAct = FsAct.BM_NEXT;
                 break;
             case PREV:
-                actName = FsAct.BM_PREV;
+                fsAct = FsAct.BM_PREV;
                 break;
         }
-        Action act = Module.fetchFileSystemAction(actName);
+        Action act = Module.fetchFileSystemAction(fsAct);
         if(act != null && act.isEnabled()) {
             ActionEvent e = new ActionEvent(getBuffer().getDocument(), 0, "");
             act.actionPerformed(e);
@@ -458,7 +458,7 @@ public class NbTextView extends SwingTextView
 
     @Override
     public void tabOperation(TABOP op, int count) {
-        String fsAct = null;
+        FsAct fsAct = null;
         switch(op) {
         case NEXT_TAB:
             fsAct = FsAct.TAB_NEXT;

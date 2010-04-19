@@ -50,6 +50,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.util.ContextAwareAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -62,6 +64,9 @@ public class NbColonCommands {
 
     public static void init()
     {
+        //
+        delegate("pin", "pin", FsAct.EDITOR_PIN);
+
         // goto editor tab
         ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
         ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
@@ -115,9 +120,25 @@ public class NbColonCommands {
     private NbColonCommands() {
     }
 
-    static private void delegate(String abrev, String name, String actionPath) {
-        ColonCommands.register(abrev, name,
-                               new Module.DelegateFileSystemAction(actionPath));
+    /**
+     * This class delegates an action to an Action which is found
+     * in the file system.
+     */
+    public static class DelegateFileSystemAction implements ActionListener {
+        FsAct fsAct;
+        DelegateFileSystemAction(FsAct fsAct) {
+            this.fsAct = fsAct;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Module.execFileSystemAction(fsAct, e);
+        }
+    }
+
+    static private void delegate(String abrev, String name, FsAct fsAct) {
+        FileObject fo = FileUtil.getConfigFile(fsAct.path());
+        ColonCommands.register(abrev, name, new DelegateFileSystemAction(fsAct));
     }
 
     public static ColonAction ACTION_fiximports = new FixImports();
@@ -179,11 +200,8 @@ public class NbColonCommands {
         }
 
         public void actionPerformed(ActionEvent e) {
-            String fsAct;
-            if(goForward)
-                fsAct = FsAct.TAB_NEXT;
-            else
-                fsAct = FsAct.TAB_PREV;
+            FsAct fsAct;
+            fsAct = goForward ? FsAct.TAB_NEXT : FsAct.TAB_PREV;
             Module.execFileSystemAction(fsAct, e);
         }
     }
@@ -208,9 +226,9 @@ public class NbColonCommands {
 
     private static final int MK_NONE = -1;
 
-    static private String[][] mkActions() {
+    static private FsAct[][] mkActions() {
         // NOTE: some entries are null
-        return new String[][] {
+        return new FsAct[][] {
             { FsAct.MK_M_BUILD,   FsAct.MK_P_BUILD,   FsAct.MK_F_BUILD,   },
             { FsAct.MK_M_CLEAN,   FsAct.MK_P_CLEAN,   FsAct.MK_F_CLEAN,   },
             { FsAct.MK_M_REBUILD, FsAct.MK_P_REBUILD, FsAct.MK_F_REBUILD, },
@@ -292,9 +310,10 @@ public class NbColonCommands {
                     else {
                         fError = true;
                         ce.getViTextView().getStatusDisplay().displayErrorMessage(
-                                "syntax: mak[e] [b[uild]|c[lean]|r[ebuild]|d[oc]"
-                                + "|de[bug]|ru[n]]"
-                                + " [m[ain]|p[project]|%]");
+                            "syntax: mak[e]"
+                            + "     [ b[uild] | c[lean] | r[ebuild] | d[oc]"
+                            + " | de[bug] | ru[n] ]"
+                            + "     [ m[ain] | p[project] | % ]");
                     }
                     if(mkOp01 != MK_NONE) {
                         if(mkOp == MK_NONE)
@@ -324,8 +343,8 @@ public class NbColonCommands {
             if(mkThing == MK_NONE)
                 mkThing = MK_MAIN;
 
-            String path = mkActions()[mkOp][mkThing];
-            if(path == null) {
+            FsAct fsAct = mkActions()[mkOp][mkThing];
+            if(fsAct == null || fsAct.path() == null) {
                 ce.getViTextView().getStatusDisplay().displayErrorMessage(
                         "no action for \"make " + mkOpDesc()[mkOp]
                         + " " + mkThingDesc()[mkThing] + "\"");
@@ -337,7 +356,7 @@ public class NbColonCommands {
             }
             
             if(!fError)
-                Module.execFileSystemAction(path, e);
+                Module.execFileSystemAction(fsAct, e);
         }
     }
 

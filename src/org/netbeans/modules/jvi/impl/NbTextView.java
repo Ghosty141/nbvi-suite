@@ -149,6 +149,19 @@ public class NbTextView extends SwingTextView
             public void run()
             {
                 // NOTE: not spinning through the editor registry
+                //       to get per document control
+                if(ViManager.isDebugAtHome()) {
+                    if(getEditorComponent() == null) {
+                        ViManager.dumpStack("NULL EDITOR");
+                        return;
+                    } else if(getEditorComponent().getDocument() == null) {
+                        ViManager.dumpStack("NULL DOCUMENT");
+                        return;
+                    }
+                }
+                if(getEditorComponent() == null
+                        || getEditorComponent().getDocument() == null)
+                    return;
                 getEditorComponent().getDocument()
                     .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
             }

@@ -28,6 +28,8 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JEditorPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -44,7 +46,9 @@ import org.openide.awt.StatusDisplayer;
  *
  * @author erra
  */
-public final class NbStatusDisplay implements ViStatusDisplay {
+public final class NbStatusDisplay implements ViStatusDisplay
+{
+    private static final Logger LOG = Logger.getLogger(NbStatusDisplay.class.getName());
     private ViTextView textView;
     private String lastMode = "";
     private String lastMsg = "";
@@ -100,7 +104,13 @@ public final class NbStatusDisplay implements ViStatusDisplay {
             this.mode = "-- " + mode + " -- ";
         else
             this.mode = "";
-        lastMsg = "";       // clear lastMsg when mode is set
+        if(false) {
+            // This ends up clearing a message when mode changes to/from
+            // "PLATFORM_SELECT" which looses info particularly when
+            // incremental search has a mathcing pattern and type one char
+            // it no longer matches; this ="" looses the not-match message.
+            lastMsg = "";       // clear lastMsg when mode is set
+        }
 	setText(StatusBar.CELL_MAIN, modeString());
         
         //
@@ -220,6 +230,9 @@ public final class NbStatusDisplay implements ViStatusDisplay {
     }
 
     private void setText(String cellName, String text, Coloring coloring) {
+        LOG.log(Level.FINE, "setText: {0} ''{1}'' {2}",
+                new Object[]{cellName, text,
+                            coloring != null ? coloring.getForeColor() : null});
 	StatusBar sb = getStatusBar();
         if(sb != null) {
             // Only use alternate for CELL_MAIN and when sb not visible

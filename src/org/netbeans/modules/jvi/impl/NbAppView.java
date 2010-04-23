@@ -27,11 +27,11 @@ import com.raelity.jvi.swing.SwingFactory;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JEditorPane;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
+import org.openide.util.WeakSet;
 import org.openide.windows.TopComponent;
 
 /**
@@ -219,7 +219,7 @@ public class NbAppView implements ViAppView
             // make sure the TC has the set.
             s = (Set<NbAppView>)tc.getClientProperty(SwingFactory.PROP_AV);
             if(s == null) {
-                s = new HashSet<NbAppView>();
+                s = new WeakSet<NbAppView>(1);
                 tc.putClientProperty(SwingFactory.PROP_AV, s);
             }
 

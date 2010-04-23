@@ -150,15 +150,8 @@ public class NbTextView extends SwingTextView
             {
                 // NOTE: not spinning through the editor registry
                 //       to get per document control
-                if(ViManager.isDebugAtHome()) {
-                    if(getEditorComponent() == null) {
-                        ViManager.dumpStack("NULL EDITOR");
-                        return;
-                    } else if(getEditorComponent().getDocument() == null) {
-                        ViManager.dumpStack("NULL DOCUMENT");
-                        return;
-                    }
-                }
+                // Needs to check for null since it might be closed
+                // by the time we get here.
                 if(getEditorComponent() == null
                         || getEditorComponent().getDocument() == null)
                     return;

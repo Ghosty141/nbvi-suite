@@ -285,11 +285,12 @@ public class NbAppView implements ViAppView
 
         if(Module.dbgAct())
             System.err.printf(
-                    "updateAppView: (%s) %s tc '%s' ep '%s' nad %b\n",
+                    "updateAppView: (%s) %s tc '%s' ep '%s' doc '%s' nad %b\n",
                     tag,
                     ViManager.getFS().getDisplayFileName(av),
                     tc != null ? Module.cid(tc) : "",
                     ep != null ? Module.cid(ep) : "",
+                    ep != null ? Module.cid(ep.getDocument()) : "",
                     isNomad);
 
         AppViews.open(av, info);

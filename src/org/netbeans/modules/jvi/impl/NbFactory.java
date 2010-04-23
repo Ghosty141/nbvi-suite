@@ -83,7 +83,7 @@ final public class NbFactory extends SwingFactory {
     
     static Set<Document> getDocSet() {
         return Collections.unmodifiableSet(
-                ((NbFactory)INSTANCE).docSet.keySet());
+                ((NbFactory)INSTANCE).docSet);
     }
 
     @Override

@@ -227,7 +227,7 @@ final public class NbFactory extends SwingFactory {
     public ViCmdEntry createCmdEntry(int type) {
         ViCmdEntry ce = super.createCmdEntry(type);
         if(type == ViCmdEntry.COLON_ENTRY) {
-            JTextComponent jtc = ce.getTextComponent();
+            JTextComponent jtc = (JTextComponent)ce.getTextComponent();
 
             // Set mime type to connect with code completion provider
             jtc.getDocument().putProperty("mimeType", "text/x-vicommand");

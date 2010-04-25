@@ -119,7 +119,7 @@ public class CcCompletion
     {
         if (dbgCompl == null)
             dbgCompl = (BooleanOption)Options.getOption(Options.dbgCompletion);
-        JTextComponent ceText = cmdEntry.getTextComponent();
+        JTextComponent ceText = (JTextComponent)cmdEntry.getTextComponent();
         if (!enable) {
             // Finished, make sure everything's shutdown
             Completion.get().hideAll();

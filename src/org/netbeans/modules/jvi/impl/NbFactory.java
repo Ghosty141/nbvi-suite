@@ -147,8 +147,17 @@ final public class NbFactory extends SwingFactory {
         //vmNoFolding = new SwingViewMapNoFolding(tv);
         //vmFontFixed = new SwingViewMapFontFixed(tv);
         //LogicalLineMap lm = new FoldLineMap(tv);
-        LineMap lm = new SwingLineMapSwitcher(
-                new LineMapNoFoldingNoWrap(tv), new LineMapFoldNoWrap(tv));
+
+        LineMap lm;
+        // Following for NO WRAP, switch on folding
+        // lm = new LineMapFoldingSwitcher(
+        //         new LineMapNoFoldingNoWrap(tv), new LineMapFoldNoWrap(tv));
+
+        // lm = new SwingLineMapFontFixedCoord(tv);
+
+        lm = new LineMapFoldingSwitcher(
+                new LineMapNoFoldingNoWrap(tv),
+                new SwingLineMapFontFixedCoord(tv));
         tv.setLineMap(lm);
         return tv;
     }

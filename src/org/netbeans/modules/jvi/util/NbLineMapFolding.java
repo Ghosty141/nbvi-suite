@@ -39,14 +39,14 @@ import org.netbeans.modules.jvi.impl.NbTextView;
  *
  * @author Ernie Rael <err at raelity.com>
  */
-public class LineMapFoldNoWrap implements LineMap
+public class NbLineMapFolding implements LineMap
 {
     private NbTextView tv;
     private FoldHierarchy fh;
     private boolean valid;
     private ClosedFold[] fs;
 
-    public LineMapFoldNoWrap(NbTextView tv)
+    public NbLineMapFolding(NbTextView tv)
     {
         this.tv = tv;
         fh = FoldHierarchy.get(tv.getEditorComponent());

@@ -149,7 +149,8 @@ final public class NbFactory extends SwingFactory {
 
         lm = new LineMapFoldingSwitcher(
                 new LineMapNoFolding(tv), new NbLineMapFolding(tv));
-        ViewMap vm = new SwingViewMapWrapFontFixed(tv);
+        //ViewMap vm = new SwingViewMapWrapFontFixed(tv);
+        ViewMap vm = new ViewMapSwitcher(tv);
         tv.setMaps(lm, vm);
         return tv;
     }

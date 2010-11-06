@@ -148,8 +148,8 @@ public class NbTextView extends SwingTextView
             @Override
             public void run()
             {
-                // NOTE: not spinning through the editor registry
-                //       to get per document control
+                // NOTE: not spinning through the editor registry.
+                //       This gives per document control (unlike stock NB editor)
                 // Needs to check for null since it might be closed
                 // by the time we get here.
                 if(getEditorComponent() == null

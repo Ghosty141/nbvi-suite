@@ -64,13 +64,13 @@ public class JViOptionWarning {
     static private String getWarningMessage() {
         return "ShiftWidth, ExpandTabs and TabStop defaults"
              + " for jVi are set through\n"
-             + "Tools>Options>AdvancedOptions>\n"
-             + "jViOptionsAndConfiguration>FileModificationOptions.\n"
-             + "Use \":set ...\" after file is opened.\n\n"
+             + "Tools>Options>jVi Config>Buffer Modifications.\n"
+             + "Can use \":set ...\" after file is opened.\n\n"
              + "See http://jvi.sourceforge.net/ReadmeNetBeans.html#options\n\n"
              + "jVi reprograms the indent/tab options per document,\n"
              + "so changes made in standard settings are lost and not used.\n\n"
-             + "See also \"modeline\" in the vim documentation.";
+             + "See also \"modeline\" in the vim documentation\n"
+             + "to persist per file settings.";
     }
 
     private static DialogDescriptor warning;

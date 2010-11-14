@@ -25,7 +25,7 @@ import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.options.BooleanOption;
+import com.raelity.jvi.options.Option;
 import com.raelity.jvi.swing.CommandLine;
 import java.awt.Color;
 import java.awt.Font;
@@ -79,7 +79,7 @@ public class CcCompletion
 
     private static CodeComplDocListener ceDocListen;
     private static boolean ceInSubstitute;
-    private static BooleanOption dbgCompl;
+    private static Option dbgCompl;
     private static FocusListener initShowCompletion = new FocusAdapter() {
         @Override
         public void focusGained(FocusEvent e)
@@ -118,7 +118,7 @@ public class CcCompletion
     public static void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable)
     {
         if (dbgCompl == null)
-            dbgCompl = (BooleanOption)Options.getOption(Options.dbgCompletion);
+            dbgCompl = Options.getOption(Options.dbgCompletion);
         JTextComponent ceText = (JTextComponent)cmdEntry.getTextComponent();
         if (!enable) {
             // Finished, make sure everything's shutdown

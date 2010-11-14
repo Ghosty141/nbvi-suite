@@ -25,6 +25,7 @@ import com.raelity.jvi.swing.OptionsPanel;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import java.beans.PropertyVetoException;
 import org.netbeans.modules.jvi.Module;
 
 public class NbOptionsNode extends OptionsPanel {
@@ -45,12 +46,6 @@ public class NbOptionsNode extends OptionsPanel {
         setMaximumSize(getPreferredSize());
     }
 
-
-    
-    // the names for the getters/setters
-    private static final String GETSET_DBG_MODULE = "DebugModule";
-    private static final String GETSET_DBG_TC = "DebugTC";
-    private static final String GETSET_DBG_HL = "DebugHL";
     
     public static class NbDebugOptions extends OptionsBean.Debug {
         @Override
@@ -62,15 +57,15 @@ public class NbOptionsNode extends OptionsPanel {
             try {
                 d01 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_MODULE,
-                                               GETSET_DBG_MODULE,
+                                               Module.DBG_MODULE,
                                                NbDebugOptions.class);
                 d02 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_TC,
-                                               GETSET_DBG_TC,
+                                               Module.DBG_TC,
                                                NbDebugOptions.class);
                 d03 = ViManager.getFactory()
                      .createPropertyDescriptor(Module.DBG_HL,
-                                               GETSET_DBG_HL,
+                                               Module.DBG_HL,
                                                NbDebugOptions.class);
             } catch (IntrospectionException ex) {
                 return descriptors;
@@ -84,28 +79,28 @@ public class NbOptionsNode extends OptionsPanel {
             return d00;
         }
         
-        public void setDebugModule(boolean arg) {
+        public void setDebugNbModule(String arg) throws PropertyVetoException {
             put(Module.DBG_MODULE, arg);
         }
 
-        public boolean getDebugModule() {
-            return getboolean(Module.DBG_MODULE);
+        public String getDebugNbModule() {
+            return getString(Module.DBG_MODULE);
         }
         
-        public void setDebugTC(boolean arg) {
+        public void setDebugNbTopComponent(String arg) throws PropertyVetoException {
             put(Module.DBG_TC, arg);
         }
 
-        public boolean getDebugTC() {
-            return getboolean(Module.DBG_TC);
+        public String getDebugNbTopComponent() {
+            return getString(Module.DBG_TC);
         }
         
-        public void setDebugHL(boolean arg) {
+        public void setDebugNbHilight(String arg) throws PropertyVetoException {
             put(Module.DBG_HL, arg);
         }
 
-        public boolean getDebugHL() {
-            return getboolean(Module.DBG_HL);
+        public String getDebugNbHilight() {
+            return getString(Module.DBG_HL);
         }
     }
 }

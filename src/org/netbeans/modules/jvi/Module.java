@@ -3,13 +3,13 @@ package org.netbeans.modules.jvi;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import com.raelity.jvi.ViCaret;
-import com.raelity.jvi.options.BooleanOption;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViInitialization;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.options.DebugOption;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -80,9 +80,9 @@ public class Module extends ModuleInstall
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
     public static final String DBG_HL = "DebugNbHilight";
-    private static BooleanOption dbgNb;
-    private static BooleanOption dbgAct;
-    private static BooleanOption dbgHL;
+    private static DebugOption dbgNb;
+    private static DebugOption dbgAct;
+    private static DebugOption dbgHL;
 
     public static boolean dbgNb() {
         return dbgNb != null && dbgNb.getBoolean();
@@ -280,15 +280,15 @@ public class Module extends ModuleInstall
     
     private static void addDebugOptions()
     {
-        dbgNb = OptUtil.createBooleanOption(DBG_MODULE, false);
+        dbgNb = OptUtil.createDebugOption(DBG_MODULE);
         OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
                                 "Module and editor kit install/install");
 
-        dbgAct = OptUtil.createBooleanOption(DBG_TC, false);
+        dbgAct = OptUtil.createDebugOption(DBG_TC);
         OptUtil.setupOptionDesc(DBG_TC, "Top Component",
                                 "TopComponent activation/open");
 
-        dbgHL = OptUtil.createBooleanOption(DBG_HL, false);
+        dbgHL = OptUtil.createDebugOption(DBG_HL);
         OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
                                 "Visual/Search highlighting");
     }

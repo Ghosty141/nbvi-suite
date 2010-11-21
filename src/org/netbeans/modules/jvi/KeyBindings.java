@@ -257,6 +257,8 @@ public class KeyBindings {
     //
     // If interested see editor.completion/src/org/netbeans/modules
     //                      /editor/completion/CompletionScrollPane
+    // and Bug 183675 - hint completion makes assumptions about
+    //                  associated editor pane bindings
     //
     private static void fixupKeypadKeys(JTextComponent ep)
     {

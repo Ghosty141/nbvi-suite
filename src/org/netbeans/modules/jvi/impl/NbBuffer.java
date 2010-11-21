@@ -9,6 +9,7 @@
 
 package org.netbeans.modules.jvi.impl;
 
+import java.lang.reflect.Field;
 import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -50,6 +51,7 @@ import org.netbeans.modules.jvi.JViOptionWarning;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.text.CloneableEditorSupport;
 
 import static com.raelity.jvi.core.Constants.*;
 
@@ -64,6 +66,34 @@ public class NbBuffer extends SwingBuffer {
 
     private static Method beginUndo;
     private static Method endUndo;
+
+    private static final UndoableEdit beginComitGroup;
+    private static final UndoableEdit endComitGroup;
+
+    static {
+        UndoableEdit begin = null;
+        UndoableEdit end = null;
+        try {
+            Field f;
+            Class ces = CloneableEditorSupport.class;
+            f = ces.getDeclaredField("BEGIN_COMIT_GROUP");
+            begin = (UndoableEdit)f.get(null);
+            f = ces.getDeclaredField("END_COMIT_GROUP");
+            end = (UndoableEdit)f.get(null);
+        } catch(NoSuchFieldException ex) {
+        } catch(SecurityException ex) {
+        } catch(IllegalArgumentException ex) {
+        } catch(IllegalAccessException ex) {
+        }
+
+        if(begin != null && end != null) {
+            beginComitGroup = begin;
+            endComitGroup = end;
+        } else {
+            beginComitGroup = null;
+            endComitGroup = null;
+        }
+    }
 
 //    private CompoundEdit compoundEdit;
 //    private static Method undoRedoFireChangeMethod;
@@ -414,7 +444,9 @@ public class NbBuffer extends SwingBuffer {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
-            if(beginUndo != null && undoRedo != null) {
+            if(beginComitGroup != null) {
+                sendUndoableEdit(beginComitGroup);
+            } else if(beginUndo != null && undoRedo != null) {
                 try {
                     beginUndo.invoke(undoRedo);
                 } catch (InvocationTargetException ex) {
@@ -426,11 +458,24 @@ public class NbBuffer extends SwingBuffer {
     @Override
     public void do_endInsertUndo() {
         if(G.isClassicUndo.getBoolean()) {
-            if(endUndo != null && undoRedo != null) {
+            if(endComitGroup != null) {
+                sendUndoableEdit(endComitGroup);
+            } else if(endUndo != null && undoRedo != null) {
                 try {
                     endUndo.invoke(undoRedo);
                 } catch (InvocationTargetException ex) {
                 } catch (IllegalAccessException ex) { }
+            }
+        }
+    }
+
+    void sendUndoableEdit(UndoableEdit ue) {
+        Document d = getDocument();
+        if(d instanceof AbstractDocument) {
+            UndoableEditListener[] uels = ((AbstractDocument)d).getUndoableEditListeners();
+            UndoableEditEvent ev = new UndoableEditEvent(d, ue);
+            for(UndoableEditListener uel : uels) {
+                uel.undoableEditHappened(ev);
             }
         }
     }

@@ -226,9 +226,9 @@ final public class NbFactory extends SwingFactory {
     }
 
     @Override
-    public ViCmdEntry createCmdEntry(int type) {
+    public ViCmdEntry createCmdEntry(ViCmdEntry.Type type) {
         ViCmdEntry ce = super.createCmdEntry(type);
-        if(type == ViCmdEntry.COLON_ENTRY) {
+        if(type == ViCmdEntry.Type.COLON) {
             JTextComponent jtc = (JTextComponent)ce.getTextComponent();
 
             // Set mime type to connect with code completion provider

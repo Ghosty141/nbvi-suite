@@ -67,8 +67,8 @@ public class NbBuffer extends SwingBuffer {
     private static Method beginUndo;
     private static Method endUndo;
 
-    private static final UndoableEdit beginComitGroup;
-    private static final UndoableEdit endComitGroup;
+    private static final UndoableEdit beginCommitGroup;
+    private static final UndoableEdit endCommitGroup;
 
     static {
         UndoableEdit begin = null;
@@ -76,9 +76,9 @@ public class NbBuffer extends SwingBuffer {
         try {
             Field f;
             Class ces = CloneableEditorSupport.class;
-            f = ces.getDeclaredField("BEGIN_COMIT_GROUP");
+            f = ces.getDeclaredField("BEGIN_COMMIT_GROUP");
             begin = (UndoableEdit)f.get(null);
-            f = ces.getDeclaredField("END_COMIT_GROUP");
+            f = ces.getDeclaredField("END_COMMIT_GROUP");
             end = (UndoableEdit)f.get(null);
         } catch(NoSuchFieldException ex) {
         } catch(SecurityException ex) {
@@ -87,11 +87,11 @@ public class NbBuffer extends SwingBuffer {
         }
 
         if(begin != null && end != null) {
-            beginComitGroup = begin;
-            endComitGroup = end;
+            beginCommitGroup = begin;
+            endCommitGroup = end;
         } else {
-            beginComitGroup = null;
-            endComitGroup = null;
+            beginCommitGroup = null;
+            endCommitGroup = null;
         }
     }
 
@@ -444,8 +444,8 @@ public class NbBuffer extends SwingBuffer {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
-            if(beginComitGroup != null) {
-                sendUndoableEdit(beginComitGroup);
+            if(beginCommitGroup != null) {
+                sendUndoableEdit(beginCommitGroup);
             } else if(beginUndo != null && undoRedo != null) {
                 try {
                     beginUndo.invoke(undoRedo);
@@ -458,8 +458,8 @@ public class NbBuffer extends SwingBuffer {
     @Override
     public void do_endInsertUndo() {
         if(G.isClassicUndo.getBoolean()) {
-            if(endComitGroup != null) {
-                sendUndoableEdit(endComitGroup);
+            if(endCommitGroup != null) {
+                sendUndoableEdit(endCommitGroup);
             } else if(endUndo != null && undoRedo != null) {
                 try {
                     endUndo.invoke(undoRedo);

@@ -62,67 +62,10 @@ import static com.raelity.jvi.core.Constants.*;
  */
 public class NbBuffer extends SwingBuffer {
     private static final Logger LOG = Logger.getLogger(NbBuffer.class.getName());
-    private UndoRedo.Manager undoRedo;
-
-    private static Method beginUndo;
-    private static Method endUndo;
-
-    private static final UndoableEdit beginCommitGroup;
-    private static final UndoableEdit endCommitGroup;
-
-    static {
-        UndoableEdit begin = null;
-        UndoableEdit end = null;
-        try {
-            Field f;
-            Class ces = CloneableEditorSupport.class;
-            f = ces.getDeclaredField("BEGIN_COMMIT_GROUP");
-            begin = (UndoableEdit)f.get(null);
-            f = ces.getDeclaredField("END_COMMIT_GROUP");
-            end = (UndoableEdit)f.get(null);
-        } catch(NoSuchFieldException ex) {
-        } catch(SecurityException ex) {
-        } catch(IllegalArgumentException ex) {
-        } catch(IllegalAccessException ex) {
-        }
-
-        if(begin != null && end != null) {
-            beginCommitGroup = begin;
-            endCommitGroup = end;
-        } else {
-            beginCommitGroup = null;
-            endCommitGroup = null;
-        }
-    }
-
-//    private CompoundEdit compoundEdit;
-//    private static Method undoRedoFireChangeMethod;
     
     /** Creates a new instance of NbBuffer */
     public NbBuffer(ViTextView tv) {
         super(tv);
-        
-        UndoableEditListener l[] = ((AbstractDocument)getDocument())
-                                                .getUndoableEditListeners();
-        for (int i = 0; i < l.length; i++) {
-            if(l[i] instanceof UndoRedo.Manager) {
-                undoRedo = (UndoRedo.Manager) l[i];
-                break;
-            }
-        }
-
-        if(beginUndo == null) {
-            try {
-                beginUndo = UndoRedo.Manager.class.getMethod("beginUndoGroup",
-                                                             (Class<?>[])null);
-                endUndo = UndoRedo.Manager.class.getMethod("endUndoGroup",
-                                                           (Class<?>[])null);
-            } catch (NoSuchMethodException ex) { }
-            if(beginUndo == null || endUndo == null) {
-                beginUndo = null;
-                endUndo = null;
-            }
-        }
     }
 
     @Override
@@ -444,28 +387,14 @@ public class NbBuffer extends SwingBuffer {
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
-            if(beginCommitGroup != null) {
-                sendUndoableEdit(beginCommitGroup);
-            } else if(beginUndo != null && undoRedo != null) {
-                try {
-                    beginUndo.invoke(undoRedo);
-                } catch (InvocationTargetException ex) {
-                } catch (IllegalAccessException ex) { }
-            }
+            sendUndoableEdit(CloneableEditorSupport.BEGIN_COMMIT_GROUP);
         }
     }
 
     @Override
     public void do_endInsertUndo() {
         if(G.isClassicUndo.getBoolean()) {
-            if(endCommitGroup != null) {
-                sendUndoableEdit(endCommitGroup);
-            } else if(endUndo != null && undoRedo != null) {
-                try {
-                    endUndo.invoke(undoRedo);
-                } catch (InvocationTargetException ex) {
-                } catch (IllegalAccessException ex) { }
-            }
+            sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
         }
     }
 

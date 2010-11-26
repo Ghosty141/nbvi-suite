@@ -1,5 +1,6 @@
 package org.netbeans.modules.jvi;
 
+import java.io.File;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import com.raelity.jvi.ViCaret;
@@ -18,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.FilenameFilter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.PreferenceChangeEvent;
@@ -32,12 +35,15 @@ import java.util.prefs.PreferenceChangeListener;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
+import org.openide.modules.InstalledFileLocator;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
@@ -169,6 +175,30 @@ public class Module extends ModuleInstall
     public void restored() {
         if (dbgNb()) {
             System.err.println(MOD + "***** restored *****");
+        }
+        // Look for an UndoRedo-patch.jar
+        File patchDir = InstalledFileLocator.getDefault().locate(
+                "modules/patches/org-openide-awt", null, false);
+        if(patchDir != null) {
+            File[] f = patchDir.listFiles(new FilenameFilter() {
+                   @Override
+                   public boolean accept(File dir, String name)
+                   {
+                       return name.contains("UndoRedo-patch");
+                   }
+               });
+            if(f != null && f.length > 0) {
+                NotifyDescriptor d = new NotifyDescriptor.Message(
+                        "Found \"" + f[0].getAbsolutePath() + "\"\n"
+                        + "If this is for jVi undo/redo operation"
+                        + " then"
+                        + " \n\nremove this file and restart NetBeans\n\n"
+                        + "or functionality is lost."
+                        + "\nNetBeans now has native support"
+                        + "for UndoRedo grouping.",
+                        NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(d);
+            }
         }
 
         for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
@@ -578,6 +608,32 @@ public class Module extends ModuleInstall
         }
         return tc;
     }
+
+    private static class RunLatched implements Runnable
+    {
+        Runnable r;
+        CountDownLatch latch;
+
+        public RunLatched(Runnable r, CountDownLatch latch)
+        {
+            this.r = r;
+            this.latch = latch;
+        }
+
+        @Override
+        public void run()
+        {
+            try {
+                r.run();
+            }
+            catch (Exception ex) {
+                LOG.log(Level.SEVERE, null, ex);
+            }
+            finally {
+                latch.countDown();
+            }
+        }
+    }
     
     public static void runInDispatch(boolean wait, Runnable runnable) {
         if(EventQueue.isDispatchThread()) {
@@ -585,16 +641,14 @@ public class Module extends ModuleInstall
         } else if(!wait) {
             EventQueue.invokeLater(runnable);
         } else {
-            Exception ex1 = null;
+            CountDownLatch latch = new CountDownLatch(1);
+            RunLatched rl = new RunLatched(runnable, latch);
+            EventQueue.invokeLater(rl);
             try {
-                EventQueue.invokeAndWait(runnable);
-            } catch (InterruptedException ex) {
-                ex1 = ex;
-            } catch (InvocationTargetException ex) {
-                ex1 = ex;
+                latch.await();
+            } catch(InterruptedException ex) {
+                LOG.log(Level.SEVERE, null, ex);
             }
-            if(ex1 != null)
-                LOG.log(Level.SEVERE, null, ex1);
         }
     }
 }

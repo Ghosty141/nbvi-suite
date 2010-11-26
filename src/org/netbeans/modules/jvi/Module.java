@@ -190,8 +190,7 @@ public class Module extends ModuleInstall
             if(f != null && f.length > 0) {
                 NotifyDescriptor d = new NotifyDescriptor.Message(
                         "Found \"" + f[0].getAbsolutePath() + "\"\n"
-                        + "If this is for jVi undo/redo operation"
-                        + " then"
+                        + "If for jVi undo/redo operation then"
                         + " \n\nremove this file and restart NetBeans\n\n"
                         + "or functionality is lost."
                         + "\nNetBeans now has native support"

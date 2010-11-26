@@ -20,14 +20,12 @@ import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.FilenameFilter;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.PreferenceChangeEvent;
@@ -241,7 +239,7 @@ public class Module extends ModuleInstall
         }
 
         if (isModuleEnabled()) {
-            runInDispatch(true, new RunJViEnable());
+            ViManager.runInDispatch(true, new RunJViEnable());
         }
 
         prefNode.addPreferenceChangeListener(new PreferenceChangeListener() {
@@ -276,7 +274,7 @@ public class Module extends ModuleInstall
             return;
         didEarlyInit = true;
 
-        runInDispatch(true, new Runnable() {
+        ViManager.runInDispatch(true, new Runnable() {
             public void run() {
                 factory = new NbFactory();
                 ViManager.setViFactory(factory);
@@ -609,58 +607,5 @@ public class Module extends ModuleInstall
             parent = SwingUtilities.getAncestorOfClass(TopComponent.class, tc);
         }
         return tc;
-    }
-
-    private static class RunLatched implements Runnable
-    {
-        Runnable r;
-        CountDownLatch latch;
-        Throwable ex;
-
-        public RunLatched(Runnable r, CountDownLatch latch)
-        {
-            this.r = r;
-            this.latch = latch;
-        }
-
-        @Override
-        public void run()
-        {
-            try {
-                r.run();
-            }
-            catch (Throwable ex1) {
-                ex = ex1;
-            }
-            finally {
-                latch.countDown();
-            }
-        }
-
-        Throwable getThrowable()
-        {
-            return ex;
-        }
-    }
-    
-    public static void runInDispatch(boolean wait, Runnable runnable) {
-        if(EventQueue.isDispatchThread()) {
-            runnable.run();
-        } else if(!wait) {
-            EventQueue.invokeLater(runnable);
-        } else {
-            CountDownLatch latch = new CountDownLatch(1);
-            RunLatched rl = new RunLatched(runnable, latch);
-            EventQueue.invokeLater(rl);
-            try {
-                latch.await();
-            } catch(InterruptedException ex) {
-            }
-            if(rl.getThrowable() != null) {
-                RuntimeException ex = new RuntimeException(
-                        "After wait after invokeLater", rl.getThrowable());
-                throw ex;
-            }
-        }
     }
 }

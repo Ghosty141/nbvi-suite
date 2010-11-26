@@ -180,6 +180,8 @@ public class Module extends ModuleInstall
         File patchDir = InstalledFileLocator.getDefault().locate(
                 "modules/patches/org-openide-awt", null, false);
         if(patchDir != null) {
+            System.err.println(
+                    "Found patch dir \"" + patchDir.getAbsolutePath() + "\"");
             File[] f = patchDir.listFiles(new FilenameFilter() {
                    @Override
                    public boolean accept(File dir, String name)

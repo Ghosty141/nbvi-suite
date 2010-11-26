@@ -613,6 +613,7 @@ public class Module extends ModuleInstall
     {
         Runnable r;
         CountDownLatch latch;
+        Throwable ex;
 
         public RunLatched(Runnable r, CountDownLatch latch)
         {
@@ -626,12 +627,17 @@ public class Module extends ModuleInstall
             try {
                 r.run();
             }
-            catch (Exception ex) {
-                LOG.log(Level.SEVERE, null, ex);
+            catch (Throwable ex1) {
+                ex = ex1;
             }
             finally {
                 latch.countDown();
             }
+        }
+
+        Throwable getThrowable()
+        {
+            return ex;
         }
     }
     
@@ -647,7 +653,11 @@ public class Module extends ModuleInstall
             try {
                 latch.await();
             } catch(InterruptedException ex) {
-                LOG.log(Level.SEVERE, null, ex);
+            }
+            if(rl.getThrowable() != null) {
+                RuntimeException ex = new RuntimeException(
+                        "After wait after invokeLater", rl.getThrowable());
+                throw ex;
             }
         }
     }

@@ -165,17 +165,20 @@ public static final String RF_PUSH_DOWN
     = "Actions/Refactoring/"
       + "org-netbeans-modules-refactoring-java-api-ui-PushDownAction.instance";
 //
+// Note: the RF_INTRODUCE_* changed for NB7
+// Directory location changed, not name.
+// Note, these are java only.
 public static final String RF_INTRODUCE_VARIABLE
-    = "Actions/Refactoring/"
+    = "Editors/text/x-java/Actions/"
     + "org-netbeans-modules-java-hints-introduce-IntroduceVariableAction.instance";
 public static final String RF_INTRODUCE_CONSTANT
-    = "Actions/Refactoring/"
+    = "Editors/text/x-java/Actions/"
     + "org-netbeans-modules-java-hints-introduce-IntroduceConstantAction.instance";
 public static final String RF_INTRODUCE_FIELD
-    = "Actions/Refactoring/"
+    = "Editors/text/x-java/Actions/"
     + "org-netbeans-modules-java-hints-introduce-IntroduceFieldAction.instance";
 public static final String RF_INTRODUCE_METHOD
-    = "Actions/Refactoring/"
+    = "Editors/text/x-java/Actions/"
     + "org-netbeans-modules-java-hints-introduce-IntroduceMethodAction.instance";
 
 // build/run and such operate on three types of things

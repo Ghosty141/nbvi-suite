@@ -25,7 +25,7 @@ import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.options.Option;
+import com.raelity.jvi.options.DebugOption;
 import com.raelity.jvi.swing.CommandLine;
 import java.awt.Color;
 import java.awt.Font;
@@ -74,18 +74,19 @@ import org.openide.windows.TopComponent;
  */
 public class CcCompletion
 {
+    private CcCompletion() { }
+
     private static final
             Logger LOG = Logger.getLogger(CcCompletion.class.getName());
 
     private static CodeComplDocListener ceDocListen;
     private static boolean ceInSubstitute;
-    private static Option dbgCompl;
+    private static DebugOption dbgCompl;
     private static FocusListener initShowCompletion = new FocusAdapter() {
         @Override
         public void focusGained(FocusEvent e)
         {
-            if (dbgCompl.getBoolean())
-                System.err.println("INIT SHOW:");
+            dbgCompl.println("INIT SHOW:");
             Completion.get().showCompletion();
         }
     };
@@ -106,19 +107,20 @@ public class CcCompletion
                                            InputEvent.CTRL_MASK);
             if (km.getAction(ks) == null)
                 km.addActionForKeyStroke(ks,
-                                         new TextAction("vi-command-code-completion") {
-                    public void actionPerformed(ActionEvent e)
-                    {
-                        Completion.get().showCompletion();
-                    }
-                });
+                     new TextAction("vi-command-code-completion") {
+                            @Override
+                            public void actionPerformed(ActionEvent e)
+                            {
+                                Completion.get().showCompletion();
+                            }
+                        });
         }
     }
 
     public static void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable)
     {
         if (dbgCompl == null)
-            dbgCompl = Options.getOption(Options.dbgCompletion);
+            dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
         JTextComponent ceText = (JTextComponent)cmdEntry.getTextComponent();
         if (!enable) {
             // Finished, make sure everything's shutdown
@@ -162,15 +164,18 @@ public class CcCompletion
     {
         boolean didIt;
 
+        @Override
         public void changedUpdate(DocumentEvent e)
         {
         }
 
+        @Override
         public void insertUpdate(DocumentEvent e)
         {
             ceDocCheck(e.getDocument());
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e)
         {
             ceDocCheck(e.getDocument());
@@ -181,14 +186,12 @@ public class CcCompletion
             try {
                 if (doc.getLength() == 2 && !ceInSubstitute) {
                     if (!didIt && "e#".equals(doc.getText(0, doc.getLength()))) {
-                        if (dbgCompl.getBoolean())
-                            System.err.println("SHOW:");
+                        dbgCompl.println("SHOW:");
                         Completion.get().showCompletion();
                         didIt = true;
                     }
                 } else if (doc.getLength() < 2) {
-                    if (dbgCompl.getBoolean())
-                        System.err.println("HIDE:");
+                    dbgCompl.println("HIDE:");
                     Completion.get().hideCompletion();
                     didIt = false;
                 }
@@ -206,32 +209,35 @@ public class CcCompletion
         return new AsyncCompletionTask(
         new ViCommandAsyncCompletionQuery(jtc), jtc);
         }*/
+        @Override
         public CompletionTask createTask(int queryType, JTextComponent jtc)
         {
             if (queryType != CompletionProvider.COMPLETION_QUERY_TYPE)
                 return null;
-            return new ViCommandCompletionTask(jtc);
+            return new ViEditAlternateTask(jtc);
         }
 
+        @Override
         public int getAutoQueryTypes(JTextComponent jtc, String typedText)
         {
             return 0;
         }
     }
 
-    public static class ViCommandCompletionTask implements CompletionTask
+    public static class ViEditAlternateTask implements CompletionTask
     {
         JTextComponent jtc;
-        List<ViCommandCompletionItem> query;
+        List<ViEditAlternateItem> query;
 
-        public ViCommandCompletionTask(JTextComponent jtc)
+        public ViEditAlternateTask(JTextComponent jtc)
         {
             this.jtc = jtc;
         }
 
+        @Override
         public void query(CompletionResultSet resultSet)
         {
-            query = new ArrayList<ViCommandCompletionItem>();
+            query = new ArrayList<ViEditAlternateItem>();
             Font font = getTxtFont();
             for (ViAppView _av : AppViews.getList(AppViews.ACTIVE)) {
                 NbAppView av = (NbAppView)_av;
@@ -252,7 +258,7 @@ public class CcCompletion
                 if (name == null)
                     name = ViManager.getFactory()
                             .getFS().getDisplayFileName(av);
-                query.add(new ViCommandCompletionItem(
+                query.add(new ViEditAlternateItem(
                         name,
                         String.format("%02d", wnum),
                         icon, false, flags, font, 2)); // offset 2 is after "e#"
@@ -260,6 +266,7 @@ public class CcCompletion
             genResults(resultSet, "QUERY");
         }
 
+        @Override
         public void refresh(CompletionResultSet resultSet)
         {
             genResults(resultSet, "REFRESH");
@@ -283,7 +290,7 @@ public class CcCompletion
             return txtFont;
         }
 
-        public void genResults(CompletionResultSet resultSet, String tag)
+        private void genResults(CompletionResultSet resultSet, String tag)
         {
             String dbsString = "";
             try {
@@ -309,7 +316,7 @@ public class CcCompletion
                         dbsString += ", filter \'" + filter + "\'";
                     resultSet.setAnchorOffset(startOffset);
                     boolean fFilterDigit = filterDigit(filter);
-                    for (ViCommandCompletionItem item : query) {
+                    for (ViEditAlternateItem item : query) {
                         String checkItem = fFilterDigit ? item.num : item.name;
                         if (filter.regionMatches(true, 0, checkItem, 0,
                                                  filter.length())) {
@@ -327,19 +334,19 @@ public class CcCompletion
             resultSet.finish();
         }
 
+        @Override
         public void cancel()
         {
-            if (dbgCompl.getBoolean())
-                System.err.println("CANCEL:");
+            dbgCompl.println("CANCEL:");
             Completion.get().hideAll();
         }
     }
 
-    private static class ViCommandCompletionItem implements CompletionItem
+    private static class ViEditAlternateItem implements CompletionItem
     {
         private static String fieldColorCode = "0000B2";
         private static Color fieldColor =
-                Color.decode("0x" + ViCommandCompletionItem.fieldColorCode);
+                Color.decode("0x" + ViEditAlternateItem.fieldColorCode);
         //private static Color fieldColor = Color.decode("0xC0C0B2");
         private Font font;
         private static ImageIcon fieldIcon = null;
@@ -350,14 +357,14 @@ public class CcCompletion
         private boolean fFilterDigit;
         private int startOffset;
 
-        ViCommandCompletionItem(String name, String num, ImageIcon icon,
+        ViEditAlternateItem(String name, String num, ImageIcon icon,
                                 boolean fFilterDigit, int flags, Font font,
                                 int dotOffset)
         {
             this.name = name;
             this.num = num;
             this.startOffset = dotOffset;
-            this.icon = icon != null ? icon : ViCommandCompletionItem.fieldIcon;
+            this.icon = icon != null ? icon : ViEditAlternateItem.fieldIcon;
             this.fFilterDigit = fFilterDigit;
             this.font = font;
             // + "<font color=\"#000000\">"
@@ -365,7 +372,7 @@ public class CcCompletion
                     "<html>&nbsp;&nbsp;" +
                     ((flags & ITEM_SELECTED) != 0 ? "<b>" : "") +
                     ((flags & ITEM_MODIFIED) != 0
-                    ? "<font color=\"#" + ViCommandCompletionItem.fieldColorCode +
+                    ? "<font color=\"#" + ViEditAlternateItem.fieldColorCode +
                     "\">" : "<font color=\"#000000\">") + name +
                     ((flags & ITEM_MODIFIED) != 0 ? " *" : "") +
                     ((flags & ITEM_SELECTED) != 0 ? "</b>" : "") + "</font>" +
@@ -376,6 +383,7 @@ public class CcCompletion
             //}
         }
 
+        @Override
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
@@ -411,6 +419,7 @@ public class CcCompletion
         }
         int hack = 0;
 
+        @Override
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
@@ -436,11 +445,13 @@ public class CcCompletion
                 evt.consume();
         }
 
+        @Override
         public int getPreferredWidth(Graphics g, Font font)
         {
             return CompletionUtilities.getPreferredWidth(nameLabel, num, g, font);
         }
 
+        @Override
         public void render(Graphics g, Font defaultFont, Color defaultColor,
                            Color backgroundColor, int width, int height,
                            boolean selected)
@@ -451,10 +462,10 @@ public class CcCompletion
             Font f = font == null ? defaultFont : font;
             Graphics2D g2 = (Graphics2D)g;
             renderingHints = pushCharHint(g2, renderingHints);
-            CompletionUtilities.renderHtml(icon, nameLabel, num, g, f,
-                                           selected ? Color.white
-                    : ViCommandCompletionItem.fieldColor, width, height,
-                                           selected);
+            CompletionUtilities.renderHtml(
+                    icon, nameLabel, num, g, f,
+                    selected ? Color.white : ViEditAlternateItem.fieldColor,
+                    width, height, selected);
             popCharHint(g2, renderingHints);
         }
         private RenderingHints renderingHints;
@@ -496,111 +507,41 @@ public class CcCompletion
             g2.addRenderingHints(rh);
         }
 
+        @Override
         public CompletionTask createDocumentationTask()
         {
             return null;
         }
 
+        @Override
         public CompletionTask createToolTipTask()
         {
             return null;
         }
 
+        @Override
         public boolean instantSubstitution(JTextComponent component)
         {
             return false;
         }
 
+        @Override
         public int getSortPriority()
         {
             return 0;
         }
 
+        @Override
         public CharSequence getSortText()
         {
             return fFilterDigit ? num : name;
         }
 
+        @Override
         public CharSequence getInsertPrefix()
         {
             return fFilterDigit ? "" : name.toLowerCase();
         }
     }
-
-    /*public static class ViCommandAsyncCompletionQuery
-    extends AsyncCompletionQuery {
-        JTextComponent jtc;
-        ViCommandCompletionTask ct;
-
-        public ViCommandAsyncCompletionQuery(JTextComponent jtc) {
-            super();
-            this.jtc = jtc;
-            System.err.println("ASYNC SETUP");
-        }
-
-        protected void query(CompletionResultSet resultSet,
-                             Document doc,
-                             int caretOffset) {
-            assert jtc.getDocument() == doc;
-            if(ct == null)
-                ct = new ViCommandCompletionTask(jtc);
-            ct.query(resultSet);
-        }
-
-        @Override
-        protected boolean canFilter(JTextComponent component) {
-            //return super.canFilter(component);
-            return true;
-        }
-
-        @Override
-        protected void filter(CompletionResultSet resultSet) {
-            //super.filter(resultSet);
-            ct.refresh(resultSet);
-        }
-    }*/
-
-            /*names.add("one");
-            names.add("two");
-            names.add("three");
-            names.add("four");
-            names.add("five");
-            names.add("six");
-            names.add("seven");
-            names.add("eight");
-            names.add("nine");
-            names.add("ten");
-            names.add("eleven");
-            names.add("twelve");
-            names.add("thirteen");
-            names.add("fourteen");
-            names.add("fifteen");
-            names.add("sixteen");
-            names.add("seventeen");
-            names.add("eighteen");
-            names.add("nineteen");
-            names.add("thirty");
-
-            nums.add(1);
-            nums.add(2);
-            nums.add(3);
-            nums.add(4);
-            nums.add(5);
-            nums.add(6);
-            nums.add(7);
-            nums.add(8);
-            nums.add(9);
-            nums.add(10);
-            nums.add(11);
-            nums.add(12);
-            nums.add(13);
-            nums.add(14);
-            nums.add(15);
-            nums.add(16);
-            nums.add(17);
-            nums.add(18);
-            nums.add(19);
-            nums.add(30);
-            genResults(resultSet, "QUERY");*/
 
 }

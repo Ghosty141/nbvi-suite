@@ -214,6 +214,7 @@ public class Module extends ModuleInstall
                 //        + mi.getSpecificationVersion());
                 if (mi.getSpecificationVersion().compareTo(
                         new SpecificationVersion("1.11.1.2")) >= 0) {
+                    // HACK_CC fixup code-compl registratin and bindings
                     ViManager.putHackMap(HACK_CC, Boolean.TRUE);
                     ViManager.putHackMap(HACK_SCROLL, Boolean.TRUE);
                 }

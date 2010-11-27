@@ -95,7 +95,7 @@
         <folder name="text">
             <folder name="x-vicommand">
                 <folder name="CompletionProviders">
-                    <file name="org-netbeans-modules-jvi-util-CcCompletion$ViCommandCompletionProvider.instance"/>
+                    <file name="org-netbeans-modules-jvi-completion-CcCompletion$ViCommandCompletionProvider.instance"/>
                 </folder>
             </folder>
         </folder>

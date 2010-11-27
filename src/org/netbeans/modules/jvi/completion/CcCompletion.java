@@ -18,7 +18,7 @@
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
-package org.netbeans.modules.jvi.util;
+package org.netbeans.modules.jvi.completion;
 
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.ViCmdEntry;
@@ -57,6 +57,7 @@ import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.modules.jvi.impl.NbAppView;
+import org.netbeans.modules.jvi.util.NbUtil;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
@@ -80,7 +81,7 @@ public class CcCompletion
             Logger LOG = Logger.getLogger(CcCompletion.class.getName());
 
     private static CodeComplDocListener ceDocListen;
-    private static boolean ceInSubstitute;
+    private static boolean ceInSubstitute; // NEEDWORK: cleanup this HACK
     private static DebugOption dbgCompl;
     private static FocusListener initShowCompletion = new FocusAdapter() {
         @Override

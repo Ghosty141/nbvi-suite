@@ -53,7 +53,7 @@ import org.netbeans.editor.BaseDocument;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.FsAct;
 import org.netbeans.modules.jvi.Module;
-import org.netbeans.modules.jvi.util.CcCompletion;
+import org.netbeans.modules.jvi.completion.CcCompletion;
 import org.netbeans.modules.jvi.util.NbLineMapFolding;
 import org.netbeans.modules.jvi.util.NbUtil;
 import org.openide.text.Line;

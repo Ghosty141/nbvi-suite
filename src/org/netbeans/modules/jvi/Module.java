@@ -330,7 +330,7 @@ public class Module extends ModuleInstall
         //
         // Some debug commands
         //
-        ColonCommands.register("topcomponentDump", "topcomponentDump",
+        ColonCommands.register("dumpTopcomponent", "dumpTopcomponent",
             new ActionListener() {
                 @SuppressWarnings("UseOfSystemOutOrSystemErr")
                 public void actionPerformed(ActionEvent e) {
@@ -345,7 +345,7 @@ public class Module extends ModuleInstall
                 }
             }
         );
-        ColonCommands.register("kitDump", "kitDump",
+        ColonCommands.register("dumpKit", "dumpKit",
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     KeyBindings.dumpKit();

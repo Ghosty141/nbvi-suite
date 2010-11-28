@@ -31,6 +31,7 @@ package org.netbeans.modules.jvi;
 import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbTextView;
 import com.raelity.jvi.core.AbbrevLookup;
+import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
@@ -104,10 +105,10 @@ public class NbColonCommands {
         delegate("rfpus","rfpushdown", FsAct.RF_PUSH_DOWN);
         delegate("rfdo","rfdown", FsAct.RF_PUSH_DOWN);
 
-        delegate("rfvar","rfvariable", FsAct.RF_INTRODUCE_VARIABLE);
-        delegate("rfcon","rfconstant", FsAct.RF_INTRODUCE_CONSTANT);
-        delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD);
-        delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD);
+        delegate("rfintrovar","rfintrovariable", FsAct.RF_INTRODUCE_VARIABLE);
+        delegate("rfintrocon","rfintroconstant", FsAct.RF_INTRODUCE_CONSTANT);
+        delegate("rfintrofie","rfintrofield", FsAct.RF_INTRODUCE_FIELD);
+        delegate("rfintromet","rfintromethod", FsAct.RF_INTRODUCE_METHOD);
 
         /* run and debug are now make targets
         ColonCommands.register("run", "run",
@@ -657,7 +658,7 @@ public class NbColonCommands {
             ColonEvent cev = (ColonEvent)ev;
             if( cev.getNArg() == 0 || cev.getNArg() == 1) {
                 String arg = cev.getNArg() == 0 ? "bottom" : cev.getArg(1);
-                AbbrevLookup.CommandElement ce = toggles.lookupCommand(arg);
+                ColonCommandItem ce = toggles.lookupCommand(arg);
                 if(ce != null) {
                     // pass on the same event that we got
                     ((ActionListener)ce.getValue()).actionPerformed(ev);

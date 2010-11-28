@@ -20,6 +20,7 @@
 
 package org.netbeans.modules.jvi.completion;
 
+import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.options.DebugOption;
@@ -98,13 +99,12 @@ public class CommandNameTask implements CompletionTask
 
     private void buildQueryResult()
     {
-        List<String> names = ColonCommands.getNameList();
-        List<String> abrevs = ColonCommands.getAbrevList();
-
+        startOffset = 0; // ????
         query = new ArrayList<CommandNameItem>();
-        startOffset = 0;
-        for(int i = 0; i < names.size(); i++) {
-            query.add(new CommandNameItem(names.get(i), abrevs.get(i)));
+
+        for(ColonCommandItem ce : ColonCommands.getList()) {
+            if(Character.isLetter(ce.getName().charAt(0)))
+                query.add(new CommandNameItem(ce));
         }
     }
 
@@ -128,9 +128,8 @@ public class CommandNameTask implements CompletionTask
                 dbsString += ", filter \'" + filter + "\'";
             resultSet.setAnchorOffset(off);
             for (CommandNameItem item : query) {
-                String checkItem = item.name;
-                if (filter.regionMatches(true, 0,
-                                         item.name, 0, filter.length())) {
+                String checkItem = item.getName();
+                if (filter.regionMatches(true, 0, item.getName(), 0, filter.length())) {
                     resultSet.addItem(item);
                 }
             }
@@ -145,29 +144,43 @@ public class CommandNameTask implements CompletionTask
 
     private class CommandNameItem implements CompletionItem
     {
-        private String name;
-        private String abrev;
-        private String nameLabel;
+        final private ColonCommandItem command;
+        final private String nameLabel;
 
-        CommandNameItem(String name, String abrev)
+        public CommandNameItem(ColonCommandItem command)
         {
-            this.name = name;
-            this.abrev = abrev;
+            this.command = command;
             StringBuilder sb = new StringBuilder();
             nameLabel = "<html>"
                         //+ "&nbsp;&nbsp;"
                         + "<b>"
-                        + abrev
+                        + getAbrev()
                         + "</b>"
-                        + name.substring(abrev.length())
+                        + getName().substring(getAbrev().length())
                         + "</html>";
+        }
+
+        /**
+         * @return the name
+         */
+        final String getName()
+        {
+            return command.getName();
+        }
+
+        /**
+         * @return the abrev
+         */
+        final String getAbrev()
+        {
+            return command.getAbbrev();
         }
 
         @Override
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("DEFAULT ACTION CN: \'" + name + "\'");
+                System.err.println("DEFAULT ACTION CN: \'" + getName() + "\'");
             try {
                 CcCompletion.ceInSubstitute = true;
                 doSubstitute(jtc);
@@ -190,7 +203,7 @@ public class CommandNameTask implements CompletionTask
         {
             Document doc = jtc.getDocument();
             int caretOffset = doc.getLength(); // clear to end of line
-            String value = name;
+            String value = getName();
             try {
                 doc.remove(startOffset, caretOffset - startOffset);
                 doc.insertString(startOffset, value, null);
@@ -204,7 +217,7 @@ public class CommandNameTask implements CompletionTask
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("ViCompletionItem CN: \'" + name + "\' " +
+                System.err.println("ViCompletionItem CN: \'" + getName() + "\' " +
                         evt.paramString());
             if (evt.getID() == KeyEvent.KEY_PRESSED &&
                     evt.getKeyChar() == KeyEvent.VK_TAB) {
@@ -238,14 +251,13 @@ public class CommandNameTask implements CompletionTask
                            boolean selected)
         {
             if (dbgCompl.getBoolean(Level.FINER))
-                System.err.println("RENDER CN: \'" + name + "\', selected " +
+                System.err.println("RENDER CN: \'" + getName() + "\', selected " +
                         selected);
             Graphics2D g2 = (Graphics2D)g;
             CompletionUtilities.renderHtml(
                     null, nameLabel, null,
                     g,
                     defaultFont,
-                    //selected ? Color.white : CommandNameItem.fieldColor,
                     defaultColor,
                     width, height, selected);
         }
@@ -277,13 +289,13 @@ public class CommandNameTask implements CompletionTask
         @Override
         public CharSequence getSortText()
         {
-            return true ? abrev : name;
+            return true ? getAbrev() : getName();
         }
 
         @Override
         public CharSequence getInsertPrefix()
         {
-            return name.toLowerCase();
+            return getName().toLowerCase();
         }
     }
 

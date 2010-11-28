@@ -27,12 +27,10 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
@@ -44,7 +42,7 @@ import org.netbeans.spi.editor.completion.support.CompletionUtilities;
 import org.openide.ErrorManager;
 
 /**
- * Filename completion for ":e#" command.
+ * Command Name completion after ":"
  * 
  * @author Ernie Rael <err at raelity.com>
  */
@@ -56,7 +54,6 @@ public class CommandNameTask implements CompletionTask
     List<CommandNameItem> query;
 
     // These variables are used by CommandNameItem
-    private Font font;
     private int startOffset;
 
     public CommandNameTask(JTextComponent jtc)
@@ -72,47 +69,46 @@ public class CommandNameTask implements CompletionTask
             resultSet.finish();
             return;
         }
-        List<String> names = ColonCommands.getNameList();
-        List<String> abrevs = ColonCommands.getAbrevList();
-
-        query = new ArrayList<CommandNameItem>();
-        font = getTxtFont();
-        startOffset = 0;
-        for(int i = 0; i < names.size(); i++) {
-            query.add(new CommandNameItem(names.get(i), abrevs.get(i)));
-        }
-        genResults(resultSet, "QUERY");
+        buildQueryResult();
+        filterResult(resultSet, "QUERY CN");
     }
 
     @Override
     public void refresh(CompletionResultSet resultSet)
     {
+        if(resultSet == null) {
+            dbgCompl.println("REFRESH CN with null resultSet");
+            return;
+        }
         if(CcCompletion.isEditAlternate(jtc.getDocument())) {
             resultSet.finish();
             return;
         }
-        genResults(resultSet, "REFRESH");
+        if(query == null)
+            buildQueryResult();
+        filterResult(resultSet, "REFRESH CN");
     }
 
-    // getTxtFont taken from core/swing/tabcontrol/src/
-    // org/netbeans/swing/tabcontrol/plaf/AbstractViewTabDisplayerUI.java
-    private Font getTxtFont()
+    @Override
+    public void cancel()
     {
-        //font = UIManager.getFont("TextField.font");
-        //Font font = UIManager.getFont("Tree.font");
-        Font txtFont;
-        txtFont = (Font)UIManager.get("windowTitleFont");
-        if (txtFont == null)
-            txtFont = new Font("Dialog", Font.PLAIN, 11);
-        else if (txtFont.isBold())
-            // don't use deriveFont() - see #49973 for details
-            txtFont =
-                    new Font(txtFont.getName(), Font.PLAIN,
-                             txtFont.getSize());
-        return txtFont;
+        dbgCompl.println("CANCEL CN:");
+        Completion.get().hideAll();
     }
 
-    private void genResults(CompletionResultSet resultSet, String tag)
+    private void buildQueryResult()
+    {
+        List<String> names = ColonCommands.getNameList();
+        List<String> abrevs = ColonCommands.getAbrevList();
+
+        query = new ArrayList<CommandNameItem>();
+        startOffset = 0;
+        for(int i = 0; i < names.size(); i++) {
+            query.add(new CommandNameItem(names.get(i), abrevs.get(i)));
+        }
+    }
+
+    private void filterResult(CompletionResultSet resultSet, String tag)
     {
         String dbsString = "";
         try {
@@ -147,13 +143,6 @@ public class CommandNameTask implements CompletionTask
         resultSet.finish();
     }
 
-    @Override
-    public void cancel()
-    {
-        dbgCompl.println("CANCEL:");
-        Completion.get().hideAll();
-    }
-
     private class CommandNameItem implements CompletionItem
     {
         private String name;
@@ -178,7 +167,7 @@ public class CommandNameTask implements CompletionTask
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("DEFAULT ACTION: \'" + name + "\'");
+                System.err.println("DEFAULT ACTION CN: \'" + name + "\'");
             try {
                 CcCompletion.ceInSubstitute = true;
                 doSubstitute(jtc);
@@ -186,6 +175,9 @@ public class CommandNameTask implements CompletionTask
                 CcCompletion.ceInSubstitute = false;
             }
             Completion.get().hideAll();
+            //
+            // NEEDSWORK: only execute if no arguments
+            //
             ///// // Go for it
             ///// Action act = jtc.getKeymap().getAction(CommandLine.EXECUTE_KEY);
             ///// if (act != null)
@@ -212,7 +204,7 @@ public class CommandNameTask implements CompletionTask
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("ViCompletionItem: \'" + name + "\' " +
+                System.err.println("ViCompletionItem CN: \'" + name + "\' " +
                         evt.paramString());
             if (evt.getID() == KeyEvent.KEY_PRESSED &&
                     evt.getKeyChar() == KeyEvent.VK_TAB) {
@@ -246,58 +238,16 @@ public class CommandNameTask implements CompletionTask
                            boolean selected)
         {
             if (dbgCompl.getBoolean(Level.FINER))
-                System.err.println("RENDER: \'" + name + "\', selected " +
+                System.err.println("RENDER CN: \'" + name + "\', selected " +
                         selected);
-            //Font f = font == null ? defaultFont : font;
-            Font f = defaultFont;
             Graphics2D g2 = (Graphics2D)g;
-            renderingHints = pushCharHint(g2, renderingHints);
             CompletionUtilities.renderHtml(
                     null, nameLabel, null,
                     g,
-                    f,
+                    defaultFont,
                     //selected ? Color.white : CommandNameItem.fieldColor,
                     defaultColor,
                     width, height, selected);
-            popCharHint(g2, renderingHints);
-        }
-        private RenderingHints renderingHints;
-        private boolean charHintsEnabled = true;
-
-        private RenderingHints pushCharHint(Graphics2D g2, RenderingHints rh)
-        {
-            if (!charHintsEnabled)
-                return null;
-            if (rh != null)
-                rh.clear();
-            else
-                rh = new RenderingHints(null);
-            // hints from: "How can you improve Java Fonts?"
-            // http://www.javalobby.org/java/forums/m92159650.html#92159650
-            // read entire discussion, KEY_TEXT_ANTIALIASING shouldn't need change
-            // NOTE: problem is that KEY_AA should not be on while doing text.
-            rh.put(RenderingHints.KEY_ANTIALIASING,
-                   g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING));
-            rh.put(RenderingHints.KEY_TEXT_ANTIALIASING,
-                   g2.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING));
-            rh.put(RenderingHints.KEY_RENDERING,
-                   g2.getRenderingHint(RenderingHints.KEY_RENDERING));
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                RenderingHints.VALUE_ANTIALIAS_OFF);
-            // g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-            //                     RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING,
-                                RenderingHints.VALUE_RENDER_QUALITY);
-            return rh;
-        }
-
-        private void popCharHint(Graphics2D g2, RenderingHints rh)
-        {
-            if (!charHintsEnabled || rh == null)
-                return;
-            g2.addRenderingHints(rh);
         }
 
         @Override

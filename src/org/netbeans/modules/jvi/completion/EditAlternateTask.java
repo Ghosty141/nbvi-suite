@@ -30,7 +30,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.logging.Level;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
-import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
@@ -84,7 +82,35 @@ public class EditAlternateTask implements CompletionTask
             resultSet.finish();
             return;
         }
-        Font font = getTxtFont();
+        buildQueryResult();
+        filterResult(resultSet, "QUERY EA");
+    }
+
+    @Override
+    public void refresh(CompletionResultSet resultSet)
+    {
+        if(resultSet == null) {
+            dbgCompl.println("REFRESH EA with null resultSet");
+            return;
+        }
+        if(!CcCompletion.isEditAlternate(jtc.getDocument())) {
+            resultSet.finish();
+            return;
+        }
+        if(query == null)
+            buildQueryResult();
+        filterResult(resultSet, "REFRESH EA");
+    }
+
+    @Override
+    public void cancel()
+    {
+        dbgCompl.println("CANCEL EA:");
+        Completion.get().hideAll();
+    }
+
+    private void buildQueryResult()
+    {
         for (ViAppView _av : AppViews.getList(AppViews.ACTIVE)) {
             NbAppView av = (NbAppView)_av;
             TopComponent tc = av.getTopComponent();
@@ -107,40 +133,11 @@ public class EditAlternateTask implements CompletionTask
             query.add(new EditAlternateItem(
                     name,
                     String.format("%02d", wnum),
-                    icon, false, flags, font, 2)); // offset 2 is after "e#"
+                    icon, false, flags, 2)); // offset 2 is after "e#"
         }
-        genResults(resultSet, "QUERY");
     }
 
-    @Override
-    public void refresh(CompletionResultSet resultSet)
-    {
-        if(!CcCompletion.isEditAlternate(jtc.getDocument())) {
-            resultSet.finish();
-            return;
-        }
-        genResults(resultSet, "REFRESH");
-    }
-
-    // getTxtFont taken from core/swing/tabcontrol/src/
-    // org/netbeans/swing/tabcontrol/plaf/AbstractViewTabDisplayerUI.java
-    private Font getTxtFont()
-    {
-        //font = UIManager.getFont("TextField.font");
-        //Font font = UIManager.getFont("Tree.font");
-        Font txtFont;
-        txtFont = (Font)UIManager.get("windowTitleFont");
-        if (txtFont == null)
-            txtFont = new Font("Dialog", Font.PLAIN, 11);
-        else if (txtFont.isBold())
-            // don't use deriveFont() - see #49973 for details
-            txtFont =
-                    new Font(txtFont.getName(), Font.PLAIN,
-                             txtFont.getSize());
-        return txtFont;
-    }
-
-    private void genResults(CompletionResultSet resultSet, String tag)
+    private void filterResult(CompletionResultSet resultSet, String tag)
     {
         String dbsString = "";
         try {
@@ -184,12 +181,23 @@ public class EditAlternateTask implements CompletionTask
         resultSet.finish();
     }
 
-    @Override
-    public void cancel()
-    {
-        dbgCompl.println("CANCEL:");
-        Completion.get().hideAll();
-    }
+    // getTxtFont taken from core/swing/tabcontrol/src/
+    // org/netbeans/swing/tabcontrol/plaf/AbstractViewTabDisplayerUI.java
+    ///// private Font getTxtFont()
+    ///// {
+    /////     //font = UIManager.getFont("TextField.font");
+    /////     //Font font = UIManager.getFont("Tree.font");
+    /////     Font txtFont;
+    /////     txtFont = (Font)UIManager.get("windowTitleFont");
+    /////     if (txtFont == null)
+    /////         txtFont = new Font("Dialog", Font.PLAIN, 11);
+    /////     else if (txtFont.isBold())
+    /////         // don't use deriveFont() - see #49973 for details
+    /////         txtFont =
+    /////                 new Font(txtFont.getName(), Font.PLAIN,
+    /////                          txtFont.getSize());
+    /////     return txtFont;
+    ///// }
 
     private static class EditAlternateItem implements CompletionItem
     {
@@ -197,7 +205,6 @@ public class EditAlternateTask implements CompletionTask
         private static Color fieldColor =
                 Color.decode("0x" + EditAlternateItem.fieldColorCode);
         //private static Color fieldColor = Color.decode("0xC0C0B2");
-        private Font font;
         private static ImageIcon fieldIcon = null;
         private ImageIcon icon;
         private String name;
@@ -207,7 +214,7 @@ public class EditAlternateTask implements CompletionTask
         private int startOffset;
 
         EditAlternateItem(String name, String num, ImageIcon icon,
-                                boolean fFilterDigit, int flags, Font font,
+                                boolean fFilterDigit, int flags,
                                 int dotOffset)
         {
             this.name = name;
@@ -215,7 +222,6 @@ public class EditAlternateTask implements CompletionTask
             this.startOffset = dotOffset;
             this.icon = icon != null ? icon : EditAlternateItem.fieldIcon;
             this.fFilterDigit = fFilterDigit;
-            this.font = font;
             // + "<font color=\"#000000\">"
             nameLabel =
                     "<html>&nbsp;&nbsp;" +
@@ -236,7 +242,7 @@ public class EditAlternateTask implements CompletionTask
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("DEFAULT ACTION: \'" + name + "\'");
+                System.err.println("DEFAULT ACTION EA: \'" + name + "\'");
             try {
                 CcCompletion.ceInSubstitute = true;
                 doSubstitute(jtc);
@@ -272,7 +278,7 @@ public class EditAlternateTask implements CompletionTask
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("ViCompletionItem: \'" + name + "\' " +
+                System.err.println("ViCompletionItem EA: \'" + name + "\' " +
                         evt.paramString());
             if (evt.getID() == KeyEvent.KEY_PRESSED &&
                     evt.getKeyChar() == KeyEvent.VK_TAB) {
@@ -306,55 +312,13 @@ public class EditAlternateTask implements CompletionTask
                            boolean selected)
         {
             if (dbgCompl.getBoolean(Level.FINER))
-                System.err.println("RENDER: \'" + name + "\', selected " +
+                System.err.println("RENDER EA: \'" + name + "\', selected " +
                         selected);
-            //Font f = font == null ? defaultFont : font;
-            Font f = defaultFont;
             Graphics2D g2 = (Graphics2D)g;
-            renderingHints = pushCharHint(g2, renderingHints);
             CompletionUtilities.renderHtml(
-                    icon, nameLabel, num, g, f,
+                    icon, nameLabel, num, g, defaultFont,
                     selected ? Color.white : EditAlternateItem.fieldColor,
                     width, height, selected);
-            popCharHint(g2, renderingHints);
-        }
-        private RenderingHints renderingHints;
-        private boolean charHintsEnabled = true;
-
-        private RenderingHints pushCharHint(Graphics2D g2, RenderingHints rh)
-        {
-            if (!charHintsEnabled)
-                return null;
-            if (rh != null)
-                rh.clear();
-            else
-                rh = new RenderingHints(null);
-            // hints from: "How can you improve Java Fonts?"
-            // http://www.javalobby.org/java/forums/m92159650.html#92159650
-            // read entire discussion, KEY_TEXT_ANTIALIASING shouldn't need change
-            // NOTE: problem is that KEY_AA should not be on while doing text.
-            rh.put(RenderingHints.KEY_ANTIALIASING,
-                   g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING));
-            rh.put(RenderingHints.KEY_TEXT_ANTIALIASING,
-                   g2.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING));
-            rh.put(RenderingHints.KEY_RENDERING,
-                   g2.getRenderingHint(RenderingHints.KEY_RENDERING));
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                RenderingHints.VALUE_ANTIALIAS_OFF);
-            // g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-            //                     RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING,
-                                RenderingHints.VALUE_RENDER_QUALITY);
-            return rh;
-        }
-
-        private void popCharHint(Graphics2D g2, RenderingHints rh)
-        {
-            if (!charHintsEnabled || rh == null)
-                return;
-            g2.addRenderingHints(rh);
         }
 
         @Override

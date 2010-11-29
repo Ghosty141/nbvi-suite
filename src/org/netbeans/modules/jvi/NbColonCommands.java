@@ -45,6 +45,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -66,56 +67,66 @@ public class NbColonCommands {
     public static void init()
     {
         //
-        delegate("pin", "pin", FsAct.EDITOR_PIN);
+        delegate("pin", "pin", FsAct.EDITOR_PIN, null);
 
         // goto editor tab
-        ColonCommands.register("tabn", "tabnext", ACTION_tabnext);
-        ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious);
-        ColonCommands.register("tabN", "tabNext", ACTION_tabprevious);
+        ColonCommands.register("tabn", "tabnext", ACTION_tabnext, null);
+        ColonCommands.register("tabp", "tabprevious", ACTION_tabprevious, null);
+        ColonCommands.register("tabN", "tabNext", ACTION_tabprevious, null);
 
         // next previous in current list
-        delegate("cn","cnext", FsAct.JUMP_NEXT);
-        delegate("cp","cprevious", FsAct.JUMP_PREV);
-        delegate("cN","cNext", FsAct.JUMP_PREV);
+        delegate("cn","cnext", FsAct.JUMP_NEXT, null);
+        delegate("cp","cprevious", FsAct.JUMP_PREV, null);
+        delegate("cN","cNext", FsAct.JUMP_PREV, null);
 
         // NEEDSWORK: when available, use this for local syntax errors
-        delegate("ln","lnext", FsAct.JUMP_NEXT);
-        delegate("lp","lprevious", FsAct.JUMP_PREV);
-        delegate("lN","lNext", FsAct.JUMP_PREV);
+        delegate("ln","lnext", FsAct.JUMP_NEXT, null);
+        delegate("lp","lprevious", FsAct.JUMP_PREV, null);
+        delegate("lN","lNext", FsAct.JUMP_PREV, null);
 
-        ColonCommands.register("gr","grep", ACTION_fu);
+        ColonCommands.register("gr","grep", ACTION_fu, null);
 
-        ColonCommands.register("fixi","fiximports", ACTION_fiximports);
+        ColonCommands.register("fixi","fiximports", ACTION_fiximports, null);
 
         // Make
-        ColonCommands.register("mak","make", new Make());
+        ColonCommands.register("mak","make", new Make(), null);
 
         // Refactoring
-        delegate("rfr","rfrename", FsAct.RF_RENAME);
-        delegate("rfm","rfmove", FsAct.RF_MOVE);
-        delegate("rfc","rfcopy", FsAct.RF_COPY);
-        delegate("rfsa", "rfsafedelete", FsAct.RF_SAFE_DELETE);
-        delegate("rfde", "rfdelete", FsAct.RF_SAFE_DELETE);
+        delegate("rfr","rfrename", FsAct.RF_RENAME, null);
+        delegate("rfm","rfmove", FsAct.RF_MOVE, null);
+        delegate("rfc","rfcopy", FsAct.RF_COPY, null);
+        delegate("rfsa", "rfsafedelete", FsAct.RF_SAFE_DELETE, null);
+        delegate("rfde", "rfdelete", FsAct.RF_SAFE_DELETE, null);
 
-        delegate("rfch","rfchangemethodparameters", FsAct.RF_CHANGE_PARAMETERS);
-        delegate("rfenc","rfencapsulatefields", FsAct.RF_ENCAPSULATE_FIELD);
+        delegate("rfch","rfchangemethodparameters", FsAct.RF_CHANGE_PARAMETERS, null);
+        delegate("rfenc","rfencapsulatefields", FsAct.RF_ENCAPSULATE_FIELD, null);
 
-        delegate("rfpul","rfpullup", FsAct.RF_PULL_UP);
-        delegate("rfup","rfup", FsAct.RF_PULL_UP);
-        delegate("rfpus","rfpushdown", FsAct.RF_PUSH_DOWN);
-        delegate("rfdo","rfdown", FsAct.RF_PUSH_DOWN);
+        delegate("rfpul","rfpullup", FsAct.RF_PULL_UP, null);
+        delegate("rfup","rfup", FsAct.RF_PULL_UP, null);
+        delegate("rfpus","rfpushdown", FsAct.RF_PUSH_DOWN, null);
+        delegate("rfdo","rfdown", FsAct.RF_PUSH_DOWN, null);
 
-        delegate("rfintrovar","rfintrovariable", FsAct.RF_INTRODUCE_VARIABLE);
-        delegate("rfintrocon","rfintroconstant", FsAct.RF_INTRODUCE_CONSTANT);
-        delegate("rfintrofie","rfintrofield", FsAct.RF_INTRODUCE_FIELD);
-        delegate("rfintromet","rfintromethod", FsAct.RF_INTRODUCE_METHOD);
+        // These are deprecated, hide them in the list
+        delegate("rfvar","rfvariable", FsAct.RF_INTRODUCE_VARIABLE,
+                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+        delegate("rfcon","rfconstant", FsAct.RF_INTRODUCE_CONSTANT,
+                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+        delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD,
+                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+        delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD,
+                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+
+        delegate("rfintrovar","rfintrovariable", FsAct.RF_INTRODUCE_VARIABLE, null);
+        delegate("rfintrocon","rfintroconstant", FsAct.RF_INTRODUCE_CONSTANT, null);
+        delegate("rfintrofie","rfintrofield", FsAct.RF_INTRODUCE_FIELD, null);
+        delegate("rfintromet","rfintromethod", FsAct.RF_INTRODUCE_METHOD, null);
 
         /* run and debug are now make targets
         ColonCommands.register("run", "run",
         ColonCommands.register("deb", "debug",
          */
 
-        ColonCommands.register("tog", "toggle", toggleAction);
+        ColonCommands.register("tog", "toggle", toggleAction, null);
     }
 
     private NbColonCommands() {
@@ -137,9 +148,11 @@ public class NbColonCommands {
         }
     }
 
-    static private void delegate(String abrev, String name, FsAct fsAct) {
+    static private void delegate(String abrev, String name, FsAct fsAct,
+                                 EnumSet<ColonCommandItem.Flag> flags) {
         FileObject fo = FileUtil.getConfigFile(fsAct.path());
-        ColonCommands.register(abrev, name, new DelegateFileSystemAction(fsAct));
+        ColonCommands.register(abrev, name, new DelegateFileSystemAction(fsAct),
+                               flags);
     }
 
     public static ColonAction ACTION_fiximports = new FixImports();
@@ -381,8 +394,8 @@ public class NbColonCommands {
 
         toggleOutput = new ToggleOutput(M_OUT);
 
-        toggles.add("ou", "output", toggleOutput);
-        toggles.add("bo", "bottom", new ToggleBottom());
+        toggles.add("ou", "output", toggleOutput, null);
+        toggles.add("bo", "bottom", new ToggleBottom(), null);
         toggles.add("de", "debug", new ActionListener() {
             public void actionPerformed(ActionEvent e)
             {
@@ -393,7 +406,7 @@ public class NbColonCommands {
                     tg.doOpen();
                 ToggleStuff.focusEditor(e.getSource());
             }
-        });
+        }, null);
     }
 
     //private static class ToggleTC implements ActionListener {

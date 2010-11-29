@@ -224,14 +224,17 @@ public class EditAlternateTask implements CompletionTask
             this.fFilterDigit = fFilterDigit;
             // + "<font color=\"#000000\">"
             nameLabel =
-                    "<html>&nbsp;&nbsp;" +
-                    ((flags & ITEM_SELECTED) != 0 ? "<b>" : "") +
-                    ((flags & ITEM_MODIFIED) != 0
-                    ? "<font color=\"#" + EditAlternateItem.fieldColorCode +
-                    "\">" : "<font color=\"#000000\">") + name +
-                    ((flags & ITEM_MODIFIED) != 0 ? " *" : "") +
-                    ((flags & ITEM_SELECTED) != 0 ? "</b>" : "") + "</font>" +
-                    "</html>";
+                    "<html>&nbsp;&nbsp;"
+                    + ((flags & ITEM_SELECTED) != 0 ? "<b>" : "")
+                    + "<font color=\"#"
+                    + ((flags & ITEM_MODIFIED) != 0
+                        ? EditAlternateItem.fieldColorCode : "000000")
+                    + "\">"
+                    +     name
+                    +     ((flags & ITEM_MODIFIED) != 0 ? " *" : "")
+                    + "</font>"
+                    + ((flags & ITEM_SELECTED) != 0 ? "</b>" : "")
+                    + "</html>";
             //if(fieldIcon == null){
             //    fieldIcon = new ImageIcon(Utilities.loadImage(
             //            "org/netbeans/modules/textfiledictionary/icon.png"));

@@ -7,6 +7,7 @@ import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViInitialization;
+import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.manager.AppViews;
@@ -21,6 +22,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.prefs.Preferences;
@@ -131,6 +133,7 @@ public class Module extends ModuleInstall
     {
         PropertyChangeListener pcl = new PropertyChangeListener()
         {
+            @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
                 String pname = evt.getPropertyName();
@@ -226,7 +229,7 @@ public class Module extends ModuleInstall
         // in layer.xml Actions/Tools: <file name="o-n-m-jvi-enable.instance">
         // produces the checkbox linked to preferences.
         Preferences prefNode = getModulePreferences();
-        if(prefNode.get(PREF_ENABLED, "").equals("")) {
+        if(prefNode.get(PREF_ENABLED, "").isEmpty()) {
             // Not set, so set it to true
             prefNode.putBoolean(PREF_ENABLED, true);
         }
@@ -243,6 +246,7 @@ public class Module extends ModuleInstall
         }
 
         prefNode.addPreferenceChangeListener(new PreferenceChangeListener() {
+            @Override
             public void preferenceChange(PreferenceChangeEvent evt) {
                 System.err.println("PREF CHANGE: " + evt);
                 if(evt.getKey().equals(PREF_ENABLED)) {
@@ -275,6 +279,7 @@ public class Module extends ModuleInstall
         didEarlyInit = true;
 
         ViManager.runInDispatch(true, new Runnable() {
+            @Override
             public void run() {
                 factory = new NbFactory();
                 ViManager.setViFactory(factory);
@@ -283,6 +288,7 @@ public class Module extends ModuleInstall
     }
 
     private static class RunJViEnable implements Runnable {
+        @Override
         public void run() {
             if(jViEnabled)
                 return;
@@ -296,6 +302,7 @@ public class Module extends ModuleInstall
      * Restore editor's caret's and keymaps
      */
     private static class RunJViDisable implements Runnable {
+        @Override
         public void run() {
             if(!jViEnabled)
                 return;
@@ -333,6 +340,7 @@ public class Module extends ModuleInstall
         ColonCommands.register("dumpTopcomponent", "dumpTopcomponent",
             new ActionListener() {
                 @SuppressWarnings("UseOfSystemOutOrSystemErr")
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     Set<TopComponent> s = TopComponent.getRegistry().getOpened();
                     System.err.println("TopComponents:");
@@ -343,14 +351,15 @@ public class Module extends ModuleInstall
                         System.err.println(", " + tc.getClass().getName());
                     }
                 }
-            }
+            }, EnumSet.of(ColonCommandItem.Flag.DBG)
         );
         ColonCommands.register("dumpKit", "dumpKit",
             new ActionListener() {
+            @Override
                 public void actionPerformed(ActionEvent e) {
                     KeyBindings.dumpKit();
                 }
-            }
+            }, EnumSet.of(ColonCommandItem.Flag.DBG)
         );
         ColonCommands.register("checkFsActList", "checkFsActList",
             new ActionListener() {
@@ -368,7 +377,7 @@ public class Module extends ModuleInstall
                     }
 
                 }
-            }
+            }, EnumSet.of(ColonCommandItem.Flag.DBG)
         );
         
         /*
@@ -429,6 +438,7 @@ public class Module extends ModuleInstall
      */
     private static class TopComponentRegistryListener
             implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent evt) {
             assert(EventQueue.isDispatchThread());
             if(false && dbgAct.getBoolean()) {

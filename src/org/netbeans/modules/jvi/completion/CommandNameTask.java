@@ -102,9 +102,9 @@ public class CommandNameTask implements CompletionTask
         startOffset = 0; // ????
         query = new ArrayList<CommandNameItem>();
 
-        for(ColonCommandItem ce : ColonCommands.getList()) {
-            if(Character.isLetter(ce.getName().charAt(0)))
-                query.add(new CommandNameItem(ce));
+        for(ColonCommandItem cci : ColonCommands.getList()) {
+            if(!cci.getFlags().contains(ColonCommandItem.Flag.HIDE))
+                query.add(new CommandNameItem(cci));
         }
     }
 
@@ -283,7 +283,9 @@ public class CommandNameTask implements CompletionTask
         @Override
         public int getSortPriority()
         {
-            return 0;
+            // put debug at low priority
+            return command.getFlags().contains(ColonCommandItem.Flag.DBG)
+                    ? 10 : 0;
         }
 
         @Override

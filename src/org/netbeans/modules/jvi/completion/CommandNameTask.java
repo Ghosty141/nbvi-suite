@@ -22,16 +22,20 @@ package org.netbeans.modules.jvi.completion;
 
 import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.options.DebugOption;
+import com.raelity.jvi.swing.CommandLine;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import javax.swing.Action;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
@@ -99,7 +103,6 @@ public class CommandNameTask implements CompletionTask
 
     private void buildQueryResult()
     {
-        startOffset = 0; // ????
         query = new ArrayList<CommandNameItem>();
 
         for(ColonCommandItem cci : ColonCommands.getList()) {
@@ -118,11 +121,13 @@ public class CommandNameTask implements CompletionTask
                 dbsString = tag + ": \'" + text + "\'";
             int off = 0;
             int caretOffset = text.length();
-            // skip white space
-            for (; off < caretOffset; off++) {
-                if (!Character.isWhitespace(text.charAt(off)))
-                    break;
+            if(text.trim().isEmpty())
+                off = caretOffset;
+            else {
+                ColonEvent ce = ColonCommands.parseCommandDummy(text);
+                off = ce.getIndexInputCommandName();
             }
+            startOffset = off;
             String filter = text.substring(off, caretOffset);
             if (dbgCompl.getBoolean())
                 dbsString += ", filter \'" + filter + "\'";
@@ -142,6 +147,14 @@ public class CommandNameTask implements CompletionTask
         resultSet.finish();
     }
 
+    private Color abrevColor = Color.green.darker();
+    private Color debugColor = Color.red.darker();
+    private String ColorString(Color c, String s)
+    {
+        return String.format( "<font color=\"#%06x\">%s</font>",
+                              c.getRGB() & 0xffffff, s);
+    }
+
     private class CommandNameItem implements CompletionItem
     {
         final private ColonCommandItem command;
@@ -151,13 +164,18 @@ public class CommandNameTask implements CompletionTask
         {
             this.command = command;
             StringBuilder sb = new StringBuilder();
-            nameLabel = "<html>"
-                        //+ "&nbsp;&nbsp;"
-                        + "<b>"
-                        + getAbrev()
-                        + "</b>"
-                        + getName().substring(getAbrev().length())
-                        + "</html>";
+            nameLabel =
+                    "<html>"
+                    + "<b>"
+                    + ColorString(
+                        command.getFlags().contains(ColonCommandItem.Flag.DBG)
+                            ? debugColor : abrevColor,
+                        getAbrev())
+                    + "</b>"
+                    + getName().substring(getAbrev().length())
+                    + (command.getFlags().contains(ColonCommandItem.Flag.NO_ARGS)
+                        ? "" : " ...")
+                    + "</html>";
         }
 
         /**
@@ -189,14 +207,14 @@ public class CommandNameTask implements CompletionTask
             }
             Completion.get().hideAll();
             //
-            // NEEDSWORK: only execute if no arguments
+            // Go for it if it has no args
             //
-            ///// // Go for it
-            ///// Action act = jtc.getKeymap().getAction(CommandLine.EXECUTE_KEY);
-            ///// if (act != null)
-            /////     act.actionPerformed(new ActionEvent(jtc,
-            /////                                         ActionEvent.ACTION_PERFORMED,
-            /////                                         "\n"));
+            if(command.getFlags().contains(ColonCommandItem.Flag.NO_ARGS)) {
+                Action act = jtc.getKeymap().getAction(CommandLine.EXECUTE_KEY);
+                if (act != null)
+                    act.actionPerformed(
+                        new ActionEvent(jtc, ActionEvent.ACTION_PERFORMED, "\n"));
+            }
         }
 
         private void doSubstitute(JTextComponent jtc)

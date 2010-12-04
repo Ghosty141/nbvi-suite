@@ -34,6 +34,7 @@ import com.raelity.jvi.core.AbbrevLookup;
 import com.raelity.jvi.core.CcFlag;
 import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.AbstractColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Msg;
@@ -137,15 +138,31 @@ public class NbColonCommands {
      * This class delegates an action to an Action which is found
      * in the file system.
      */
-    public static class DelegateFileSystemAction implements ActionListener {
+    public static class DelegateFileSystemAction extends AbstractColonAction {
         FsAct fsAct;
         DelegateFileSystemAction(FsAct fsAct) {
             this.fsAct = fsAct;
         }
 
         @Override
+        public EnumSet<CcFlag> getFlags()
+        {
+            return EnumSet.of(CcFlag.NO_ARGS);
+        }
+
+        @Override
         public void actionPerformed(ActionEvent e) {
             Module.execFileSystemAction(fsAct, e);
+        }
+
+        @Override
+        public boolean isEnabled()
+        {
+            Action act = Module.fetchFileSystemAction(fsAct);
+            if(act != null)
+                return Module.fetchFileSystemAction(fsAct).isEnabled();
+            else
+                return false;
         }
     }
 
@@ -157,7 +174,7 @@ public class NbColonCommands {
     }
 
     public static ColonAction ACTION_fiximports = new FixImports();
-    static private class FixImports extends ColonAction {
+    static private class FixImports extends AbstractColonAction {
 
         @Override
         public EnumSet<CcFlag> getFlags()
@@ -168,6 +185,7 @@ public class NbColonCommands {
         // "Menu/Source/org-netbeans-modules-editor-java"
         // + "-JavaFixAllImports$MainMenuWrapper.instance"));
         
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
             if(source instanceof JEditorPane) {
@@ -200,10 +218,12 @@ public class NbColonCommands {
     }
 
     static private class FindUsages implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e) {
             // The execution must be defered for the focus transfer to
             // the JEP to complete.
             EventQueue.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     doWhereUsed();
                 }
@@ -221,6 +241,7 @@ public class NbColonCommands {
             this.goForward = goForward;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             FsAct fsAct;
             fsAct = goForward ? FsAct.TAB_NEXT : FsAct.TAB_PREV;
@@ -297,7 +318,8 @@ public class NbColonCommands {
      * :mak[e] [ b[uild] | c[lean] | r[ebuild]| d[oc] de[bug] | ru[n]] \
      *         [ m[ain] | p[roject] | % ]
      */
-    static private class Make extends ColonAction {
+    static private class Make extends AbstractColonAction {
+        @Override
         public void actionPerformed(ActionEvent e) {
             ColonEvent ce = (ColonEvent)e;
             boolean fError = false;
@@ -405,6 +427,7 @@ public class NbColonCommands {
         toggles.add("ou", "output", toggleOutput, null);
         toggles.add("bo", "bottom", new ToggleBottom(), null);
         toggles.add("de", "debug", new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e)
             {
                 ToggleGroup tg = new ToggleGroup(M_DBG);
@@ -425,6 +448,7 @@ public class NbColonCommands {
     private static class ToggleBottom implements ActionListener {
         boolean didCloseDebug;
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             ToggleGroup toggleDebug = new ToggleGroup(M_DBG);
             boolean tOutputWindowFlag = toggleOutput.isOpen();
@@ -448,6 +472,7 @@ public class NbColonCommands {
         }
     }
 
+    @Deprecated // really just want to replace it with legit API
     static Object runMethod(TopComponentGroup tcg, String methodName)
     {
         Object o = null;
@@ -455,6 +480,7 @@ public class NbColonCommands {
 
         try {
             Class c = tcg.getClass();
+            @SuppressWarnings("unchecked")
             Method getTopComponentsMethod = c.getMethod(methodName);
             o = getTopComponentsMethod.invoke(tcg);
         } catch (IllegalAccessException ex) {
@@ -487,6 +513,7 @@ public class NbColonCommands {
      * @param tcg
      * @return null if can't determine
      */
+    @SuppressWarnings("unchecked")
     static Set<TopComponent> getTopComponents(TopComponentGroup tcg)
     {
         return (Set<TopComponent>) runMethod(tcg, "getTopComponents");
@@ -564,6 +591,7 @@ public class NbColonCommands {
             closedList = new ArrayList<WeakReference<TopComponent>>();
         }
 
+        @Override
         boolean isOpen() {
             return closedList.isEmpty() && isOpenOutput();
         }
@@ -616,6 +644,7 @@ public class NbColonCommands {
             return open;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if(isOpen()) {
                 doClose();
@@ -673,7 +702,8 @@ public class NbColonCommands {
     }
     
     /** hide/show stuff as seen in view menu */
-    static ColonAction toggleAction = new ColonAction() {
+    static ColonAction toggleAction = new AbstractColonAction() {
+        @Override
         public void actionPerformed(ActionEvent ev) {
             initToggleCommand();
             ColonEvent cev = (ColonEvent)ev;

@@ -151,6 +151,7 @@ public class CommandNameTask implements CompletionTask
 
     private Color abrevColor = Color.green.darker().darker();
     private Color debugColor = Color.red.darker().darker();
+    private Color disabledColor = Color.gray; //dark 0xC0, light 0x40
     private String ColorString(Color c, String s)
     {
         if(true)
@@ -168,25 +169,34 @@ public class CommandNameTask implements CompletionTask
         public CommandNameItem(ColonCommandItem command)
         {
             this.command = command;
+            if (dbgCompl.getBoolean(Level.FINE))
+                System.err.println("CommandNameItem: \'" + getName() + "\'");
             XMLUtil x = XMLUtil.get();
-            nameLabel =
-                    "<html>"
-                    + (command.getFlags().contains(CcFlag.DEPRECATED)
-                        ? "<s>" : "")
-                    + "<b>"
-                    + ColorString(
-                        command.getFlags().contains(CcFlag.DBG)
-                        ? debugColor : abrevColor,
-                        x.utf2xml(getAbrev()))
-                    + "<i>"
-                    + x.utf2xml(getName().substring(getAbrev().length()))
-                    + "</i>"
-                    + "</b>"
-                    + (command.getFlags().contains(CcFlag.DEPRECATED)
-                        ? "</s>" : "")
-                    + (command.getFlags().contains(CcFlag.NO_ARGS)
-                        ? "" : " ...")
-                    + "</html>";
+            if(command.isEnabled()) {
+                nameLabel =
+                "<html>"
+                + (command.getFlags().contains(CcFlag.DEPRECATED) ? "<s>" : "")
+                + "<b>"
+                + ColorString(
+                    command.getFlags().contains(CcFlag.DBG)
+                    ? debugColor : abrevColor,
+                    x.utf2xml(getAbrev()))
+                + "<i>"
+                + x.utf2xml(getName().substring(getAbrev().length()))
+                + "</i>"
+                + "</b>"
+                + (command.getFlags().contains(CcFlag.DEPRECATED) ? "</s>" : "")
+                + (command.getFlags().contains(CcFlag.NO_ARGS) ? "" : " ...")
+                + "</html>";
+            } else {
+                nameLabel =
+                "<html>"
+                + (command.getFlags().contains(CcFlag.DEPRECATED) ? "<s>" : "")
+                + ColorString( disabledColor, x.utf2xml(getAbrev()))
+                + (command.getFlags().contains(CcFlag.DEPRECATED) ? "</s>" : "")
+                + (command.getFlags().contains(CcFlag.NO_ARGS) ? "" : " ...")
+                + "</html>";
+            }
         }
 
         /**

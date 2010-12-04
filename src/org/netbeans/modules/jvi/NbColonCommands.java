@@ -31,6 +31,7 @@ package org.netbeans.modules.jvi;
 import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbTextView;
 import com.raelity.jvi.core.AbbrevLookup;
+import com.raelity.jvi.core.CcFlag;
 import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonAction;
@@ -108,13 +109,13 @@ public class NbColonCommands {
 
         // These are deprecated, hide them in the list
         delegate("rfvar","rfvariable", FsAct.RF_INTRODUCE_VARIABLE,
-                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+                 EnumSet.of(CcFlag.DEPRECATED));
         delegate("rfcon","rfconstant", FsAct.RF_INTRODUCE_CONSTANT,
-                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+                 EnumSet.of(CcFlag.DEPRECATED));
         delegate("rffie","rffield", FsAct.RF_INTRODUCE_FIELD,
-                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+                 EnumSet.of(CcFlag.DEPRECATED));
         delegate("rfmet","rfmethod", FsAct.RF_INTRODUCE_METHOD,
-                 EnumSet.of(ColonCommandItem.Flag.HIDE));
+                 EnumSet.of(CcFlag.DEPRECATED));
 
         delegate("rfintrovar","rfintrovariable", FsAct.RF_INTRODUCE_VARIABLE, null);
         delegate("rfintrocon","rfintroconstant", FsAct.RF_INTRODUCE_CONSTANT, null);
@@ -149,7 +150,7 @@ public class NbColonCommands {
     }
 
     static private void delegate(String abrev, String name, FsAct fsAct,
-                                 EnumSet<ColonCommandItem.Flag> flags) {
+                                 Set<CcFlag> flags) {
         FileObject fo = FileUtil.getConfigFile(fsAct.path());
         ColonCommands.register(abrev, name, new DelegateFileSystemAction(fsAct),
                                flags);
@@ -157,9 +158,16 @@ public class NbColonCommands {
 
     public static ColonAction ACTION_fiximports = new FixImports();
     static private class FixImports extends ColonAction {
+
+        @Override
+        public EnumSet<CcFlag> getFlags()
+        {
+            return EnumSet.of(CcFlag.NO_ARGS);
+        }
         // new Module.DelegateFileSystemAction(
         // "Menu/Source/org-netbeans-modules-editor-java"
         // + "-JavaFixAllImports$MainMenuWrapper.instance"));
+        
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
             if(source instanceof JEditorPane) {
@@ -171,7 +179,7 @@ public class NbColonCommands {
         }
     }
 
-    public static ColonAction ACTION_fu = new FindUsages();
+    public static ActionListener ACTION_fu = new FindUsages();
 
     private static void doWhereUsed() {
         Action act = Module.fetchFileSystemAction(FsAct.WHERE_USED);
@@ -191,7 +199,7 @@ public class NbColonCommands {
             Util.vim_beep();
     }
 
-    static private class FindUsages extends ColonAction {
+    static private class FindUsages implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             // The execution must be defered for the focus transfer to
             // the JEP to complete.

@@ -3,14 +3,14 @@ package org.netbeans.modules.jvi;
 import java.io.File;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFactory;
-import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.core.CcFlag;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Util;
+import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.ViInitialization;
-import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.options.OptUtil;
 import com.raelity.jvi.options.DebugOption;
 
 import java.awt.Component;
@@ -351,7 +351,7 @@ public class Module extends ModuleInstall
                         System.err.println(", " + tc.getClass().getName());
                     }
                 }
-            }, EnumSet.of(ColonCommandItem.Flag.DBG)
+            }, EnumSet.of(CcFlag.DBG)
         );
         ColonCommands.register("dumpKit", "dumpKit",
             new ActionListener() {
@@ -359,7 +359,7 @@ public class Module extends ModuleInstall
                 public void actionPerformed(ActionEvent e) {
                     KeyBindings.dumpKit();
                 }
-            }, EnumSet.of(ColonCommandItem.Flag.DBG)
+            }, EnumSet.of(CcFlag.DBG)
         );
         ColonCommands.register("checkFsActList", "checkFsActList",
             new ActionListener() {
@@ -377,7 +377,7 @@ public class Module extends ModuleInstall
                     }
 
                 }
-            }, EnumSet.of(ColonCommandItem.Flag.DBG)
+            }, EnumSet.of(CcFlag.DBG)
         );
         
         /*

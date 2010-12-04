@@ -20,12 +20,14 @@
 
 package org.netbeans.modules.jvi.completion;
 
+import com.raelity.jvi.core.CcFlag;
 import com.raelity.jvi.core.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.options.DebugOption;
 import com.raelity.jvi.swing.CommandLine;
+import com.raelity.text.XMLUtil;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -106,7 +108,7 @@ public class CommandNameTask implements CompletionTask
         query = new ArrayList<CommandNameItem>();
 
         for(ColonCommandItem cci : ColonCommands.getList()) {
-            if(!cci.getFlags().contains(ColonCommandItem.Flag.HIDE))
+            if(!cci.getFlags().contains(CcFlag.HIDE))
                 query.add(new CommandNameItem(cci));
         }
     }
@@ -147,12 +149,15 @@ public class CommandNameTask implements CompletionTask
         resultSet.finish();
     }
 
-    private Color abrevColor = Color.green.darker();
-    private Color debugColor = Color.red.darker();
+    private Color abrevColor = Color.green.darker().darker();
+    private Color debugColor = Color.red.darker().darker();
     private String ColorString(Color c, String s)
     {
-        return String.format( "<font color=\"#%06x\">%s</font>",
-                              c.getRGB() & 0xffffff, s);
+        if(true)
+            return String.format("<font color=\"#%06x\">%s</font>",
+                                 c.getRGB() & 0xffffff, s);
+        else
+            return s;
     }
 
     private class CommandNameItem implements CompletionItem
@@ -163,17 +168,23 @@ public class CommandNameTask implements CompletionTask
         public CommandNameItem(ColonCommandItem command)
         {
             this.command = command;
-            StringBuilder sb = new StringBuilder();
+            XMLUtil x = XMLUtil.get();
             nameLabel =
                     "<html>"
+                    + (command.getFlags().contains(CcFlag.DEPRECATED)
+                        ? "<s>" : "")
                     + "<b>"
                     + ColorString(
-                        command.getFlags().contains(ColonCommandItem.Flag.DBG)
-                            ? debugColor : abrevColor,
-                        getAbrev())
+                        command.getFlags().contains(CcFlag.DBG)
+                        ? debugColor : abrevColor,
+                        x.utf2xml(getAbrev()))
+                    + "<i>"
+                    + x.utf2xml(getName().substring(getAbrev().length()))
+                    + "</i>"
                     + "</b>"
-                    + getName().substring(getAbrev().length())
-                    + (command.getFlags().contains(ColonCommandItem.Flag.NO_ARGS)
+                    + (command.getFlags().contains(CcFlag.DEPRECATED)
+                        ? "</s>" : "")
+                    + (command.getFlags().contains(CcFlag.NO_ARGS)
                         ? "" : " ...")
                     + "</html>";
         }
@@ -183,7 +194,7 @@ public class CommandNameTask implements CompletionTask
          */
         final String getName()
         {
-            return command.getName();
+            return command.getDisplayName();
         }
 
         /**
@@ -209,7 +220,7 @@ public class CommandNameTask implements CompletionTask
             //
             // Go for it if it has no args
             //
-            if(command.getFlags().contains(ColonCommandItem.Flag.NO_ARGS)) {
+            if(command.getFlags().contains(CcFlag.NO_ARGS)) {
                 Action act = jtc.getKeymap().getAction(CommandLine.EXECUTE_KEY);
                 if (act != null)
                     act.actionPerformed(
@@ -222,6 +233,8 @@ public class CommandNameTask implements CompletionTask
             Document doc = jtc.getDocument();
             int caretOffset = doc.getLength(); // clear to end of line
             String value = getName();
+            if(!command.getFlags().contains(CcFlag.NO_ARGS))
+                value += " ";
             try {
                 doc.remove(startOffset, caretOffset - startOffset);
                 doc.insertString(startOffset, value, null);
@@ -302,14 +315,14 @@ public class CommandNameTask implements CompletionTask
         public int getSortPriority()
         {
             // put debug at low priority
-            return command.getFlags().contains(ColonCommandItem.Flag.DBG)
+            return command.getFlags().contains(CcFlag.DBG)
                     ? 10 : 0;
         }
 
         @Override
         public CharSequence getSortText()
         {
-            return true ? getAbrev() : getName();
+            return (true ? getAbrev() : getName()).toLowerCase();
         }
 
         @Override

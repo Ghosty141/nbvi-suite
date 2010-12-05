@@ -9,7 +9,7 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import java.lang.reflect.Field;
+import com.raelity.jvi.ViBadLocationException;
 import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -21,8 +21,6 @@ import com.raelity.jvi.manager.Scheduler;
 import com.raelity.jvi.swing.SwingBuffer;
 import com.raelity.text.TextUtil;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -48,7 +46,6 @@ import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.netbeans.modules.jvi.JViOptionWarning;
-import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.text.CloneableEditorSupport;
@@ -304,7 +301,7 @@ public class NbBuffer extends SwingBuffer {
                 else if ("\n".equals(getText(tv.getCaretPosition(), 1))) {
                     Misc.check_cursor_col();
                 }
-            } catch (BadLocationException ex) { }
+            } catch (ViBadLocationException ex) { }
         } else
             Util.vim_beep();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
@@ -370,6 +367,7 @@ public class NbBuffer extends SwingBuffer {
                 // action
                 
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         tv.getStatusDisplay().displayErrorMessage(
                                 "No changes made."
@@ -425,18 +423,22 @@ public class NbBuffer extends SwingBuffer {
     private void correlateDocumentEvents() {
         Document doc = getDocument();
         documentListener = new DocumentListener() {
+            @Override
             public void changedUpdate(DocumentEvent e) {
                 //dumpDocEvent("change", e);
             }
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 dumpDocEvent("insert", e);
             }
+            @Override
             public void removeUpdate(DocumentEvent e) {
                 dumpDocEvent("remove", e);
             }
         };
         doc.addDocumentListener(documentListener);
         undoableEditListener = new UndoableEditListener() {
+            @Override
             public void undoableEditHappened(UndoableEditEvent e) {
                 UndoableEdit ue = e.getEdit();
                 System.err.println(ue.getClass().getSimpleName()

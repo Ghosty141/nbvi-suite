@@ -33,6 +33,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -84,18 +85,20 @@ public class CcCompletion
         // Add Ctrl-space binding
         Keymap km = JTextComponent.getKeymap(CommandLine.COMMAND_LINE_KEYMAP);
         if (km != null) {
-            KeyStroke ks =
-                    KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
-                                           InputEvent.CTRL_MASK);
-            if (km.getAction(ks) == null)
-                km.addActionForKeyStroke(ks,
-                     new TextAction("vi-command-code-completion") {
+            KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
+                                                  InputEvent.CTRL_MASK);
+            Action act = new TextAction("vi-command-code-completion") {
                             @Override
                             public void actionPerformed(ActionEvent e)
                             {
                                 Completion.get().showCompletion();
                             }
-                        });
+                        };
+            if (km.getAction(ks) == null)
+                km.addActionForKeyStroke(ks, act);
+            // Let Ctrl-D bring up code completion
+            ks = KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK);
+            km.addActionForKeyStroke(ks, act);
         }
         // OUCH, treat any input as user typed
         DocumentUtilities.setTypingModification(jtc.getDocument(), true);

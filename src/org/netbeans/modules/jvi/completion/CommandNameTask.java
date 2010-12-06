@@ -192,7 +192,7 @@ public class CommandNameTask implements CompletionTask
                 nameLabel =
                 "<html>"
                 + (command.getFlags().contains(CcFlag.DEPRECATED) ? "<s>" : "")
-                + ColorString( disabledColor, x.utf2xml(getAbrev()))
+                + ColorString( disabledColor, x.utf2xml(getName()))
                 + (command.getFlags().contains(CcFlag.DEPRECATED) ? "</s>" : "")
                 + (command.getFlags().contains(CcFlag.NO_ARGS) ? "" : " ...")
                 + "</html>";

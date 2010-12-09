@@ -21,6 +21,8 @@
 package org.netbeans.modules.jvi.completion;
 
 import com.raelity.jvi.ViCmdEntry;
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.DebugOption;
@@ -35,9 +37,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit.DefaultKeyTypedAction;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Keymap;
@@ -59,22 +60,10 @@ public class CcCompletion
     private static final
             Logger LOG = Logger.getLogger(CcCompletion.class.getName());
 
-    private static CodeComplDocListener ceDocListen;
-    static boolean ceInSubstitute; // NEEDWORK: cleanup this HACK
     private static DebugOption dbgCompl;
-    private static FocusListener initShowCompletion = new FocusAdapter() {
-        @Override
-        public void focusGained(FocusEvent e)
-        {
-            dbgCompl.println("INIT SHOW:");
-            Completion.get().showCompletion();
-        }
-    };
-
+    private static FocusListener initShowCompletion;
 
     //
-    // NOTE: Use DocumentUtilities.setTypingModification() for
-    //       getAutoQueryTypes to work. See editor.completion...CompletionImpl
     // Bug 110237 - JTextField with EditorRegistry dependent APIs has problems
     //
     private static void fixupCodeCompletionTextComponent(JTextComponent jtc)
@@ -99,9 +88,10 @@ public class CcCompletion
             // Let Ctrl-D bring up code completion
             ks = KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK);
             km.addActionForKeyStroke(ks, act);
+            // provide a default key typed action that
+            // follows NB's user did the typing protocol
+            km.setDefaultAction(new DefaultKeyTyped());
         }
-        // OUCH, treat any input as user typed
-        DocumentUtilities.setTypingModification(jtc.getDocument(), true);
     }
 
     public static void commandEntryAssist(ViCmdEntry cmdEntry, boolean enable)
@@ -109,78 +99,79 @@ public class CcCompletion
         if (dbgCompl == null)
             dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
         JTextComponent jtc = (JTextComponent)cmdEntry.getTextComponent();
+        jtc.removeFocusListener(initShowCompletion);
+        initShowCompletion = null;
+
         if (!enable) {
             // Finished, make sure everything's shutdown
-            DocumentUtilities.setTypingModification(jtc.getDocument(), false);
             Completion.get().hideAll();
-            jtc.removeFocusListener(initShowCompletion);
-            jtc.getDocument().removeDocumentListener(ceDocListen);
-            ceDocListen = null;
             return;
         }
+
         fixupCodeCompletionTextComponent(jtc);
-        if (!Options.getOption(Options.autoPopupFN).getBoolean())
-            return;
-        ceInSubstitute = false;
-        Document ceDoc = jtc.getDocument();
-        ceDocListen = new CodeComplDocListener();
-        ceDoc.addDocumentListener(ceDocListen);
-        if(isEditAlternate(ceDoc)) {
-            // Wait till combo's ready to go.
-            ceDocListen.didIt = true;
+        // If either autopopup is enabled,
+        // check for starting up code completion with the
+        // initial contents of the command window
+        if (Options.getOption(Options.autoPopupFN).getBoolean()
+            || Options.getOption(Options.autoPopupCcName).getBoolean()) {
+            initShowCompletion = new StartCcFocusListener();
             if (jtc.hasFocus())
-                initShowCompletion.focusGained(null);
+                initShowCompletion.focusGained(new FocusEvent(jtc, 0));
             else
                 jtc.addFocusListener(initShowCompletion);
         }
     }
 
+    private static class DefaultKeyTyped extends DefaultKeyTypedAction
+    {
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            DocumentUtilities.setTypingModification(
+                    getTextComponent(e).getDocument(), true);
+            try {
+                super.actionPerformed(e);
+            } finally {
+                DocumentUtilities.setTypingModification(
+                        getTextComponent(e).getDocument(), false);
+            }
+        }
+        
+    }
+
+    // This is good for one shot, it uninstalls itself
+    private static class StartCcFocusListener extends FocusAdapter {
+        @Override
+        public void focusGained(FocusEvent e)
+        {
+            JTextComponent jtc = (JTextComponent)e.getComponent();
+            jtc.removeFocusListener(this);
+            if(Options.getOption(Options.autoPopupFN).getBoolean()
+                        && isEditAlternate(jtc.getDocument())
+                || Options.getOption(Options.autoPopupCcName).getBoolean())
+            {
+                dbgCompl.println("INIT SHOW:");
+                Completion.get().showCompletion();
+            }
+        }
+    };
+
     static boolean isEditAlternate(Document doc)
     {
         try {
             String s = doc.getText(0, doc.getLength());
-            return s.startsWith("e#");
+            if(s.trim().isEmpty())
+                return false;
+            else {
+                ColonEvent ce = ColonCommands.parseCommandNoExec(s);
+                return "edit".equals(ce.getNoExecCommandNameLookup())
+                        && ce.getNArg() > 0
+                        && ce.getArg(1).startsWith("#"); 
+            }
         } catch(BadLocationException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
         return false;
-    }
-
-    private static class CodeComplDocListener implements DocumentListener
-    {
-        boolean didIt;
-
-        @Override
-        public void changedUpdate(DocumentEvent e)
-        {
-        }
-
-        @Override
-        public void insertUpdate(DocumentEvent e)
-        {
-            ceDocCheck(e.getDocument());
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e)
-        {
-            ceDocCheck(e.getDocument());
-        }
-
-        private void ceDocCheck(Document doc)
-        {
-            if (doc.getLength() == 2 && !ceInSubstitute) {
-                if (!didIt && isEditAlternate(doc)) {
-                    dbgCompl.println("SHOW:");
-                    Completion.get().showCompletion();
-                    didIt = true;
-                }
-            } else if (doc.getLength() < 2) {
-                dbgCompl.println("HIDE:");
-                Completion.get().hideCompletion();
-                didIt = false;
-            }
-        }
     }
 }
 

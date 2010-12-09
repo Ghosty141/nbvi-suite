@@ -3,6 +3,7 @@ package org.netbeans.modules.jvi.completion;
 import com.raelity.jvi.core.Options;
 import com.raelity.jvi.options.DebugOption;
 import java.util.logging.Level;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionTask;
@@ -32,10 +33,17 @@ public class EditAlternateProvider implements CompletionProvider
     }
 
     @Override
-    public int getAutoQueryTypes(JTextComponent component, String typedText)
+    public int getAutoQueryTypes(JTextComponent jtc, String typedText)
     {
         dbgCompl.printf(Level.CONFIG,
                         "AUTO_QUERY_TYPES: EditAlternate: '%s'\n", typedText);
+        Document doc = jtc.getDocument();
+        if ("#".equals(typedText)
+                && Options.getOption(Options.autoPopupFN).getBoolean()
+                && CcCompletion.isEditAlternate(doc)) {
+            dbgCompl.println("SHOW:");
+            return CompletionProvider.COMPLETION_QUERY_TYPE;
+        }
         return 0;
     }
 }

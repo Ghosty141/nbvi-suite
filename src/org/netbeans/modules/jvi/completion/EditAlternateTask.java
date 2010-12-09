@@ -247,10 +247,8 @@ public class EditAlternateTask implements CompletionTask
             if (dbgCompl.getBoolean())
                 System.err.println("DEFAULT ACTION EA: \'" + name + "\'");
             try {
-                CcCompletion.ceInSubstitute = true;
                 doSubstitute(jtc);
             } finally {
-                CcCompletion.ceInSubstitute = false;
             }
             Completion.get().hideAll();
             // Go for it

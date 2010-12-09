@@ -126,7 +126,7 @@ public class CommandNameTask implements CompletionTask
             if(text.trim().isEmpty())
                 off = caretOffset;
             else {
-                ColonEvent ce = ColonCommands.parseCommandDummy(text);
+                ColonEvent ce = ColonCommands.parseCommandNoExec(text);
                 off = ce.getIndexInputCommandName();
             }
             startOffset = off;
@@ -221,10 +221,8 @@ public class CommandNameTask implements CompletionTask
             if (dbgCompl.getBoolean())
                 System.err.println("DEFAULT ACTION CN: \'" + getName() + "\'");
             try {
-                CcCompletion.ceInSubstitute = true;
                 doSubstitute(jtc);
             } finally {
-                CcCompletion.ceInSubstitute = false;
             }
             Completion.get().hideAll();
             //

@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
-import javax.swing.ActionMap;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
 import javax.swing.text.Caret;

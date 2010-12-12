@@ -20,6 +20,7 @@
 
 package org.netbeans.modules.jvi.util;
 
+import com.raelity.jvi.lib.MutableBoolean;
 import com.raelity.jvi.lib.MutableInt;
 import com.raelity.jvi.swing.LineMap;
 import java.util.ArrayList;
@@ -53,17 +54,20 @@ public class NbLineMapFolding implements LineMap
         setupListeners();
     }
 
+    @Override
     public boolean isFolding()
     {
         // NEEDSWORK: only return true if there are any collapsed folds
         return true;
     }
 
+    @Override
     public int logicalLine(final int docLine) throws RuntimeException
     {
         final MutableInt mi = new MutableInt();
         runLocked(new Runnable()
         {
+            @Override
             public void run()
             {
                 ClosedFold cf = findDocLineFold(docLine);
@@ -73,11 +77,13 @@ public class NbLineMapFolding implements LineMap
         return mi.getValue();
     }
 
+    @Override
     public int docLine(final int logicalLine)
     {
         final MutableInt mi = new MutableInt();
         runLocked(new Runnable()
         {
+            @Override
             public void run()
             {
                 ClosedFold cf = findLogicalLineFold(logicalLine);
@@ -87,7 +93,36 @@ public class NbLineMapFolding implements LineMap
         });
         return mi.getValue();
     }
+    
+    @Override
+    public boolean hasFolding(final int docLine,
+                              final MutableInt pDocFirst,
+                              final MutableInt pDocLast)
+    {
+        final MutableBoolean mb = new MutableBoolean();
+        runLocked(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                ClosedFold cf = findDocLineFold(docLine);
+                if(cf != null) {
+                    int docLast = cf.getBaseDocLine()
+                                  + cf.getFoldLineCount() - 1;
+                    if(docLine <= docLast) {
+                        mb.setValue(true);
+                        if(pDocFirst != null)
+                            pDocFirst.setValue(cf.getBaseDocLine());
+                        if(pDocLast != null)
+                            pDocLast.setValue(docLast);
+                    }
+                }
+            }
+        });
+        return mb.getValue();
+    }
 
+    @Override
     public int docLineOffset(int logicalLine)
     {
         int docLine = docLine(logicalLine);
@@ -152,7 +187,7 @@ public class NbLineMapFolding implements LineMap
             return baseLogicalLine;
         }
 
-        private int getFoldLineCount()
+        int getFoldLineCount()
         {
             //   tv.getBuffer().getLineNumber(fold.getEndOffset())
             // - tv.getBuffer().getLineNumber(fold.getStartOffset());
@@ -175,6 +210,7 @@ public class NbLineMapFolding implements LineMap
         return findFold(new ClosedFold(docLine),
             new Comparator<ClosedFold>()
             {
+                @Override
                 public int compare(ClosedFold o1, ClosedFold o2)
                 {
                     return o1.getBaseDocLine() - o2.getBaseDocLine();
@@ -187,6 +223,7 @@ public class NbLineMapFolding implements LineMap
         return findFold(new ClosedFold(logicalLine),
             new Comparator<ClosedFold>()
             {
+                @Override
                 public int compare(ClosedFold o1, ClosedFold o2)
                 {
                     return o1.getBaseLogicalLine() - o2.getBaseLogicalLine();
@@ -212,10 +249,12 @@ public class NbLineMapFolding implements LineMap
     {
         tv.getEditorComponent().getDocument().render(new Runnable()
         {
+            @Override
             public void run()
             {
                 fh.render(new Runnable()
                 {
+                    @Override
                     public void run()
                     {
                         build();
@@ -269,6 +308,7 @@ public class NbLineMapFolding implements LineMap
     {
         fh.addFoldHierarchyListener(new FoldHierarchyListener()
         {
+            @Override
             public void foldHierarchyChanged(FoldHierarchyEvent evt)
             {
                 valid = false;
@@ -277,8 +317,11 @@ public class NbLineMapFolding implements LineMap
         tv.getEditorComponent().getDocument().addDocumentListener(
             new DocumentListener()
             {
+                @Override
                 public void insertUpdate(DocumentEvent e) { docEvent(e); }
+                @Override
                 public void removeUpdate(DocumentEvent e) { docEvent(e); }
+                @Override
                 public void changedUpdate(DocumentEvent e) { docEvent(e); }
         });
     }

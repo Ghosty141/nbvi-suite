@@ -28,8 +28,8 @@
                 <attr name="preferencesKey" stringvalue="viEnabled"/>
                 <attr name="instanceCreate"
                       methodvalue="org.openide.awt.Actions.checkbox"/>
-                <attr name="displayName" stringvalue="jVi"/>
-                <!--<attr name="displayName" bundlevalue="your.pkg.Bundle#key"/>-->
+                <attr name="displayName"
+                      bundlevalue="org.netbeans.modules.jvi.Bundle#ActionsTools_Name_jVi"/>
                 <attr name="iconBase"
                       stringvalue="org/netbeans/modules/jvi/resources/jViLogoSimple.png"/>
                 <attr name="noIconInMenu" boolvalue="true"/>

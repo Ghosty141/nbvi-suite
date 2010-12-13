@@ -164,7 +164,11 @@ public class CcCompletion
                 return false;
             else {
                 ColonEvent ce = ColonCommands.parseCommandNoExec(s);
-                return "edit".equals(ce.getNoExecCommandNameLookup())
+                if(ce == null)
+                    LOG.log(Level.SEVERE,
+                            "isEditAlternate: can''t parse: \"{0}\"", s);
+                return ce != null
+                        && "edit".equals(ce.getNoExecCommandNameLookup())
                         && ce.getNArg() > 0
                         && ce.getArg(1).startsWith("#"); 
             }

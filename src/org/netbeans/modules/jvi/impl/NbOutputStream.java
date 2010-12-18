@@ -184,6 +184,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             this.len = len;
         }
 
+        @Override
         public void outputLineAction(OutputEvent outputEvent) {
             nbLine.show(Line.ShowOpenType.OPEN,
                         Line.ShowVisibilityType.FOCUS,
@@ -202,9 +203,11 @@ public class NbOutputStream extends OutputStreamAdaptor {
             //}
         }
 
+        @Override
         public void outputLineCleared(OutputEvent outputEvent) {
         }
 
+        @Override
         public void outputLineSelected(OutputEvent outputEvent) {
         }
     }
@@ -256,6 +259,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             this.link = link;
         }
 
+        @Override
         public void outputLineAction(OutputEvent ev) {
             // invoke a browser on the link
             URL url;
@@ -267,9 +271,11 @@ public class NbOutputStream extends OutputStreamAdaptor {
             }
         }
 
+        @Override
         public void outputLineCleared(OutputEvent ev) {
         }
 
+        @Override
         public void outputLineSelected(OutputEvent ev) {
         }
     }

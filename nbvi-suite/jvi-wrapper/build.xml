@@ -9,30 +9,32 @@
     <property name="original.project.dir" value="../jvi-project"/>
     <property name="original.project.jar"
               value="${original.project.dir}/dist/jvi-project.jar"/>
+    <property name="jvi.core.lib.dir"
+              value="../../../jvi/lib"/>
     <property name="l2fprod.common.sheet.jar"
-              value="../../../jvi/lib/l2fprod-common-sheet.jar"/>
+              value="${jvi.core.lib.dir}/l2fprod-common-sheet.jar"/>
     
     <target name="release">
         <echo message="Building ${original.project.dir}" level="info"/>
+
+        <!--  Copy NB's openide lib util, util-lookup jars to jVi's lib.
+              Note, use overwrite so files are guarenteed to match
+              the IDE you are working with.
+        -->
+        <copy todir="${jvi.core.lib.dir}"
+              preservelastmodified="true" verbose="true" overwrite="true">
+              <filelist dir="${nbplatform.active.dir}/platform/lib"
+                        files="org-openide-util.jar
+                               org-openide-util-lookup.jar" />
+        </copy>
+
         <ant dir="${original.project.dir}"
              target="jar" inheritall="false" inheritrefs="false"/>
         <echo message="Done building ${original.project.dir}" level="info"/>
 
-        <echo message="Copying jvi stuff to ${cluster}/modules/ext" level="info"/>
-        <!--
-        <copy todir="${cluster}/modules/ext">
-            <filelist dir=".">
-                <file name="${original.project.jar}"/>
-                <file name="${l2fprod.common.sheet.jar}"/>
-            </filelist>
-        </copy>
-        <copy todir="${cluster}/modules/ext">
-            <fileset dir=".">
-                <include name="${original.project.jar}"/>
-                <include name="${l2fprod.common.sheet.jar}"/>
-            </fileset>
-        </copy>
-        -->
+        <echo message="Copying jvi stuff to ${cluster}/modules/ext"
+              level="info"/>
+
         <copy todir="${cluster}/modules/ext"
               file="${original.project.jar}"/>
         <copy todir="${cluster}/modules/ext"

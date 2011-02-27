@@ -306,6 +306,8 @@ public class Module extends ModuleInstall
         public void run() {
             if(!jViEnabled)
                 return;
+            // TODO: get rid of extra undo/redo state?
+            ViManager.exitInputMode();
             jViEnabled = false;
 
             if(dbgNb())

@@ -225,6 +225,8 @@ public class Module extends ModuleInstall
         }
 
         earlyInit(); // set up the ViFactory
+        // Add the actions used by jVi to the System's FileSystem
+        KeyActionsFS.injectKeyActionsLayer();
 
         // in layer.xml Actions/Tools: <file name="o-n-m-jvi-enable.instance">
         // produces the checkbox linked to preferences.

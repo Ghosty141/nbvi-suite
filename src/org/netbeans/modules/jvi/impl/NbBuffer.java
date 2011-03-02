@@ -158,7 +158,7 @@ public class NbBuffer extends SwingBuffer {
                 doc.atomicLock();
                 try {
                     indent.reindent(getLineStartOffset(line),
-                                    getLineEndOffset(line + count - 1));
+                                    getLineEndOffset2(line + count - 1));
                 } catch (BadLocationException ex) {
                     LOG.log(Level.SEVERE, null, ex);
                 } finally {
@@ -186,7 +186,7 @@ public class NbBuffer extends SwingBuffer {
                 doc.atomicLock();
                 try {
                     reformat.reformat(getLineStartOffset(line),
-                                    getLineEndOffset(line + count - 1));
+                                      getLineEndOffset2(line + count - 1));
                 } catch (BadLocationException ex) {
                     LOG.log(Level.SEVERE, null, ex);
                 } finally {

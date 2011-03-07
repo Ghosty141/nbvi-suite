@@ -386,9 +386,12 @@ public class KeyBindings {
 
     /**
      * registered in META-INF/services
+     * NOTE:  editor.settings.storage
+     *        <friend>org.netbeans.modules.jvi</friend>
      *
      * http://www.netbeans.org/issues/show_bug.cgi?id=90403
      */
+    @ServiceProvider(service=StorageFilter.class)
     public static final class KeybindingsInjector
             extends StorageFilter<Collection<KeyStroke>, MultiKeyBinding>
     {
@@ -463,12 +466,18 @@ public class KeyBindings {
                                 mapJvi.size());
                 }
 
+                // Bug 138172 - single key binding added in
+                //      StorageFilter.afterLoad doesn't replace multikeybinding
+                // So spin through current keybindings and if first key of a
+                // multikeybinding is a jVi keybinding, then remove it.
                 List<KeyStroke> ksl =
                         new ArrayList<KeyStroke>();
                 ksl.add(null);
                 Iterator<MultiKeyBinding> it = map.values().iterator();
                 while (it.hasNext()) {
                     MultiKeyBinding mkbOrig = it.next();
+                    if(mkbOrig.getKeyStrokeCount() <= 1)
+                        continue;
                     // ksl is a keyStrokList of the first key of the NB binding
                     ksl.set(0, mkbOrig.getKeyStroke(0));
                     // If the NB binding starts with a jVi binding, then stash it

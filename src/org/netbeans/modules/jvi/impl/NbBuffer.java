@@ -9,6 +9,10 @@
 
 package org.netbeans.modules.jvi.impl;
 
+import org.openide.util.WeakListeners;
+import com.raelity.jvi.core.Options;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
 import com.raelity.jvi.ViBadLocationException;
 import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import com.raelity.jvi.core.Edit;
@@ -63,6 +67,14 @@ public class NbBuffer extends SwingBuffer {
     /** Creates a new instance of NbBuffer */
     public NbBuffer(ViTextView tv) {
         super(tv);
+
+        // NB associates blink rate with mime type.
+        // Without tracking all the mimeTypes,
+        // set the blink rate with the buffer; this
+        // is too often, but it almost never changes.
+        Preferences prefs = ViManager.getFactory().getPreferences();
+        prefs.addPreferenceChangeListener(WeakListeners.create(
+                PreferenceChangeListener.class, prefsListener, prefs));
     }
 
     @Override
@@ -71,50 +83,92 @@ public class NbBuffer extends SwingBuffer {
             stopDocumentEvents();
         super.removeShare();
     }
-    
+
+    private final PreferenceChangeListener prefsListener
+            = new PreferenceChangeListener() {
+        @Override
+        public void preferenceChange(PreferenceChangeEvent evt)
+        {
+            if(evt.getKey().equals(Options.caretBlinkRate)) {
+                setBlinkRate();
+            }
+        }
+    };
+
     @Override
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
-        Preferences prefs = CodeStylePreferences.get(
+        Preferences codePrefs = CodeStylePreferences.get(
                 getDocument()).getPreferences();
 
         JViOptionWarning.setInternalAction(true);
         try {
             // NEEDSWORK: only do the "put" if something changed
-            prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
+            codePrefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
 
-            prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
+            codePrefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
 
-            prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
-            prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
+            codePrefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
+            codePrefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
         } finally {
             JViOptionWarning.setInternalAction(false);
         }
 
     }
 
+    /**
+     * Get the Preferences node for the mime type associated with tv.
+     * If tv is null, then use mime type of this NbBuffer's document.
+     * @param tv
+     * @return 
+     */
+    public Preferences getMimePrefs(ViTextView tv)
+    {
+        Preferences prefs = null;
+        String mimeType = tv == null
+                ? NbEditorUtilities.getMimeType(getDocument())
+                : NbEditorUtilities.getMimeType(
+                    ((JTextComponent)tv.getEditorComponent()));
+        if(mimeType != null) {
+            prefs = MimeLookup.getLookup(
+                    MimePath.parse(mimeType)).lookup(Preferences.class);
+        }
+        return prefs;
+    }
+
     @Override
     public void viOptionSet(ViTextView tv, String name) {
         super.viOptionSet(tv, name);
-        // String mimeType = tv.getEditorComponent().getContentType();
-        String mimeType = NbEditorUtilities.getMimeType(
-                ((JTextComponent)tv.getEditorComponent()));
-        Preferences prefs = MimeLookup.getLookup(
-                MimePath.parse(mimeType)).lookup(Preferences.class);
+        Preferences mimePrefs = getMimePrefs(tv);
+        if(mimePrefs == null)
+            return;
 
         JViOptionWarning.setInternalAction(true);
         try {
 
             if("b_p_ts".equals(name)) {
-                prefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
-                prefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
+                mimePrefs.putInt(SimpleValueNames.TAB_SIZE, b_p_ts);
+                mimePrefs.putInt(SimpleValueNames.SPACES_PER_TAB, b_p_ts);
             } else if("b_p_sw".equals(name)) {
-                prefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
+                mimePrefs.putInt(SimpleValueNames.INDENT_SHIFT_WIDTH, b_p_sw);
             } else if("b_p_et".equals(name)) {
-                prefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
+                mimePrefs.putBoolean(SimpleValueNames.EXPAND_TABS, b_p_et);
             }
         } finally {
             JViOptionWarning.setInternalAction(false);
+        }
+    }
+
+    // set the blink rate for the mime type of this buffer's Document
+    private void setBlinkRate() {
+        Preferences mimePrefs = getMimePrefs(null);
+        if(mimePrefs != null) {
+            int n = Options.getOption(Options.caretBlinkRate).getInteger();
+            // when there are multiple editors of the same mime type
+            // (the usual case), only need to do the putInt once for
+            // the mime type. (note the putInt triggers a NB listener)
+            if(mimePrefs.getInt(SimpleValueNames.CARET_BLINK_RATE, -1) != n)
+                mimePrefs.putInt(SimpleValueNames.CARET_BLINK_RATE, n);
         }
     }
 

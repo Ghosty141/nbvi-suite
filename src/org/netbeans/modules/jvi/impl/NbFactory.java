@@ -28,6 +28,7 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
+import com.raelity.jvi.core.Options;
 import com.raelity.jvi.core.WindowTreeBuilder;
 import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
@@ -178,15 +179,13 @@ final public class NbFactory extends SwingFactory {
     public static void installCaret(JEditorPane ep, Caret newCaret) {
         Caret oldCaret = ep.getCaret(); // should never be null
         int offset = 0;
-        int blinkRate = 400;
         boolean visible = true;
         if(oldCaret != null) {
             offset = oldCaret.getDot();
-            blinkRate = oldCaret.getBlinkRate();
             visible = oldCaret.isVisible();
             if(G.dbgEditorActivation.getBoolean()) {
-                System.err.format("installCaret: was off %d, rate %d, vis %b\n",
-                        offset, blinkRate, visible);
+                System.err.format("installCaret: was off %d, vis %b\n",
+                        offset, visible);
             }
         }
         ep.setCaret(newCaret);
@@ -195,6 +194,7 @@ final public class NbFactory extends SwingFactory {
             // exception trying to cast PlanDocument to BaseDocument
             newCaret.setDot(offset);
         }
+        int blinkRate = Options.getOption(Options.caretBlinkRate).getInteger();
         newCaret.setBlinkRate(blinkRate);
         newCaret.setVisible(visible);
     }

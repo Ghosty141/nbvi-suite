@@ -105,6 +105,11 @@ public class NbTextView extends SwingTextView
     public void activateOptions(ViTextView tv)
     {
         super.activateOptions(tv);
+        Preferences codePrefs
+                = CodeStylePreferences.get((Document)null).getPreferences();
+        codePrefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
+        codePrefs.putBoolean(
+                SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
         setWrapPref();
     }
     

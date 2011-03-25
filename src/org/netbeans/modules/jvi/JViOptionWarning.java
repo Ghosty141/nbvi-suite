@@ -62,13 +62,16 @@ public class JViOptionWarning {
     // to allow copy of web site.
 
     static private String getWarningMessage() {
-        return "ShiftWidth, ExpandTabs and TabStop defaults"
-             + " for jVi are set through\n"
+        return "ShiftWidth, ExpandTabs, TabStop, LineWrap\n"
+             + "and other options for jVi are set through\n"
              + "Tools>Options>jVi Config>Buffer Modifications.\n"
-             + "Can use \":set ...\" after file is opened.\n\n"
+             + "and Tools>Options>jVi Config>General.\n"
+             + "Also, can use \":set ...\" after file is opened.\n"
+             + "Do \":set all\" to see options for \":set\"\n\n"
              + "See http://jvi.sourceforge.net/ReadmeNetBeans.html#options\n\n"
-             + "jVi reprograms the indent/tab options per document,\n"
-             + "so changes made in standard settings are lost and not used.\n\n"
+             + "jVi reprograms some options, including indent/tab/linewrap,\n"
+             + "per document (not globally); changes made in standard\n"
+             + "NetBeans settings are lost and not used.\n\n"
              + "See also \"modeline\" in the vim documentation\n"
              + "to persist per file settings.";
     }
@@ -77,7 +80,7 @@ public class JViOptionWarning {
     private static Dialog dialog;
     private static Date lastShowTime = new Date(0);
     private static PreferenceChangeListener scl;
-    private final static Set<MimePath> mimePaths = new HashSet();
+    private final static Set<MimePath> mimePaths = new HashSet<MimePath>();
 
     private static final MutableBoolean
             isInternalSetting = new MutableBoolean();
@@ -118,6 +121,7 @@ public class JViOptionWarning {
      * and its been 5 minutes since we've warned, then show the warning.
      */
     private static class TabSetListener implements PreferenceChangeListener {
+        @Override
         public void preferenceChange(PreferenceChangeEvent evt) {
             // workaround for Issue 142723
             //      "preference change events when nothing changes"
@@ -130,7 +134,12 @@ public class JViOptionWarning {
                    || SimpleValueNames.SPACES_PER_TAB.equals(settingName)
                    || SimpleValueNames.INDENT_SHIFT_WIDTH.equals(settingName)
                    || SimpleValueNames.EXPAND_TABS.equals(settingName)
-                   || SimpleValueNames.TAB_SIZE.equals(settingName))
+                   || SimpleValueNames.TAB_SIZE.equals(settingName)
+                   || SimpleValueNames.CARET_BLINK_RATE.equals(settingName)
+                   || SimpleValueNames.LINE_NUMBER_VISIBLE.equals(settingName)
+                   || SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE.equals(settingName)
+                   || SimpleValueNames.TEXT_LINE_WRAP.equals(settingName)
+                  )
                && new Date().getTime() - lastShowTime.getTime() > noDrawTime
                ) {
 
@@ -144,6 +153,7 @@ public class JViOptionWarning {
 
     private static class CreateDisplayTabWarning implements Runnable
     {
+        @Override
         public void run()
         {
             if (warning == null) {
@@ -153,6 +163,7 @@ public class JViOptionWarning {
                         "jVi Warning",
                         false,
                         new ActionListener() {
+                                @Override
                                 public void actionPerformed(ActionEvent e)
                                 {
                                     closeDialog(true);
@@ -251,5 +262,9 @@ public class JViOptionWarning {
         boolean isCancelled() {
             return cancelled;
         }
+    }
+
+    private JViOptionWarning()
+    {
     }
 }

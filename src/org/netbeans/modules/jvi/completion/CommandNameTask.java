@@ -127,17 +127,21 @@ public class CommandNameTask implements CompletionTask
                 off = caretOffset;
             else {
                 ColonEvent ce = ColonCommands.parseCommandNoExec(text);
-                off = ce.getIndexInputCommandName();
+                off = ce != null ? ce.getIndexInputCommandName() : -1;
             }
-            startOffset = off;
-            String filter = text.substring(off, caretOffset);
-            if (dbgCompl.getBoolean())
-                dbsString += ", filter \'" + filter + "\'";
-            resultSet.setAnchorOffset(off);
-            for (CommandNameItem item : query) {
-                String checkItem = item.getName();
-                if (filter.regionMatches(true, 0, item.getName(), 0, filter.length())) {
-                    resultSet.addItem(item);
+            if(off >= 0) {
+                startOffset = off;
+                String filter = text.substring(off, caretOffset);
+                if (dbgCompl.getBoolean())
+                    dbsString += ", filter \'" + filter + "\'";
+                resultSet.setAnchorOffset(off);
+                for (CommandNameItem item : query) {
+                    String checkItem = item.getName();
+                    if (filter.regionMatches(true, 0,
+                                             item.getName(), 0,
+                                             filter.length())) {
+                        resultSet.addItem(item);
+                    }
                 }
             }
         } catch (BadLocationException ex) {

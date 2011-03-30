@@ -25,7 +25,7 @@ package org.netbeans.modules.jvi;
 
 import org.netbeans.modules.jvi.impl.NbOptionsNode;
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.swing.OptionsPanel;
+import com.raelity.jvi.swing.ui.options.OptionsPanel;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;

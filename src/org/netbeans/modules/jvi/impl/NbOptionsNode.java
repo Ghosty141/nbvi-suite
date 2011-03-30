@@ -21,7 +21,7 @@ package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.options.OptionsBean;
 import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.swing.OptionsPanel;
+import com.raelity.jvi.swing.ui.options.OptionsPanel;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;

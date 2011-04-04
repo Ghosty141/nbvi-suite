@@ -46,49 +46,58 @@ public final class jViOptionsPanelController extends OptionsPanelController
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     private boolean changed;
 
+    @Override
     public void update()
     {
         getPanel().load();
         changed = false;
     }
 
+    @Override
     public void applyChanges()
     {
-        //getPanel().store();
+        getPanel().ok();
         changed = false;
     }
 
+    @Override
     public void cancel()
     {
         getPanel().cancel();
         changed = false;
     }
 
+    @Override
     public boolean isValid()
     {
         return getPanel().valid();
     }
 
+    @Override
     public boolean isChanged()
     {
         return changed;
     }
 
+    @Override
     public HelpCtx getHelpCtx()
     {
         return null; // new HelpCtx("...ID") if you have a help set
     }
 
+    @Override
     public JComponent getComponent(Lookup masterLookup)
     {
         return getDisplayPanel();
     }
 
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener l)
     {
         pcs.addPropertyChangeListener(l);
     }
 
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener l)
     {
         pcs.removePropertyChangeListener(l);
@@ -105,6 +114,7 @@ public final class jViOptionsPanelController extends OptionsPanelController
         if (optionsPanel == null) {
             //panel = new jViConfigPanel(this);
             optionsPanel = new NbOptionsNode(new OptionsPanel.ChangeNotify() {
+                @Override
                 public void change()
                 {
                     changed();

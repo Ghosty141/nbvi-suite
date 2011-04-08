@@ -21,7 +21,7 @@
 package org.netbeans.modules.jvi.completion;
 
 import com.raelity.jvi.core.CcFlag;
-import com.raelity.jvi.core.ColonCommandItem;
+import com.raelity.jvi.core.lib.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Options;

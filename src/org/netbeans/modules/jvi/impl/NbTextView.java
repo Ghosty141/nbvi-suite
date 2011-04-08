@@ -62,7 +62,7 @@ import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
-import static com.raelity.jvi.core.Constants.*;
+import static com.raelity.jvi.core.lib.Constants.*;
 
 /**
  * Pretty much the SwingTextView used for standard swing.

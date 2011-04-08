@@ -31,7 +31,7 @@ package org.netbeans.modules.jvi;
 import static org.netbeans.modules.jvi.Module.dbgNb;
 import org.netbeans.modules.jvi.impl.NbTextView;
 import com.raelity.jvi.core.lib.AbbrevLookup;
-import com.raelity.jvi.core.CcFlag;
+import com.raelity.jvi.core.lib.CcFlag;
 import com.raelity.jvi.core.lib.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.AbstractColonAction;

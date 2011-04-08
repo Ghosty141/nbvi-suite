@@ -3,7 +3,7 @@ package org.netbeans.modules.jvi;
 import java.io.File;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFactory;
-import com.raelity.jvi.core.CcFlag;
+import com.raelity.jvi.core.lib.CcFlag;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViCaret;

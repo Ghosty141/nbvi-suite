@@ -29,7 +29,7 @@ import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
 import com.raelity.jvi.core.Options;
-import com.raelity.jvi.core.WindowTreeBuilder;
+import com.raelity.jvi.core.lib.WindowTreeBuilder;
 import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
 

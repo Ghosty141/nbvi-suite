@@ -20,7 +20,7 @@
 
 package org.netbeans.modules.jvi.completion;
 
-import com.raelity.jvi.core.CcFlag;
+import com.raelity.jvi.core.lib.CcFlag;
 import com.raelity.jvi.core.lib.ColonCommandItem;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;

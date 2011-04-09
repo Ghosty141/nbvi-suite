@@ -59,11 +59,33 @@
 
     <folder name="OptionsExport">
         <folder name="jVi">
-            <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
             <attr name="position" intvalue="1000"/>
-            <file name="jVi">
-                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi.*"/>
+            <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
+            <file name="jVi-options">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.optionsName"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/(jvi[.].*|jvi/KeyBindings[.].*)"/>
+                <attr name="position" intvalue="10"/>
+            </file>
+            <file name="jVi-history">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.historyName"/>
+                <!-- <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/commands.*"/> -->
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/(commands|search)[.].*"/>
+                <attr name="position" intvalue="20"/>
+            </file>
+            <file name="jVi-registers">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.registersName"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/registers/.*"/>
+                <attr name="position" intvalue="30"/>
+            </file>
+            <file name="jVi-marks">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.marksName"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/marks/.*"/>
+                <attr name="position" intvalue="40"/>
+            </file>
+            <file name="jVi-filemarks">
+                <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.filemarksName"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/filemarks/.*"/>
+                <attr name="position" intvalue="50"/>
             </file>
         </folder>
     </folder>

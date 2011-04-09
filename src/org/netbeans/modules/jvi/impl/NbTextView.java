@@ -1,7 +1,6 @@
 package org.netbeans.modules.jvi.impl;
 
-import org.netbeans.api.editor.mimelookup.MimePath;
-import org.openide.util.Lookup;
+import org.netbeans.modules.jvi.JViOptionWarning;
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
@@ -41,7 +40,6 @@ import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.fold.Fold;
 import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldUtilities;
-import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
@@ -107,10 +105,17 @@ public class NbTextView extends SwingTextView
         super.activateOptions(tv);
         Preferences codePrefs
                 = CodeStylePreferences.get((Document)null).getPreferences();
-        codePrefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
-        codePrefs.putBoolean(
-                SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
-        setWrapPref();
+
+        JViOptionWarning.setInternalAction(true);
+        try {
+            codePrefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
+            codePrefs.putBoolean(
+                    SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
+                    w_p_list);
+            setWrapPref();
+        } finally {
+            JViOptionWarning.setInternalAction(false);
+        }
     }
     
     //
@@ -123,22 +128,30 @@ public class NbTextView extends SwingTextView
 
         assert this == tv;
 
-        if("w_p_nu".equals(name)) {
-            // global affect, just do it
-            CodeStylePreferences.get((Document)null).getPreferences().putBoolean(
-                    SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
-        } else if("w_p_list".equals(name)) {
-            // global affect, just do it
-            CodeStylePreferences.get((Document)null).getPreferences().putBoolean(
-                    SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
-        } else if("w_p_wrap".equals(name)) {
-            // vim wants per textView, NB supports per buf
-            SetColonCommand.syncTextViewInstances(name, this);
-            setWrapPref();
-        } else if("w_p_lbr".equals(name)) {
-            // vim wants per textView, NB supports per buf
-            SetColonCommand.syncTextViewInstances(name, this);
-            setWrapPref();
+        JViOptionWarning.setInternalAction(true);
+        try {
+            if("w_p_nu".equals(name)) {
+                // global affect, just do it
+                CodeStylePreferences.get((Document)null).getPreferences()
+                        .putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE,
+                                    w_p_nu);
+            } else if("w_p_list".equals(name)) {
+                // global affect, just do it
+                CodeStylePreferences.get((Document)null).getPreferences()
+                        .putBoolean(
+                            SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
+                            w_p_list);
+            } else if("w_p_wrap".equals(name)) {
+                // vim wants per textView, NB supports per buf
+                SetColonCommand.syncTextViewInstances(name, this);
+                setWrapPref();
+            } else if("w_p_lbr".equals(name)) {
+                // vim wants per textView, NB supports per buf
+                SetColonCommand.syncTextViewInstances(name, this);
+                setWrapPref();
+            }
+        } finally {
+            JViOptionWarning.setInternalAction(false);
         }
     }
 

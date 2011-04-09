@@ -338,7 +338,7 @@ public class NbBuffer extends SwingBuffer {
         }
         // NEEDSWORK: check can undo for beep
         
-        isUndoChange(); // clears the flag
+        createDocChangeInfo();
         int n = getLineCount();
         tv.getOps().xact(action);
         ///// ActionEvent e = new ActionEvent(tv.getEditorComponent(),
@@ -346,9 +346,10 @@ public class NbBuffer extends SwingBuffer {
         /////                                 "");
         ///// Module.execFileSystemAction(action, e);
         
-        if(isUndoChange()) {
+        DocChangeInfo data = getDocChangeInfo();
+        if(data.isChange) {
             // NEEDSWORK: check if need newline adjust
-            tv.setCaretPosition(getUndoOffset());
+            tv.setCaretPosition(data.offset);
             try {
                 if(n != getLineCount())
                     Edit.beginline(BL_WHITE);

@@ -42,6 +42,14 @@ import org.openide.windows.OutputWriter;
 /**
  * NbOutputStream is used to report the results of jVi commands such as
  * ":g/pattern/p" or ":1,$s/old/new/p".
+ * <br/>
+ * Typical usage is:
+ * <pre>
+ *      ViOutputStream vios = ViManager.createOutputStream(...
+ *      vios.print ...
+ *      vios.close
+ * </pre>
+ * in particular, the vios is not kept open for long periods of time.
  *
  * NEEDSWORK: NbOutputStream provide an option for hyperlink creation?
  * NEEDSWORK: NbOutputStream use NbEditorUtilities.getLine() to track links?

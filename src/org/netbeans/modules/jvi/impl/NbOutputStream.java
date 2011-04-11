@@ -116,7 +116,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
         }
         if(fRaise) {
             io.select();
-            //io.setFocusTaken(true);
+            io.setFocusTaken(true);
         }
         ow = io.getOut();
     }

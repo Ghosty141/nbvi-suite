@@ -63,6 +63,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
             Logger LOG = Logger.getLogger(NbOutputStream.class.getName());
     String type;
     ViTextView tv;
+    InputOutput io;
     OutputWriter ow;
     String fnTag;
     StringBuilder sb = new StringBuilder();
@@ -88,21 +89,22 @@ public class NbOutputStream extends OutputStreamAdaptor {
         if(type.equals(ViOutputStream.OUTPUT)) {
             // plain output, no hyper text stuff or files or line numbers
             String tabTag = "jVi Output";
-            ow = getIO(tabTag, false, bringUpWindow); // reuse tab
+            getIO(tabTag, false, bringUpWindow); // reuse tab
             ow.println("-----------------------------------------------------");
             if(info != null)
                 ow.println(info);
         } else {
             String sep = type.equals(ViOutputStream.SEARCH) ? "/" : "";
             String tabTag = "jVi " + sep +  (info != null ? info : "") + sep;
-            ow = getIO(tabTag, true, true); // make a new tab, always raise win
+            getIO(tabTag, true, true); // make a new tab, always raise win
             fnTag = tv.getBuffer().getDisplayFileName() + ":";
         }
         checkOpen();
     }
     
-    private OutputWriter getIO(String tabTag, boolean fNew, boolean fRaise) {
-        InputOutput io = IOProvider.getDefault().getIO(tabTag, fNew);
+    private void getIO(String tabTag, boolean fNew, boolean fRaise) {
+        io = IOProvider.getDefault().getIO(tabTag, fNew);
+
         if(io.isClosed() && fRaise) {
             // See NetBeans Issue 101445
             try {
@@ -112,9 +114,11 @@ public class NbOutputStream extends OutputStreamAdaptor {
                 io = IOProvider.getDefault().getIO(tabTag, true);
             }
         }
-        if(fRaise)
+        if(fRaise) {
             io.select();
-        return io.getOut();
+            //io.setFocusTaken(true);
+        }
+        ow = io.getOut();
     }
 
     @Override
@@ -153,8 +157,10 @@ public class NbOutputStream extends OutputStreamAdaptor {
 
     @Override
     public void close() {
+        //io.setFocusTaken(false);
         ow.close();
         ow = null;
+        io = null;
         tv = null;
         ///// outputListener = null;
         checkClose();

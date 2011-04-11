@@ -223,7 +223,7 @@ public class NbBuffer extends SwingBuffer {
                 indent.unlock();
             }
         } else {
-            Util.vim_beep();
+            Util.beep_flush();
         }
     }
 
@@ -251,7 +251,7 @@ public class NbBuffer extends SwingBuffer {
                 reformat.unlock();
             }
         } else {
-            Util.vim_beep();
+            Util.beep_flush();
         }
     }
 
@@ -306,7 +306,7 @@ public class NbBuffer extends SwingBuffer {
         } else {
             fException = true;
         }
-        Util.vim_beep();
+        Util.beep_flush();
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -329,7 +329,7 @@ public class NbBuffer extends SwingBuffer {
     private void undoOrRedo(String tag, String action) {
         NbTextView tv = (NbTextView)Scheduler.getCurrentTextView();
         if(tv == null || !tv.isEditable()) {
-            Util.vim_beep();
+            Util.beep_flush();
             return;
         }
         if(Misc.isInAnyUndo()) {
@@ -358,7 +358,7 @@ public class NbBuffer extends SwingBuffer {
                 }
             } catch (ViBadLocationException ex) { }
         } else
-            Util.vim_beep();
+            Util.beep_flush();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
     }
 

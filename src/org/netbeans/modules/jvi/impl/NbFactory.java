@@ -436,7 +436,7 @@ final public class NbFactory extends SwingFactory {
             ViManager.getFactory().startTagPush(ce.getViTextView(), "");
             act.actionPerformed(ce);
         } else
-            Util.vim_beep();
+            Util.beep_flush();
     }
 
     @Override

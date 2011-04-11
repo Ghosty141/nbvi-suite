@@ -214,7 +214,7 @@ public class NbColonCommands {
                 act = null;
         }
         if(act == null)
-            Util.vim_beep();
+            Util.beep_flush();
     }
 
     static private class FindUsages implements ActionListener {

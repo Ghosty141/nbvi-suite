@@ -245,7 +245,7 @@ public class NbTextView extends SwingTextView
     @Override
     public boolean openNewLine(DIR op) {
         if ( !isEditable() ) {
-            Util.vim_beep();
+            Util.beep_flush();
             return false;
         }
         if(op == DIR.BACKWARD && w_cursor.getLine() == 1) {
@@ -356,7 +356,7 @@ public class NbTextView extends SwingTextView
                 
             case NEXT_JUMP:
             case PREV_JUMP:
-                Util.vim_beep();
+                Util.beep_flush();
                 break;
         }
     }
@@ -381,7 +381,7 @@ public class NbTextView extends SwingTextView
         if(action != null) {
             ops.xact(action);
         } else {
-            Util.vim_beep();
+            Util.beep_flush();
         }
     }
     
@@ -400,7 +400,7 @@ public class NbTextView extends SwingTextView
         }
 
         if(error) {
-            Util.vim_beep();
+            Util.beep_flush();
             return;
         }
 
@@ -454,7 +454,7 @@ public class NbTextView extends SwingTextView
         if(action != null) {
             ops.xact(action);
         } else {
-            Util.vim_beep();
+            Util.beep_flush();
         }
     }
     
@@ -477,7 +477,7 @@ public class NbTextView extends SwingTextView
             ActionEvent e = new ActionEvent(getBuffer().getDocument(), 0, "");
             act.actionPerformed(e);
         } else
-            Util.vim_beep();
+            Util.beep_flush();
     }
 
     @Override
@@ -498,7 +498,7 @@ public class NbTextView extends SwingTextView
                                             "");
             Module.execFileSystemAction(fsAct, e);
         } else
-            Util.vim_beep();
+            Util.beep_flush();
     }
     
     //

@@ -402,7 +402,7 @@ public class Module extends ModuleInstall
         if(act != null && act.isEnabled())
             act.actionPerformed(e);
         else
-            Util.vim_beep();
+            Util.beep_flush();
     }
     
     /** Get an Action from the file system at the given path.

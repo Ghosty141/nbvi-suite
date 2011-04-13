@@ -70,6 +70,7 @@ public enum FsAct {
         MK_F_TEST		(s.MK_F_TEST),
         MK_F_DBGTEST		(s.MK_F_DBGTEST),
         MK_F_DOC		(null),
+        JVI_ENABLE		(s.JVI_ENABLE),
         ;
 
         private String path;
@@ -95,6 +96,9 @@ public enum FsAct {
         }
 
 private static class s {
+private static final String JVI_ENABLE
+    = "Actions/Tools/o-n-m-jvi-enable.instance";
+
 public static final String EDITOR_PIN
     = "Actions/Edit/com-raelity-nbm-editor_pin-Pin.instance";
 

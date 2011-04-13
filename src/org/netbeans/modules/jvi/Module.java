@@ -38,6 +38,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Actions;
@@ -263,27 +264,39 @@ public class Module extends ModuleInstall
                     EventQueue.invokeLater(enabled
                                            ? new RunJViEnable()
                                            : new RunJViDisable());
-                    fixupJviButton(enabled);
+                    fixupJviButton();
                 }
+            }
+        });
+        WindowManager.getDefault().invokeWhenUIReady(new Runnable() {
+            @Override public void run() {
+                timer = new Timer(10000, new ActionListener() {
+                    @Override public void actionPerformed(ActionEvent e) {
+                        timer = null;
+                        fixupJviButton();
+                    }
+                });
+                timer.setRepeats(false);
+                timer.start();
             }
         });
     }
 
     // NEEDSWORK: TEMPORARY; DELETE when handled by system
-    private static void fixupJviButton(final boolean enabled)
+    private static void fixupJviButton()
     {
-                    ViManager.runInDispatch(false, new Runnable() {
-                        @Override public void run()
-                        {
-                            if(jviButton != null
-                                    && jviOnIcon != null
-                                    && jviOffIcon != null) {
-                                jviButton.setIcon(
-                                        enabled ? jviOnIcon : jviOffIcon);
-                            }
-                        }
-                    });
+        ViManager.runInDispatch(false, new Runnable() {
+            @Override public void run()
+            {
+                if(jviButton != null
+                        && jviOnIcon != null
+                        && jviOffIcon != null) {
+                    jviButton.setIcon(jViEnabled() ? jviOnIcon : jviOffIcon);
+                }
+            }
+        });
     }
+    private static Timer timer;
     private static AbstractButton jviButton;
     private static ImageIcon jviOnIcon;
     private static ImageIcon jviOffIcon;
@@ -294,14 +307,14 @@ public class Module extends ModuleInstall
         public boolean connect(AbstractButton button, Action action)
         {
             if("jVi".equals(action.getValue(Action.NAME))) {
-                System.err.println("connetc: " + action.getValue(Action.NAME));
+                //System.err.println("connetc: " + action.getValue(Action.NAME));
                 jviButton = button;
                 jviOnIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24_checked.png", false);
                 jviOffIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24.png", false);
                 EventQueue.invokeLater(new Runnable()
                 {
                     @Override public void run() {
-                        fixupJviButton(jViEnabled());
+                        fixupJviButton();
                     }
                 });
 

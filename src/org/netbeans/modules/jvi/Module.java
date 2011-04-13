@@ -1,6 +1,8 @@
 package org.netbeans.modules.jvi;
 
 import java.io.File;
+import javax.swing.AbstractButton;
+import javax.swing.JMenuItem;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import com.raelity.jvi.core.lib.CcFlag;
@@ -33,10 +35,12 @@ import java.util.logging.Logger;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
+import org.openide.awt.Actions;
 
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
@@ -47,6 +51,7 @@ import org.openide.modules.InstalledFileLocator;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
@@ -258,9 +263,57 @@ public class Module extends ModuleInstall
                     EventQueue.invokeLater(enabled
                                            ? new RunJViEnable()
                                            : new RunJViDisable());
+                    fixupJviButton(enabled);
                 }
             }
         });
+    }
+
+    // NEEDSWORK: TEMPORARY; DELETE when handled by system
+    private static void fixupJviButton(final boolean enabled)
+    {
+                    ViManager.runInDispatch(false, new Runnable() {
+                        @Override public void run()
+                        {
+                            if(jviButton != null
+                                    && jviOnIcon != null
+                                    && jviOffIcon != null) {
+                                jviButton.setIcon(
+                                        enabled ? jviOnIcon : jviOffIcon);
+                            }
+                        }
+                    });
+    }
+    private static AbstractButton jviButton;
+    private static ImageIcon jviOnIcon;
+    private static ImageIcon jviOffIcon;
+    @ServiceProvider(service=Actions.ButtonActionConnector.class)
+    public static class checkActions implements Actions.ButtonActionConnector {
+
+        @Override
+        public boolean connect(AbstractButton button, Action action)
+        {
+            if("jVi".equals(action.getValue(Action.NAME))) {
+                System.err.println("connetc: " + action.getValue(Action.NAME));
+                jviButton = button;
+                jviOnIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24_checked.png", false);
+                jviOffIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24.png", false);
+                EventQueue.invokeLater(new Runnable()
+                {
+                    @Override public void run() {
+                        fixupJviButton(jViEnabled());
+                    }
+                });
+
+            }
+            return false;
+        }
+
+        @Override
+        public boolean connect(JMenuItem item, Action action, boolean popup)
+        {
+            return false;
+        }
     }
 
     public static void setShutdownHook(Runnable hook) {

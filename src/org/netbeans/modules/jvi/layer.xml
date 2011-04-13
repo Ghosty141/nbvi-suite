@@ -31,7 +31,7 @@
                 <attr name="displayName"
                       bundlevalue="org.netbeans.modules.jvi.Bundle#ActionsTools_Name_jVi"/>
                 <attr name="iconBase"
-                      stringvalue="org/netbeans/modules/jvi/resources/jViLogoSimple.png"/>
+                      stringvalue="org/netbeans/modules/jvi/resources/jViLogoToggle.png"/>
                 <attr name="noIconInMenu" boolvalue="true"/>
                 <attr name="asynchronous" boolvalue="false"/>
             </file>

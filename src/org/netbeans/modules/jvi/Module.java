@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
@@ -268,21 +269,13 @@ public class Module extends ModuleInstall
                 }
             }
         });
-        WindowManager.getDefault().invokeWhenUIReady(new Runnable() {
-            @Override public void run() {
-                timer = new Timer(10000, new ActionListener() {
-                    @Override public void actionPerformed(ActionEvent e) {
-                        timer = null;
-                        fixupJviButton();
-                    }
-                });
-                timer.setRepeats(false);
-                timer.start();
-            }
-        });
     }
 
+    ////////////////////////////////////////////////////////////////////
+    //
     // NEEDSWORK: TEMPORARY; DELETE when handled by system
+    //
+    ////////////////////////////////////////////////////////////////////
     private static void fixupJviButton()
     {
         ViManager.runInDispatch(false, new Runnable() {
@@ -296,7 +289,6 @@ public class Module extends ModuleInstall
             }
         });
     }
-    private static Timer timer;
     private static AbstractButton jviButton;
     private static ImageIcon jviOnIcon;
     private static ImageIcon jviOffIcon;
@@ -315,6 +307,27 @@ public class Module extends ModuleInstall
                 {
                     @Override public void run() {
                         fixupJviButton();
+                    }
+                });
+                // make sure unexpected changes to icon don't mess things up
+                jviButton.addPropertyChangeListener("icon", new PropertyChangeListener() {
+
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt)
+                    {
+                        // System.err.println("BUTTON_PROPERTY_CHANGE "
+                        //         + evt.getPropertyName());
+                        final Icon icon = jViEnabled() ? jviOnIcon : jviOffIcon;
+                        if(evt.getNewValue() != icon) {
+                            EventQueue.invokeLater(new Runnable() {
+
+                                @Override
+                                public void run()
+                                {
+                                    jviButton.setIcon(icon);
+                                }
+                            });
+                        }
                     }
                 });
 

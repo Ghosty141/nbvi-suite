@@ -346,15 +346,20 @@ public class NbBuffer extends SwingBuffer {
         /////                                 "");
         ///// Module.execFileSystemAction(action, e);
         
-        DocChangeInfo data = getDocChangeInfo();
-        if(data.isChange) {
-            // NEEDSWORK: check if need newline adjust
-            tv.setCaretPosition(data.offset);
+        DocChangeInfo info = getDocChangeInfo();
+        if(info.isChange) {
             try {
-                if(n != getLineCount())
-                    Edit.beginline(BL_WHITE);
-                else if ("\n".equals(getText(tv.getCaretPosition(), 1))) {
-                    Misc.check_cursor_col();
+                // Only adjust the cursor if undo/redo left the cursor on col 0;
+                // not entirely correct, but...
+                if(info.offset != tv.w_cursor.getOffset()) {
+                    tv.w_cursor.set(info.offset);
+                }
+                if(tv.w_cursor.getColumn() == 0) {
+                    if(n != getLineCount())
+                        Edit.beginline(BL_WHITE);
+                    else if ("\n".equals(getText(tv.getCaretPosition(), 1))) {
+                        Misc.check_cursor_col();
+                    }
                 }
             } catch (ViBadLocationException ex) { }
         } else

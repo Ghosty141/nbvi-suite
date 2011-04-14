@@ -45,6 +45,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
@@ -72,6 +74,7 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Ernie Rael <err at raelity.com>
  */
 public class KeyBindings {
+    static final Logger LOG = Logger.getLogger(Module.class.getName());
     private static KeybindingsInjector KB_INJECTOR = null;
     private static final String JVI_INSTALL_ACTION_NAME = "jvi-install";
     private static Map<JEditorPane, Action> epToDefaultKeyAction =
@@ -127,8 +130,16 @@ public class KeyBindings {
 
         // give all the editors the jVi DKTA and cursor
         for (JEditorPane ep : knownEditors.keySet()) {
+            if(dbgNb())
+                System.err.println(MOD + " enableKeyBindings knownJEP: "
+                        + ep.getClass().getName());
             captureDefaultKeyTypedActionAndEtc(ep);
-            checkCaret(ep);
+            try {
+                checkCaret(ep);
+            }
+            catch(ClassCastException ex) {
+                LOG.log(Level.SEVERE, ep.getClass().getName(), ex);
+            }
         }
     }
 

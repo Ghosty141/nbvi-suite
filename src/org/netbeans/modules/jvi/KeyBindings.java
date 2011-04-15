@@ -117,6 +117,8 @@ public class KeyBindings {
             }
         };
         KeyBinding.addPropertyChangeListener(KeyBinding.KEY_BINDINGS, pcl);
+        if(ViManager.isDebugAtHome())
+            LOG.setLevel(Level.FINEST);
     }
 
     /** updates the keymap and restores DKTA and caret */

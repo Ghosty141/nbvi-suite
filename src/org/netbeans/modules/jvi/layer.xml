@@ -40,6 +40,7 @@
 
     <folder name="OptionsDialog">
         <file name="jViConfigOptionsCategory.instance">
+            <attr name="position" intvalue="1000"/>
             <attr name="categoryName"
                   bundlevalue="org.netbeans.modules.jvi.Bundle#OptionsCategory_Name_jViConfig"/>
             <attr name="controller"
@@ -63,28 +64,30 @@
             <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.displayName"/>
             <file name="jVi-options">
                 <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.optionsName"/>
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/(jvi[.].*|jvi/KeyBindings[.].*)"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi([.]properties|/KeyBindings[.]properties)"/>
                 <attr name="position" intvalue="10"/>
             </file>
             <file name="jVi-history">
                 <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.historyName"/>
-                <!-- <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/commands.*"/> -->
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/(commands|search)[.].*"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/(commands|search)[.]properties"/>
                 <attr name="position" intvalue="20"/>
             </file>
             <file name="jVi-registers">
                 <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.registersName"/>
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/registers/.*"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/registers([.]properties|/.*)"/>
+                <!-- filter an old style registers.properties, only need the HACK ... -->
+                <!-- following doesn't work, probably because nothing matches the  #val# -->
+                <!-- <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/registers/.*|config/Preferences/org/netbeans/modules/jvi/registers[.]properties#IMPORT_CHECK_HACK#"/> -->
                 <attr name="position" intvalue="30"/>
             </file>
             <file name="jVi-marks">
                 <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.marksName"/>
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/marks/.*"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/marks([.]properties|/.*)"/>
                 <attr name="position" intvalue="40"/>
             </file>
             <file name="jVi-filemarks">
                 <attr name="displayName" bundlevalue="org.netbeans.modules.jvi.Bundle#jVi.Options.Export.filemarksName"/>
-                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/filemarks/.*"/>
+                <attr name="include" stringvalue="config/Preferences/org/netbeans/modules/jvi/filemarks([.]properties|/.*)"/>
                 <attr name="position" intvalue="50"/>
             </file>
         </folder>

@@ -1,6 +1,7 @@
 package org.netbeans.modules.jvi;
 
 import java.io.File;
+import java.io.IOException;
 import javax.swing.AbstractButton;
 import javax.swing.JMenuItem;
 import org.netbeans.modules.jvi.impl.NbAppView;
@@ -10,6 +11,7 @@ import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.ViCaret;
 import com.raelity.jvi.ViInitialization;
+import com.raelity.jvi.core.lib.PreferencesChangeMonitor;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.options.OptUtil;
@@ -153,6 +155,30 @@ public class Module extends ModuleInstall
         };
         ViManager.addPropertyChangeListener(ViManager.P_BOOT, pcl);
         ViManager.addPropertyChangeListener(ViManager.P_LATE_INIT, pcl);
+
+        PreferencesChangeMonitor.setFileHack(
+                new PreferencesChangeMonitor.FileHack()
+                {
+                    @Override
+                    public boolean hasKeyValue(Preferences prefs, String child,
+                                               String key, String val )
+                    {
+                        FileObject cf = FileUtil.getConfigFile(
+                              "Preferences" + prefs.absolutePath()
+                              + "/" + child + ".properties");
+                        if(cf != null) {
+                            try {
+                                String s = cf.asText();
+                                if(s.contains(key + "=" + val)) {
+                                    return true;
+                                }
+                            } catch(IOException ex) {
+                                LOG.log(Level.SEVERE, null, ex);
+                            }
+                        }
+                        return false;
+                    }
+                });
     }
 
     public static String cid(Object o)

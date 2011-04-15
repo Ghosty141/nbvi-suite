@@ -130,6 +130,8 @@ public class KeyBindings {
 
         // give all the editors the jVi DKTA and cursor
         for (JEditorPane ep : knownEditors.keySet()) {
+            LOG.log(Level.FINE, "{0} enableKeyBindings knownJEP: {1}",
+                    new Object[]{MOD, ep.getClass().getName()});
             if(dbgNb())
                 System.err.println(MOD + " enableKeyBindings knownJEP: "
                         + ep.getClass().getName());

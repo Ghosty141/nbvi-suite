@@ -25,6 +25,7 @@ import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.FilenameFilter;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -97,6 +98,7 @@ public class Module extends ModuleInstall
     private static DebugOption dbgNb;
     private static DebugOption dbgAct;
     private static DebugOption dbgHL;
+    private static WeakReference<TopComponent> refOutput;
 
     public static boolean dbgNb() {
         return dbgNb != null && dbgNb.getBoolean();
@@ -201,6 +203,11 @@ public class Module extends ModuleInstall
     }
     private static void setModuleEnabled(boolean flag) {
         getModulePreferences().putBoolean(PREF_ENABLED, flag);
+    }
+
+    public static TopComponent getOutput()
+    {
+        return refOutput == null ? null : refOutput.get();
     }
     
     /** called when the module is loaded (at netbeans startup time) */
@@ -586,6 +593,10 @@ public class Module extends ModuleInstall
 
                 boolean isEditor = pokeTC(tc, false);
                 tcDumpInfo(tc, "open");
+
+                if(tc != null && "Output".equals(tc.getName())) {
+                    refOutput = new WeakReference<TopComponent>(tc);
+                }
 
                 boolean createdAppView = false;
                 List<JEditorPane> l = getDescendentJep(tc);

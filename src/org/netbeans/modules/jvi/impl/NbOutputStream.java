@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.Module;
 import org.openide.awt.HtmlBrowser;
 import org.openide.text.Line;
 import org.openide.windows.IOProvider;
@@ -38,6 +39,7 @@ import org.openide.windows.InputOutput;
 import org.openide.windows.OutputEvent;
 import org.openide.windows.OutputListener;
 import org.openide.windows.OutputWriter;
+import org.openide.windows.TopComponent;
 
 /**
  * NbOutputStream is used to report the results of jVi commands such as
@@ -51,7 +53,6 @@ import org.openide.windows.OutputWriter;
  * </pre>
  * in particular, the vios is not kept open for long periods of time.
  *
- * NEEDSWORK: NbOutputStream provide an option for hyperlink creation?
  * NEEDSWORK: NbOutputStream use NbEditorUtilities.getLine() to track links?
  *            Might as well give each line its own listener then.
  * Use Normal.nv_goto if textview still active/available.
@@ -68,10 +69,11 @@ public class NbOutputStream extends OutputStreamAdaptor {
     String fnTag;
     StringBuilder sb = new StringBuilder();
     boolean fHyperlink = true;
+    boolean savedSetFocusTaken;
     ///// NewOutputListenerImpl outputListener;
 
-    static int nOpen;
-    static boolean checkOpenClose = true;
+    private static int nOpen;
+    private static final boolean checkOpenClose = true;
     
     /** Creates a new instance of NbOutputStream.
      * Type of ViOutputStream.OUTPUT is plain command output, the other
@@ -114,9 +116,15 @@ public class NbOutputStream extends OutputStreamAdaptor {
                 io = IOProvider.getDefault().getIO(tabTag, true);
             }
         }
+        TopComponent tc = Module.getOutput();
+        boolean fShowing = tc == null || tc.isShowing() ? true : false;
+        savedSetFocusTaken = io.isFocusTaken();
         if(fRaise) {
+            if(!fShowing)
+                io.setFocusTaken(true); // so ESC will hide it
             io.select();
-            io.setFocusTaken(true);
+        } else {
+            io.setFocusTaken(false);
         }
         ow = io.getOut();
     }
@@ -157,7 +165,7 @@ public class NbOutputStream extends OutputStreamAdaptor {
 
     @Override
     public void close() {
-        //io.setFocusTaken(false);
+        io.setFocusTaken(savedSetFocusTaken);
         ow.close();
         ow = null;
         io = null;

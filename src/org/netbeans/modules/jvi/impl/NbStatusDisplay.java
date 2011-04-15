@@ -56,6 +56,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
     private Coloring lastMsgColoring = null;
     private String mode = "";
     private boolean fFrozen;
+    private int scrollCount;
 
     // NOTE: StatusDisplayer.Message
     private static StatusDisplayer.Message sdMsg;
@@ -79,6 +80,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
             if(listener == null)
                 listener = new ChangeListener()
                 {
+                    @Override
                     public void stateChanged(ChangeEvent e)
                     {
                         StatusDisplayer sd = (StatusDisplayer)e.getSource();
@@ -96,11 +98,12 @@ public final class NbStatusDisplay implements ViStatusDisplay
      * Use the NB JLabel and mimic the NB usage.
      * This is not localized. NB's status label needs a cleaner interface.
      */
+    @Override
     public void displayMode(String mode) {
         // Keep track of the mode we're in
         if( ! mode.equals(lastMode))
             lastMode = mode;
-        if( ! mode.equals(""))
+        if( ! mode.isEmpty())
             this.mode = "-- " + mode + " -- ";
         else
             this.mode = "";
@@ -129,7 +132,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
             nbMode = "";
 	} else {
             jviOnlyMode = true;
-            if(mode.equals("")) {
+            if(mode.isEmpty()) {
                 tip = "Command Mode";
             } else if(G.VIsual_active){
                 if (G.VIsual_select) {
@@ -170,6 +173,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
 	}
     }
 
+    @Override
     public void displayCommand(String text) {
         text = text.trim();
         if(text.length() != 0)
@@ -180,11 +184,13 @@ public final class NbStatusDisplay implements ViStatusDisplay
         refresh();
     }
 
+    @Override
     public void displayStatusMessage(String text) {
         fFrozen = false;
         setMessageText(text);
     }
 
+    @Override
     public void displayErrorMessage(String text) {
         fFrozen = false;
         lastMsg = text;
@@ -192,6 +198,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
 	setText(StatusBar.CELL_MAIN, modeString() + text, lastMsgColoring);
     }
 
+    @Override
     public void displayWarningMessage(String text) {
         fFrozen = false;
         lastMsg = text;
@@ -199,24 +206,43 @@ public final class NbStatusDisplay implements ViStatusDisplay
 	setText(StatusBar.CELL_MAIN, modeString() + text, lastMsgColoring);
     }
 
+    @Override
     public void displayFrozenMessage(String text) {
         fFrozen = true;
         setMessageText(text);
     }
 
+    @Override
     public void clearMessage() {
         if(fFrozen)
             return;
 	setMessageText("");
     }
 
+    @Override
     public void clearDisplay() {
         // don't change any status state, just do it
         setText(StatusBar.CELL_MAIN, "");
     }
 
+    @Override
     public void refresh() {
-        setText(StatusBar.CELL_MAIN, modeString() + lastMsg + lastCmd, lastMsgColoring);
+        // preserve scrollCount
+        int t = scrollCount;
+        setText(StatusBar.CELL_MAIN,
+                modeString() + lastMsg + lastCmd,
+                lastMsgColoring);
+        scrollCount = t;
+    }
+
+    @Override
+    public void scrolling()
+    {
+        // NEEDSWOKR: we scrolled, just leave things as is
+        //            Could repeat the last message with a timeout
+        if(++scrollCount > 3) {
+            clearMessage();
+        }
     }
 
     private void setMessageText(String text) {
@@ -233,6 +259,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
         LOG.log(Level.FINE, "setText: {0} ''{1}'' {2}",
                 new Object[]{cellName, text,
                             coloring != null ? coloring.getForeColor() : null});
+        scrollCount = 0;
 	StatusBar sb = getStatusBar();
         if(sb != null) {
             // Only use alternate for CELL_MAIN and when sb not visible

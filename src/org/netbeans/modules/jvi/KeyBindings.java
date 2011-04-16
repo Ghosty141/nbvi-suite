@@ -133,10 +133,10 @@ public class KeyBindings {
         // give all the editors the jVi DKTA and cursor
         for (JEditorPane ep : knownEditors.keySet()) {
             LOG.log(Level.FINE, "{0} enableKeyBindings knownJEP: {1}",
-                    new Object[]{MOD, ep.getClass().getName()});
+                    new Object[]{MOD, Module.getName(ep)});
             if(dbgNb())
                 System.err.println(MOD + " enableKeyBindings knownJEP: "
-                        + ep.getClass().getName());
+                        + Module.getName(ep));
             captureDefaultKeyTypedActionAndEtc(ep);
             try {
                 checkCaret(ep);
@@ -160,10 +160,7 @@ public class KeyBindings {
                 if(ep.getCaret() instanceof NbCaret) {
                     NbFactory.installCaret(ep, c01);
                     if(dbgNb()) {
-                        System.err.println("restore caret: "
-                                + ViManager.getFactory().getFS()
-                                  .getDisplayFileName(
-                                   ViManager.getFactory().getAppView(ep)));
+                        System.err.println("restore caret: " + Module.getName(ep));
                     }
                 }
                 editorToCaret.remove(ep);
@@ -201,7 +198,7 @@ public class KeyBindings {
     /**
      * @return false when editor already was not in there
      */
-    private static boolean removeKnownEditor(JEditorPane ep)
+    static boolean removeKnownEditor(JEditorPane ep)
     {
         editorToCaret.remove(ep);
         return knownEditors.remove(ep) != null;

@@ -209,6 +209,12 @@ public class Module extends ModuleInstall
     {
         return refOutput == null ? null : refOutput.get();
     }
+
+    public static String getName(JEditorPane ep)
+    {
+        return ViManager.getFactory().getFS().getDisplayFileName(
+                ViManager.getFactory().getAppView(ep));
+    }
     
     /** called when the module is loaded (at netbeans startup time) */
     @Override
@@ -619,6 +625,7 @@ public class Module extends ModuleInstall
                 TopComponent tc = (TopComponent) evt.getNewValue();
                 for (NbAppView av : NbAppView.fetchAvFromTC(tc)) {
                     tcDumpInfo(tc, "close");
+                    KeyBindings.removeKnownEditor(av.getEditor());
                     AppViews.close(av);
                 }
             }

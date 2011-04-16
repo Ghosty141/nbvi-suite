@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +64,7 @@ import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
 import org.netbeans.modules.jvi.impl.NbCaret;
 import org.netbeans.modules.jvi.impl.NbFactory;
+import org.openide.util.WeakSet;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -83,8 +85,7 @@ public class KeyBindings {
             new HashMap<EditorKit, Action>();
     private static Map<JEditorPane, Caret> editorToCaret =
             new WeakHashMap<JEditorPane, Caret>();
-    private static Map<JEditorPane, Object> knownEditors =
-            new WeakHashMap<JEditorPane, Object>();
+    private static Set<JEditorPane> knownEditors = new WeakSet<JEditorPane>();
 
     private static boolean didInit;
     @ServiceProvider(service=ViInitialization.class,
@@ -131,7 +132,7 @@ public class KeyBindings {
         KeyBindings.updateKeymap();
 
         // give all the editors the jVi DKTA and cursor
-        for (JEditorPane ep : knownEditors.keySet()) {
+        for (JEditorPane ep : knownEditors) {
             LOG.log(Level.FINE, "{0} enableKeyBindings knownJEP: {1}",
                     new Object[]{MOD, Module.getName(ep)});
             if(dbgNb())
@@ -154,7 +155,7 @@ public class KeyBindings {
                     + knownEditors.size());
 
         // restore the carets
-        for (JEditorPane ep : knownEditors.keySet()) {
+        for (JEditorPane ep : knownEditors) {
             Caret c01 = editorToCaret.get(ep);
             if(c01 != null) {
                 if(ep.getCaret() instanceof NbCaret) {
@@ -188,20 +189,20 @@ public class KeyBindings {
     }
 
     /**
-     * @return false when editor already in there
+     * @return false if editor already in there
      */
     private static boolean addKnownEditor(JEditorPane ep)
     {
-        return knownEditors.put(ep, null) != null;
+        return knownEditors.add(ep);
     }
 
     /**
-     * @return false when editor already was not in there
+     * @return false if editor was not in there
      */
     static boolean removeKnownEditor(JEditorPane ep)
     {
         editorToCaret.remove(ep);
-        return knownEditors.remove(ep) != null;
+        return knownEditors.remove(ep);
     }
 
     /** EXPECTED THAT forceKeymapRefresh DOES NOT RETUN UNTILL ALL KEYMAPS DONE*/
@@ -378,7 +379,7 @@ public class KeyBindings {
 
     public static void checkCaret(JEditorPane ep)
     {
-        assert knownEditors.containsKey(ep);
+        assert knownEditors.contains(ep);
         if (!jViEnabled())
             return;
         if (!(ep.getCaret() instanceof ViCaret)) {

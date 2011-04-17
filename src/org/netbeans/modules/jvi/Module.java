@@ -41,6 +41,7 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
+import org.netbeans.modules.jvi.impl.NbFS;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Actions;
@@ -212,8 +213,14 @@ public class Module extends ModuleInstall
 
     public static String getName(JEditorPane ep)
     {
-        return ViManager.getFactory().getFS().getDisplayFileName(
-                ViManager.getFactory().getAppView(ep));
+        String s = ViManager.getFactory().getFS().getDisplayFileName(
+                                ViManager.getFactory().getAppView(ep));
+        if(NbFS.NULL_APP_VIEW.equals(s)) {
+            // NEEDSWORK:  av = (NbAppView)ep
+            //                  .getClientProperty(SwingFactory.PROP_AV);
+            s = ep.getClass().getName() + ":" + s;
+        }
+        return s;
     }
     
     /** called when the module is loaded (at netbeans startup time) */

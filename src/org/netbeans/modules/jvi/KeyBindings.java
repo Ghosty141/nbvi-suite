@@ -20,6 +20,7 @@
 
 package org.netbeans.modules.jvi;
 
+import javax.swing.plaf.TextUI;
 import static org.netbeans.modules.jvi.Module.earlyInit;
 import static org.netbeans.modules.jvi.Module.MOD;
 import static org.netbeans.modules.jvi.Module.jViEnabled;
@@ -61,6 +62,7 @@ import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
 import org.netbeans.editor.BaseKit;
+import org.netbeans.editor.BaseTextUI;
 import org.netbeans.modules.editor.settings.storage.spi.StorageFilter;
 import org.netbeans.modules.jvi.impl.NbCaret;
 import org.netbeans.modules.jvi.impl.NbFactory;
@@ -135,16 +137,17 @@ public class KeyBindings {
         for (JEditorPane ep : knownEditors) {
             LOG.log(Level.FINE, "{0} enableKeyBindings knownJEP: {1}",
                     new Object[]{MOD, Module.getName(ep)});
-            if(dbgNb())
-                System.err.println(MOD + " enableKeyBindings knownJEP: "
-                        + Module.getName(ep));
-            captureDefaultKeyTypedActionAndEtc(ep);
-            try {
+            TextUI ui = ep.getUI();
+            if(ui instanceof BaseTextUI) {
+                if(dbgNb())
+                    System.err.println(MOD + " enableKeyBindings knownJEP: "
+                            + Module.getName(ep));
+                captureDefaultKeyTypedActionAndEtc(ep);
                 checkCaret(ep);
-            }
-            catch(ClassCastException ex) {
-                LOG.log(Level.SEVERE, ep.getClass().getName(), ex);
-            }
+            } else
+                LOG.log(Level.WARNING,
+                        "enableKeyBindings not NB BaseTextUI: {0}",
+                        Module.getName(ep));
         }
     }
 
@@ -159,9 +162,15 @@ public class KeyBindings {
             Caret c01 = editorToCaret.get(ep);
             if(c01 != null) {
                 if(ep.getCaret() instanceof NbCaret) {
-                    NbFactory.installCaret(ep, c01);
+                    LOG.log(Level.FINE, "{0} disableKeyBindings knownJEP: {1}",
+                            new Object[]{MOD, Module.getName(ep)});
                     if(dbgNb()) {
                         System.err.println("restore caret: " + Module.getName(ep));
+                    }
+                    try {
+                        NbFactory.installCaret(ep, c01);
+                    } catch(NullPointerException ex) {
+                        System.err.println("OUCH");
                     }
                 }
                 editorToCaret.remove(ep);

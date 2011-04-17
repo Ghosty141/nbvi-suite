@@ -38,7 +38,8 @@ public class NbFS extends abstractFS
         return dobj;
     }
 
-    private static final String NULL_FO = "noname-null-FileObject";
+    public static final String NULL_FO = "noname-null-FileObject";
+    public static final String NULL_APP_VIEW = "screwy-AppView-missing-fields";
 
     @Override
     public String getDisplayFileName(ViAppView _av) {
@@ -61,7 +62,7 @@ public class NbFS extends abstractFS
                 s = av.getEditor().getClass().getSimpleName();
         }
         if(s == null)
-            s = "screwy-AppView-missing-fields";
+            s = NULL_APP_VIEW;
         return s;
     }
 

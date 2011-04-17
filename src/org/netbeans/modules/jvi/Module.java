@@ -39,7 +39,6 @@ import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import javax.swing.Action;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import org.openide.DialogDisplayer;
@@ -57,6 +56,7 @@ import org.openide.modules.ModuleInstall;
 import org.openide.modules.SpecificationVersion;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
+import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -319,17 +319,13 @@ public class Module extends ModuleInstall
         ViManager.runInDispatch(false, new Runnable() {
             @Override public void run()
             {
-                if(jviButton != null
-                        && jviOnIcon != null
-                        && jviOffIcon != null) {
-                    jviButton.setIcon(jViEnabled() ? jviOnIcon : jviOffIcon);
+                if(jviButton != null) {
+                    jviButton.setSelected(jViEnabled());
                 }
             }
         });
     }
     private static AbstractButton jviButton;
-    private static ImageIcon jviOnIcon;
-    private static ImageIcon jviOffIcon;
     @ServiceProvider(service=Actions.ButtonActionConnector.class)
     public static class checkActions implements Actions.ButtonActionConnector {
 
@@ -337,38 +333,22 @@ public class Module extends ModuleInstall
         public boolean connect(AbstractButton button, Action action)
         {
             if("jVi".equals(action.getValue(Action.NAME))) {
+                if(action instanceof Presenter.Toolbar)
+                    return false;
+
+                // Older version of NetBeans, need to work around
+                // Bug 197639 - Actions.checkbox has no icon for "off" state
+
                 //System.err.println("connetc: " + action.getValue(Action.NAME));
                 jviButton = button;
-                jviOnIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24_checked.png", false);
-                jviOffIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24.png", false);
+                Icon jviOnIcon = ImageUtilities.loadImageIcon("org/netbeans/modules/jvi/resources/jViLogoToggle24_selected.png", false);
+                jviButton.setSelectedIcon(jviOnIcon);
                 EventQueue.invokeLater(new Runnable()
                 {
                     @Override public void run() {
                         fixupJviButton();
                     }
                 });
-                // make sure unexpected changes to icon don't mess things up
-                jviButton.addPropertyChangeListener("icon", new PropertyChangeListener() {
-
-                    @Override
-                    public void propertyChange(PropertyChangeEvent evt)
-                    {
-                        // System.err.println("BUTTON_PROPERTY_CHANGE "
-                        //         + evt.getPropertyName());
-                        final Icon icon = jViEnabled() ? jviOnIcon : jviOffIcon;
-                        if(evt.getNewValue() != icon) {
-                            EventQueue.invokeLater(new Runnable() {
-
-                                @Override
-                                public void run()
-                                {
-                                    jviButton.setIcon(icon);
-                                }
-                            });
-                        }
-                    }
-                });
-
             }
             return false;
         }

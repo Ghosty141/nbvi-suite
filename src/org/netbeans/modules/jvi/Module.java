@@ -302,9 +302,8 @@ public class Module extends ModuleInstall
         prefNode.addPreferenceChangeListener(new PreferenceChangeListener() {
             @Override
             public void preferenceChange(PreferenceChangeEvent evt) {
-                System.err.println("PREF CHANGE: " + evt);
                 if(evt.getKey().equals(PREF_ENABLED)) {
-                    System.err.println("PREF CHANGE TO: " + evt.getNewValue());
+                    System.err.println("jVi PREF CHANGE TO: " + evt.getNewValue());
                     boolean enabled = getModulePreferences()
                             .getBoolean(PREF_ENABLED, true);
                     EventQueue.invokeLater(enabled

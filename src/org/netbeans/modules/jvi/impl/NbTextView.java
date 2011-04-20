@@ -158,7 +158,7 @@ public class NbTextView extends SwingTextView
     private void setWrapPref()
     {
         Preferences prefs = CodeStylePreferences.get(
-                getEditorComponent().getDocument()).getPreferences();
+                getEditor().getDocument()).getPreferences();
         String s = !w_p_wrap ? "none" : w_p_lbr ? "words" : "chars";
         prefs.put(SimpleValueNames.TEXT_LINE_WRAP, s);
         EventQueue.invokeLater(new Runnable()
@@ -170,10 +170,10 @@ public class NbTextView extends SwingTextView
                 //       This gives per document control (unlike stock NB editor)
                 // Needs to check for null since it might be closed
                 // by the time we get here.
-                if(getEditorComponent() == null
-                        || getEditorComponent().getDocument() == null)
+                if(getEditor() == null
+                        || getEditor().getDocument() == null)
                     return;
-                getEditorComponent().getDocument()
+                getEditor().getDocument()
                     .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
             }
         });
@@ -406,11 +406,11 @@ public class NbTextView extends SwingTextView
 
         // NOTE: MAKE_VISIBLE is the only thing supported
 
-        final FoldHierarchy fh = FoldHierarchy.get(getEditorComponent());
+        final FoldHierarchy fh = FoldHierarchy.get(getEditor());
 
         // get the fold containing the offset,
         // expand it and all its parents
-        getEditorComponent().getDocument().render(new Runnable() {
+        getEditor().getDocument().render(new Runnable() {
             public void run() {
                 fh.lock();
                 try {
@@ -493,7 +493,7 @@ public class NbTextView extends SwingTextView
         }
 
         if(fsAct != null) {
-            ActionEvent e = new ActionEvent(getEditorComponent(),
+            ActionEvent e = new ActionEvent(getEditor(),
                                             ActionEvent.ACTION_PERFORMED,
                                             "");
             Module.execFileSystemAction(fsAct, e);

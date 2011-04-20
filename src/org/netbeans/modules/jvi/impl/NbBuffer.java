@@ -128,7 +128,7 @@ public class NbBuffer extends SwingBuffer {
         String mimeType = tv == null
                 ? NbEditorUtilities.getMimeType(getDocument())
                 : NbEditorUtilities.getMimeType(
-                    ((JTextComponent)tv.getEditorComponent()));
+                    ((JTextComponent)tv.getEditor()));
         if(mimeType != null) {
             prefs = MimeLookup.getLookup(
                     MimePath.parse(mimeType)).lookup(Preferences.class);

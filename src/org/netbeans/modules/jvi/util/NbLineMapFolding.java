@@ -50,7 +50,7 @@ public class NbLineMapFolding implements LineMap
     public NbLineMapFolding(NbTextView tv)
     {
         this.tv = tv;
-        fh = FoldHierarchy.get(tv.getEditorComponent());
+        fh = FoldHierarchy.get(tv.getEditor());
         setupListeners();
     }
 
@@ -247,7 +247,7 @@ public class NbLineMapFolding implements LineMap
      * running stuff. */
     private void runLocked(final Runnable r)
     {
-        tv.getEditorComponent().getDocument().render(new Runnable()
+        tv.getEditor().getDocument().render(new Runnable()
         {
             @Override
             public void run()
@@ -314,7 +314,7 @@ public class NbLineMapFolding implements LineMap
                 valid = false;
             }
         });
-        tv.getEditorComponent().getDocument().addDocumentListener(
+        tv.getEditor().getDocument().addDocumentListener(
             new DocumentListener()
             {
                 @Override

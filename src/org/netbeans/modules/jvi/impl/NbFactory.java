@@ -272,7 +272,7 @@ final public class NbFactory extends SwingFactory {
     }
     
     private static void fillTagFrom(Tag tag, ViTextView tv) {
-        tag.fromDoc = ((JEditorPane)tv.getEditorComponent()).getDocument();
+        tag.fromDoc = ((JEditorPane)tv.getEditor()).getDocument();
         tag.fromFile = tv.getBuffer().getDisplayFileName();
         try {
             tag.fromPosition = tag.fromDoc.createPosition(tv.getCaretPosition());
@@ -295,7 +295,7 @@ final public class NbFactory extends SwingFactory {
            String fromData = tag.fromFile;
            // If the from tag is the current file, show the document's line
             ViTextView tv = G.curwin;
-            if(((JEditorPane)tv.getEditorComponent())
+            if(((JEditorPane)tv.getEditor())
                     .getDocument().equals(tag.fromDoc)) {
                 String s = tv.getBuffer().getLineSegment(
                                     tag.fromLine.getLineNumber() +1).toString();
@@ -375,7 +375,7 @@ final public class NbFactory extends SwingFactory {
     public final void startTagPush(ViTextView tv, String ident) {
         if(tv == null)
             return;
-        if(((JEditorPane)tv.getEditorComponent()).getDocument() == null)
+        if(((JEditorPane)tv.getEditor()).getDocument() == null)
             return;
         
         pushingTag = new Tag();
@@ -395,7 +395,7 @@ final public class NbFactory extends SwingFactory {
         if(pushingTag == null)
             return;
         
-        Document doc = ((JEditorPane)tv.getEditorComponent()).getDocument();
+        Document doc = ((JEditorPane)tv.getEditor()).getDocument();
         if(doc == null)
             return;
                 

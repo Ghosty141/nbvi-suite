@@ -44,7 +44,7 @@ public class NbOps extends OpsBase {
                 break;
             case KEY_TYPED:
                 Action a = KeyBindings.getDefaultKeyAction(
-                        ((JEditorPane)textView.getEditorComponent()));
+                        ((JEditorPane)textView.getEditor()));
                 xact(a != null ? a : keyTypedAction);
                 return;
             case INSERT_NEW_LINE:

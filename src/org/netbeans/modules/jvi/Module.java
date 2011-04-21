@@ -166,6 +166,9 @@ public class Module extends ModuleInstall
                     public boolean hasKeyValue(Preferences prefs, String child,
                                                String key, String val )
                     {
+                        // look into the preferences file,
+                        // not what the preferences subsystem thinks,
+                        // to see if the key value is there.
                         FileObject cf = FileUtil.getConfigFile(
                               "Preferences" + prefs.absolutePath()
                               + "/" + child + ".properties");

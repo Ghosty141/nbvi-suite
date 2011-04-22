@@ -122,13 +122,6 @@ public class NbLineMapFolding implements LineMap
         return mb.getValue();
     }
 
-    @Override
-    public int docLineOffset(int logicalLine)
-    {
-        int docLine = docLine(logicalLine);
-        return tv.getBuffer().getLineStartOffset(docLine);
-    }
-
     /** describe a closed fold and the non-folded lines that follow it */
     private class ClosedFold
     {

@@ -49,11 +49,15 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import javax.swing.ImageIcon;
-import org.netbeans.modules.editor.completion.PatchedHtmlRenderer;
+import org.openide.awt.HtmlRenderer;
 
 /**
  * Various code completion utilities including completion item
  * contents rendering.
+ * <p/>
+ * From org.netbeans.spi.editor.completion.support.CompletionUtilities
+ * to make icon width a param. Can't use PatchedHtmlRenderer, just use the
+ * normal one and ignore selected param. It's up to caller to make things right.
  *
  * @author Miloslav Metelka
  * @version 1.00
@@ -75,7 +79,7 @@ public final class CompletionUtilities {
      * By default 16x16 icons should be used.
      */
     private static final int ICON_HEIGHT = 16;
-    private static final int ICON_WIDTH = 16;
+    //private static final int ICON_WIDTH = 16;
     
     /**
      * The gap between left and right text.
@@ -104,18 +108,18 @@ public final class CompletionUtilities {
      * @return &gt;=0 preferred rendering width of the item.
      */
     public static int getPreferredWidth(String leftHtmlText, String rightHtmlText,
-    Graphics g, Font defaultFont) {
-        int width = BEFORE_ICON_GAP + ICON_WIDTH + AFTER_ICON_GAP + AFTER_RIGHT_TEXT_GAP;
+    Graphics g, Font defaultFont, int width) {
+        width += BEFORE_ICON_GAP + AFTER_ICON_GAP + AFTER_RIGHT_TEXT_GAP;
         if (leftHtmlText != null && leftHtmlText.length() > 0) {
-            width += (int)PatchedHtmlRenderer.renderHTML(leftHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
-                    defaultFont, Color.black, PatchedHtmlRenderer.STYLE_CLIP, false, true);
+            width += (int)HtmlRenderer.renderHTML(leftHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
+                    defaultFont, Color.black, HtmlRenderer.STYLE_CLIP, false);
         }
         if (rightHtmlText != null && rightHtmlText.length() > 0) {
             if (leftHtmlText != null) {
                 width += BEFORE_RIGHT_TEXT_GAP;
             }
-            width += (int)PatchedHtmlRenderer.renderHTML(rightHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
-                    defaultFont, Color.black, PatchedHtmlRenderer.STYLE_CLIP, false, true);
+            width += (int)HtmlRenderer.renderHTML(rightHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
+                    defaultFont, Color.black, HtmlRenderer.STYLE_CLIP, false);
         }
         return width;
     }
@@ -159,31 +163,31 @@ public final class CompletionUtilities {
      */
     public static void renderHtml(ImageIcon icon, String leftHtmlText, String rightHtmlText,
     Graphics g, Font defaultFont, Color defaultColor,
-    int width, int height, boolean selected) {
+    int width, int height, boolean selected, int iconWidth) {
         if (icon != null) {
             // The image of the ImageIcon should already be loaded
             // so no ImageObserver should be necessary
             boolean done = g.drawImage(icon.getImage(), BEFORE_ICON_GAP, (height - icon.getIconHeight()) /2, null);
             assert (done);
         }
-        int iconWidth = BEFORE_ICON_GAP + ICON_WIDTH + AFTER_ICON_GAP;
+        iconWidth += BEFORE_ICON_GAP + AFTER_ICON_GAP;
         int rightTextX = width - AFTER_RIGHT_TEXT_GAP;
         FontMetrics fm = g.getFontMetrics(defaultFont);
         int textY = (height - fm.getHeight())/2 + fm.getHeight() - fm.getDescent();
         if (rightHtmlText != null && rightHtmlText.length() > 0) {
-            int rightTextWidth = (int)PatchedHtmlRenderer.renderHTML(rightHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
-                    defaultFont, defaultColor, PatchedHtmlRenderer.STYLE_CLIP, false, true);
+            int rightTextWidth = (int)HtmlRenderer.renderHTML(rightHtmlText, g, 0, 0, Integer.MAX_VALUE, 0,
+                    defaultFont, defaultColor, HtmlRenderer.STYLE_CLIP, false);
             rightTextX = Math.max(iconWidth, rightTextX - rightTextWidth);
             // Render right text
-            PatchedHtmlRenderer.renderHTML(rightHtmlText, g, rightTextX, textY, rightTextWidth, textY,
-                defaultFont, defaultColor, PatchedHtmlRenderer.STYLE_CLIP, true, selected);
+            HtmlRenderer.renderHTML(rightHtmlText, g, rightTextX, textY, rightTextWidth, textY,
+                defaultFont, defaultColor, HtmlRenderer.STYLE_CLIP, true);
             rightTextX = Math.max(iconWidth, rightTextX - BEFORE_RIGHT_TEXT_GAP);
         }
 
         // Render left text
         if (leftHtmlText != null && leftHtmlText.length() > 0 && rightTextX > iconWidth) { // any space for left text?
-            PatchedHtmlRenderer.renderHTML(leftHtmlText, g, iconWidth, textY, rightTextX - iconWidth, textY,
-                defaultFont, defaultColor, PatchedHtmlRenderer.STYLE_TRUNCATE, true, selected);
+            HtmlRenderer.renderHTML(leftHtmlText, g, iconWidth, textY, rightTextX - iconWidth, textY,
+                defaultFont, defaultColor, HtmlRenderer.STYLE_TRUNCATE, true);
         }
     }
     

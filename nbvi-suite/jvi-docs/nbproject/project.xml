@@ -55,7 +55,14 @@
                     <ide-action name="javadoc"/>
                 </context-menu>
             </view>
+            <subprojects/>
         </general-data>
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/1"/>
+        <preferences xmlns="http://www.netbeans.org/ns/auxiliary-configuration-preferences/1">
+            <module name="org-netbeans-modules-html-editor-lib">
+                <property name="default-html-public-id" value="-//W3C//DTD HTML 4.01 Transitional//EN"/>
+            </module>
+            <module name="org-netbeans-modules-projectimport-eclipse-core"/>
+        </preferences>
     </configuration>
 </project>

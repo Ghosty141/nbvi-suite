@@ -49,7 +49,6 @@ import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
 import org.netbeans.spi.editor.completion.CompletionTask;
-import org.netbeans.spi.editor.completion.support.CompletionUtilities;
 import org.openide.ErrorManager;
 import org.openide.windows.TopComponent;
 
@@ -65,11 +64,15 @@ public class EditAlternateTask implements CompletionTask
     private static final int ITEM_DIRTY = 2;     // modified, not written
     private static final int ITEM_MODIFIED = 4;  // out of sync with VCS
     private static final int ITEM_NEW = 8;       // not yet in VCS
-    private static Font myDefaultFont;
-    private static Font myDirtyFont;
 
-    JTextComponent jtc;
     List<EditAlternateItem> query = new ArrayList<EditAlternateItem>();
+
+    // follow shared by CompletionItem
+    JTextComponent jtc;
+    private Font ciDefaultFont;
+    private Font ciDirtyFont;
+    private int ciMaxIconWidth;
+    private int ciTextOffset;
 
     public EditAlternateTask(JTextComponent jtc)
     {
@@ -115,12 +118,12 @@ public class EditAlternateTask implements CompletionTask
         dbgCompl.println("CANCEL EA:");
         Completion.get().hideAll();
         // drop the fonts
-        myDefaultFont = null;
-        myDirtyFont = null;
     }
 
     private void buildQueryResult()
     {
+        // NEEDSWORK: figure this out by looking at the JTextComponent
+        ciTextOffset = 2; // offset 2 is after "e#"
         for (ViAppView _av : AppViews.getList(AppViews.ACTIVE)) {
             NbAppView av = (NbAppView)_av;
             TopComponent tc = av.getTopComponent();
@@ -143,7 +146,7 @@ public class EditAlternateTask implements CompletionTask
             query.add(new EditAlternateItem(
                     name,
                     String.format("%02d", wnum),
-                    icon, false, flags, 2)); // offset 2 is after "e#"
+                    icon, false, flags));
         }
     }
 
@@ -156,7 +159,7 @@ public class EditAlternateTask implements CompletionTask
             if (dbgCompl.getBoolean())
                 dbsString = tag + ": \'" + text + "\'";
             if (CcCompletion.isEditAlternate(doc)) {
-                int startOffset = 2; // char after 'e#'
+                int startOffset = ciTextOffset; // char after 'e#'
                 // NEEDSWORK: can't count on the caret position since
                 // this is sometimes called from the event dispatch thread
                 // so just use the entire string. Set the caret to
@@ -204,26 +207,30 @@ public class EditAlternateTask implements CompletionTask
         private String nameLabel;
         private String num;
         private boolean fFilterDigit;
-        private int startOffset;
         private int flags;
         private Color myColor;
         private static final String LEFT_ARROW = "\u2190"; //larr ← U+2190
         private Font myFont;
 
         EditAlternateItem(String name, String num, ImageIcon icon,
-                                boolean fFilterDigit, int flags, int dotOffset)
+                                boolean fFilterDigit, int flags)
         {
             this.name = name;
             this.num = num;
-            this.startOffset = dotOffset;
-            this.icon = icon; // != null ? icon : EditAlternateItem.fieldIcon;
             this.fFilterDigit = fFilterDigit;
             this.flags = flags;
+            this.icon = icon;
+            if(icon.getIconWidth() > ciMaxIconWidth)
+                ciMaxIconWidth = icon.getIconWidth();
 
-            // NOTE: it seems a font specified in the html
-            //       overrides "defaultFont"
+            // Font color spec'd in html overrides defaultColor.
+            // Since using standard CompletionUtilities to work around icon
+            // width issues, so not using "PatchedHtmlRenderer".
+            //
+            // DO NOT put font color spec in html.
+            //
 
-            StringBuilder sb = new StringBuilder("&nbsp;&nbsp;"); // for icon
+            StringBuilder sb = new StringBuilder();
             sb.append(name);
             if((flags & ITEM_ACTIVE) != 0) {
                 sb.append(" ").append(LEFT_ARROW);
@@ -240,26 +247,27 @@ public class EditAlternateTask implements CompletionTask
                 return myFont;
 
             // first make sure there's local, static, default font
-            if(myDefaultFont == null) {
+            if(ciDefaultFont == null) {
                 Map<TextAttribute, Object> m
                         = new HashMap<TextAttribute, Object>();
                 m.put(TextAttribute.FAMILY, Font.SANS_SERIF);
                 m.put(TextAttribute.SIZE, defaultFont.getSize2D());
-                myDefaultFont = new Font(m);
+                ciDefaultFont = new Font(m);
             }
             if((flags & ITEM_DIRTY) != 0) {
-                if(myDirtyFont == null) {
+                if(ciDirtyFont == null) {
                     Map<TextAttribute, Object> m
                             = new HashMap<TextAttribute, Object>();
                     m.put(TextAttribute.FAMILY, Font.SANS_SERIF);
-                    m.put(TextAttribute.SIZE, defaultFont.getSize2D()+1);
-                    m.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
-                    //m.put(TextAttribute.WIDTH, TextAttribute.WIDTH_EXTENDED);
-                    myDirtyFont = new Font(m);
+                    // font size +1 looks better than extended width
+                    // no modification (except bold) is ok, but seems too subtle
+                    m.put(TextAttribute.SIZE, ciDefaultFont.getSize2D()+1);
+                    m.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+                    ciDirtyFont = new Font(m);
                 }
-                myFont = myDirtyFont;
+                myFont = ciDirtyFont;
             } else
-                myFont = myDefaultFont;
+                myFont = ciDefaultFont;
             return myFont;
         }
         private Color getColor(Color defaultColor)
@@ -294,9 +302,9 @@ public class EditAlternateTask implements CompletionTask
             //String value = name;
             String value = num;
             try {
-                doc.remove(startOffset, caretOffset - startOffset);
-                doc.insertString(startOffset, value, null);
-                jtc.setCaretPosition(startOffset + value.length());
+                doc.remove(ciTextOffset, caretOffset - ciTextOffset);
+                doc.insertString(ciTextOffset, value, null);
+                jtc.setCaretPosition(ciTextOffset + value.length());
             } catch (BadLocationException e) {
                 ErrorManager.getDefault().notify(ErrorManager.INFORMATIONAL, e);
             }
@@ -334,7 +342,8 @@ public class EditAlternateTask implements CompletionTask
         {
             font = getFont(font);
             // System.err.println(""+font+"   "+name);
-            return CompletionUtilities.getPreferredWidth(nameLabel, num, g, font);
+            return CompletionUtilities.getPreferredWidth(
+                    nameLabel, num, g, font, ciMaxIconWidth);
         }
 
         @Override
@@ -352,7 +361,7 @@ public class EditAlternateTask implements CompletionTask
             CompletionUtilities.renderHtml(
                     icon, nameLabel, num, g, font,
                     selected ? Color.white : color,
-                    width, height, selected);
+                    width, height, selected, ciMaxIconWidth);
         }
 
         @Override

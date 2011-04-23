@@ -32,8 +32,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.font.TextAttribute;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
@@ -58,8 +61,12 @@ import org.openide.windows.TopComponent;
 public class EditAlternateTask implements CompletionTask
 {
     private static DebugOption dbgCompl;
-    private static final int ITEM_SELECTED = 1;
-    private static final int ITEM_MODIFIED = 2;
+    private static final int ITEM_ACTIVE = 1;
+    private static final int ITEM_DIRTY = 2;     // modified, not written
+    private static final int ITEM_MODIFIED = 4;  // out of sync with VCS
+    private static final int ITEM_NEW = 8;       // not yet in VCS
+    private static Font myDefaultFont;
+    private static Font myDirtyFont;
 
     JTextComponent jtc;
     List<EditAlternateItem> query = new ArrayList<EditAlternateItem>();
@@ -107,6 +114,9 @@ public class EditAlternateTask implements CompletionTask
     {
         dbgCompl.println("CANCEL EA:");
         Completion.get().hideAll();
+        // drop the fonts
+        myDefaultFont = null;
+        myDirtyFont = null;
     }
 
     private void buildQueryResult()
@@ -117,14 +127,14 @@ public class EditAlternateTask implements CompletionTask
             int wnum = av.getWNum();
             int flags = 0;
             if (TopComponent.getRegistry().getActivated() == tc)
-                flags |= ITEM_SELECTED;
+                flags |= ITEM_ACTIVE;
             ImageIcon icon =
                     tc.getIcon() != null ? new ImageIcon(tc.getIcon()) : null;
             String name = null;
             if(av.getEditor() != null) {
                 Document doc = av.getEditor().getDocument();
                 if (NbEditorUtilities.getDataObject(doc).isModified())
-                    flags |= ITEM_MODIFIED;
+                    flags |= ITEM_DIRTY;
                 name = NbEditorUtilities.getFileObject(doc).getNameExt();
             }
             if (name == null)
@@ -181,64 +191,82 @@ public class EditAlternateTask implements CompletionTask
         resultSet.finish();
     }
 
+    // o.n.swing.tabcontrol/src/org/netbeans/swing/tabcontrol
+    // Tip_Show_Opened_Documents_List=Show Opened Documents List
     // getTxtFont taken from core/swing/tabcontrol/src/
     // org/netbeans/swing/tabcontrol/plaf/AbstractViewTabDisplayerUI.java
-    ///// private Font getTxtFont()
-    ///// {
-    /////     //font = UIManager.getFont("TextField.font");
-    /////     //Font font = UIManager.getFont("Tree.font");
-    /////     Font txtFont;
-    /////     txtFont = (Font)UIManager.get("windowTitleFont");
-    /////     if (txtFont == null)
-    /////         txtFont = new Font("Dialog", Font.PLAIN, 11);
-    /////     else if (txtFont.isBold())
-    /////         // don't use deriveFont() - see #49973 for details
-    /////         txtFont =
-    /////                 new Font(txtFont.getName(), Font.PLAIN,
-    /////                          txtFont.getSize());
-    /////     return txtFont;
-    ///// }
 
-    private static class EditAlternateItem implements CompletionItem
+    private class EditAlternateItem implements CompletionItem
     {
-        private static String fieldColorCode = "0000B2";
-        private static Color fieldColor =
-                Color.decode("0x" + EditAlternateItem.fieldColorCode);
-        //private static Color fieldColor = Color.decode("0xC0C0B2");
-        private static ImageIcon fieldIcon = null;
+        private static final String modifiedColorCode = "0x0000B2";
         private ImageIcon icon;
         private String name;
-        private String nameLabel; // with padding for wide icon
+        private String nameLabel;
         private String num;
         private boolean fFilterDigit;
         private int startOffset;
+        private int flags;
+        private Color myColor;
+        private static final String LEFT_ARROW = "\u2190"; //larr ← U+2190
+        private Font myFont;
 
         EditAlternateItem(String name, String num, ImageIcon icon,
-                                boolean fFilterDigit, int flags,
-                                int dotOffset)
+                                boolean fFilterDigit, int flags, int dotOffset)
         {
             this.name = name;
             this.num = num;
             this.startOffset = dotOffset;
-            this.icon = icon != null ? icon : EditAlternateItem.fieldIcon;
+            this.icon = icon; // != null ? icon : EditAlternateItem.fieldIcon;
             this.fFilterDigit = fFilterDigit;
-            // + "<font color=\"#000000\">"
-            nameLabel =
-                    "<html>&nbsp;&nbsp;"
-                    + ((flags & ITEM_SELECTED) != 0 ? "<b>" : "")
-                    + "<font color=\"#"
-                    + ((flags & ITEM_MODIFIED) != 0
-                        ? EditAlternateItem.fieldColorCode : "000000")
-                    + "\">"
-                    +     name
-                    +     ((flags & ITEM_MODIFIED) != 0 ? " *" : "")
-                    + "</font>"
-                    + ((flags & ITEM_SELECTED) != 0 ? "</b>" : "")
-                    + "</html>";
-            //if(fieldIcon == null){
-            //    fieldIcon = new ImageIcon(Utilities.loadImage(
-            //            "org/netbeans/modules/textfiledictionary/icon.png"));
-            //}
+            this.flags = flags;
+
+            // NOTE: it seems a font specified in the html
+            //       overrides "defaultFont"
+
+            StringBuilder sb = new StringBuilder("&nbsp;&nbsp;"); // for icon
+            sb.append(name);
+            if((flags & ITEM_ACTIVE) != 0) {
+                sb.append(" ").append(LEFT_ARROW);
+            }
+            if((flags & ITEM_MODIFIED) != 0) {
+                myColor = Color.decode(modifiedColorCode);
+            }
+            nameLabel = sb.toString();
+        }
+
+        private Font getFont(Font defaultFont)
+        {
+            if(myFont != null)
+                return myFont;
+
+            // first make sure there's local, static, default font
+            if(myDefaultFont == null) {
+                Map<TextAttribute, Object> m
+                        = new HashMap<TextAttribute, Object>();
+                m.put(TextAttribute.FAMILY, Font.SANS_SERIF);
+                m.put(TextAttribute.SIZE, defaultFont.getSize2D());
+                myDefaultFont = new Font(m);
+            }
+            if((flags & ITEM_DIRTY) != 0) {
+                if(myDirtyFont == null) {
+                    Map<TextAttribute, Object> m
+                            = new HashMap<TextAttribute, Object>();
+                    m.put(TextAttribute.FAMILY, Font.SANS_SERIF);
+                    m.put(TextAttribute.SIZE, defaultFont.getSize2D()+1);
+                    m.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
+                    //m.put(TextAttribute.WIDTH, TextAttribute.WIDTH_EXTENDED);
+                    myDirtyFont = new Font(m);
+                }
+                myFont = myDirtyFont;
+            } else
+                myFont = myDefaultFont;
+            return myFont;
+        }
+        private Color getColor(Color defaultColor)
+        {
+            if(myColor != null)
+                return myColor;
+            return Color.black;
         }
 
         @Override
@@ -304,6 +332,8 @@ public class EditAlternateTask implements CompletionTask
         @Override
         public int getPreferredWidth(Graphics g, Font font)
         {
+            font = getFont(font);
+            // System.err.println(""+font+"   "+name);
             return CompletionUtilities.getPreferredWidth(nameLabel, num, g, font);
         }
 
@@ -315,10 +345,13 @@ public class EditAlternateTask implements CompletionTask
             if (dbgCompl.getBoolean(Level.FINER))
                 System.err.println("RENDER EA: \'" + name + "\', selected " +
                         selected);
+            Color color = getColor(defaultColor);
+            Font font = getFont(defaultFont);
+            // System.err.println(""+font+"  "+color+"  "+name);
             Graphics2D g2 = (Graphics2D)g;
             CompletionUtilities.renderHtml(
-                    icon, nameLabel, num, g, defaultFont,
-                    selected ? Color.white : EditAlternateItem.fieldColor,
+                    icon, nameLabel, num, g, font,
+                    selected ? Color.white : color,
                     width, height, selected);
         }
 
@@ -349,7 +382,7 @@ public class EditAlternateTask implements CompletionTask
         @Override
         public CharSequence getSortText()
         {
-            return fFilterDigit ? num : name;
+            return fFilterDigit ? num : name.toLowerCase();
         }
 
         @Override

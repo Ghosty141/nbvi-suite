@@ -13,3 +13,4 @@ module's display name is "jVi KeyBindings" and jvi-wrapper's display name is
 
 jvi-wrapper and nbvi are contained in nbvi-suite. The clean and build targets
 on jvi-wrapper are modified to clean/build jvi-project.
+

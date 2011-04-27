@@ -35,6 +35,7 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import javax.swing.Action;
@@ -107,6 +108,8 @@ public class CommandNameTask implements CompletionTask
     {
         query = new ArrayList<CommandNameItem>();
 
+        query.add(new CommandNameItem(
+            new ColonCommandItem("", "", null, EnumSet.of(CcFlag.NO_ARGS))));
         for(ColonCommandItem cci : ColonCommands.getList()) {
             if(!cci.getFlags().contains(CcFlag.HIDE))
                 query.add(new CommandNameItem(cci));

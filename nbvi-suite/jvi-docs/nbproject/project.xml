@@ -9,7 +9,7 @@
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>jVi Docs</name>
             <properties>
-                <property name="project.dir">C:\a\src\jvi-dev\jvi\doc</property>
+                <property name="project.dir">../../../jvi/doc</property>
                 <property name="ant.script">${project.dir}/build.xml</property>
             </properties>
             <folders>

@@ -13,8 +13,8 @@
                 <package>com.raelity.text</package>
             </public-packages>
             <class-path-extension>
-                <runtime-relative-path>ext/jvi-project.jar</runtime-relative-path>
-                <binary-origin>../jvi-project/dist/jvi-project.jar</binary-origin>
+                <runtime-relative-path>ext/jvi.jar</runtime-relative-path>
+                <binary-origin>../../../jvi/dist/jvi.jar</binary-origin>
             </class-path-extension>
             <class-path-extension>
                 <runtime-relative-path>ext/l2fprod-common-sheet.jar</runtime-relative-path>

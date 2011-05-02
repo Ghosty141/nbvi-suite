@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See harness/README in the NetBeans platform -->
+<!-- for some information on what you could do (e.g. targets to override). -->
+<!-- If you delete this file and reopen the project it will be recreated. -->
+<project name="org.netbeans.modules.jvi" default="netbeans" basedir=".">
+    <description>Builds, tests, and runs the project org.netbeans.modules.jvi.</description>
+    <import file="nbproject/build-impl.xml"/>
+
+    <!-- Nice idea, but links to sourceforge don't work.
+         In addition, the copy must be done in some target, like release. -->
+    <property name="jvi.docs" value="/c:/a/src/jvi-docs/htdocs"/>
+    <property name="jvi.helpset"
+              value="${basedir}/javahelp/org/netbeans/modules/jvi/docs"/>
+
+    <!--
+    <copy failonerror="false"
+          file="${jvi.docs}/CHANGES.html"
+          tofile="${jvi.helpset}/jvi-changes.html"/>
+    -->
+</project>

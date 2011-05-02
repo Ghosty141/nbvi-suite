@@ -1,16 +1,15 @@
 Both jvi and nbvi should be checked out of the Mercurial repository, and they 
 should reside in the same directory.
 
-To build everything with NetBeans, open nbvi/nbvi-suite (yep, its backwards)
-and build it using the target "Create NBMs". jvi-project can be built and run 
-as a standalone app for debugging jVi internals.
+To build everything with NetBeans, open nbvi (aka nbvi-suite)
+and build it with "Build All". If you want to install it, you'll need the
+NBMs; run target "Package as > NBMs" and look in nbvi/build/updates.
 
-jvi is the platform independent code. It is referenced from the free form
-project nbvi/nbvi-suite/jvi-project. jvi-project is wrapped by the module
-jvi-wrapper. nbvi is the module that interface jVi to NetBeans. The nbvi
-module's display name is "jVi KeyBindings" and jvi-wrapper's display name is
-"jVi Core".
+nbvi-module (aka jVi for NetBeans) is the module that interfaces jVi to
+NetBeans. This is all NetBeans code (a few features that should be
+split/refactored to the jVi project).
 
-jvi-wrapper and nbvi are contained in nbvi-suite. The clean and build targets
-on jvi-wrapper are modified to clean/build jvi-project.
+jvi-wrapper (aka jVi Core) is a module wrapper for the standalone, independent
+of NetBeans, jVi project. Clean and build on the wrapper, do clean and build
+on the project.
 

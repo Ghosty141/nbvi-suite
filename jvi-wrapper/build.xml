@@ -6,11 +6,11 @@
     <description>Builds, tests, and runs the project com.raelity.jvi.</description>
     <import file="nbproject/build-impl.xml"/>
     
-    <property name="original.project.dir" value="../../../jvi"/>
+    <property name="original.project.dir" value="../../jvi"/>
     <property name="original.project.jar"
               value="${original.project.dir}/dist/jvi.jar"/>
     <property name="jvi.core.lib.dir"
-              value="../../../jvi/lib"/>
+              value="../../jvi/lib"/>
     <property name="l2fprod.common.sheet.jar"
               value="${jvi.core.lib.dir}/l2fprod-common-sheet.jar"/>
     

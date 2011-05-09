@@ -102,14 +102,6 @@
     </folder>
     -->
 
-    <folder name="Services">
-        <folder name="JavaHelp">
-            <file name="jvi-helpset.xml" url="jvi-helpset.xml">
-                <attr name="position" intvalue="4300"/>
-            </file>
-        </folder>
-    </folder>
-
     <folder name="Editors">
         <file name="org-netbeans-modules-jvi-impl-NbTextView$HighlightsFactory.instance"/>
 

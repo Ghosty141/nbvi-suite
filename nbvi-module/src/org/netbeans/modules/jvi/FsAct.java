@@ -21,6 +21,7 @@ import org.openide.filesystems.FileUtil;
  */
 public enum FsAct {
         EDITOR_PIN		(s.EDITOR_PIN),
+        ORGANIZE_IMPORTS	(s.ORGANIZE_IMPORTS),
         UNDO			(s.UNDO),
         REDO			(s.REDO),
         GO_TYPE			(s.GO_TYPE),
@@ -101,6 +102,10 @@ private static final String JVI_ENABLE
 
 public static final String EDITOR_PIN
     = "Actions/Edit/com-raelity-nbm-editor_pin-Pin.instance";
+
+public static final String ORGANIZE_IMPORTS
+    = "Actions/Source/com-kenai-organizeimports"
+        + "-core-OrganizeImportsAction.instance";
 
 public static final String UNDO
     = "Actions/Edit/org-openide-actions-UndoAction.instance";

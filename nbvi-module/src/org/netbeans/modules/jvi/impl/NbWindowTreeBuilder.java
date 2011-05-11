@@ -25,12 +25,16 @@ import com.raelity.jvi.core.lib.WindowTreeBuilder;
 import com.raelity.jvi.manager.ViManager;
 import java.awt.Component;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JComponent;
+import org.openide.windows.Mode;
+import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -72,7 +76,7 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
     }
 
     @Override
-    protected ViAppView getAppView(Component c)
+    protected NbAppView getAppView(Component c)
     {
         // NEEDSWORK: peer may be top component
         return NbAppView.getAppView(c);
@@ -135,13 +139,42 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
         @Override
         public String toString()
         {
-            String s = super.toString();
-            if(isEditor())
-                s += " " + ViManager.getFS().getDisplayFileName(
-                        getAppView(getPeer()));
-            return s;
+            StringBuilder sb = new StringBuilder(super.toString());
+            if(isEditor()) {
+                NbAppView av = getAppView(getPeer());
+                sb.append(" ").append(ViManager.getFS().getDisplayFileName(av));
+                TopComponent tc = av.getTopComponent();
+                if(tc != null) {
+                    WindowManager wm = WindowManager.getDefault();
+                    Mode m = wm.findMode(tc);
+                    if(m != null) {
+                        sb.append(" mode=").append(m.getName())
+                                .append(" isEdMode=").append(wm.isEditorMode(m));
+                    } else
+                        sb.append("null-Mode");
+                } else
+                    sb.append(" null-TC");
+            }
+            return sb.toString();
         }
 
+    }
+
+    @Override
+    protected void dumpWinAction(ActionEvent e, StringBuilder sb)
+    {
+        //
+        // prepend a list of modes
+        //
+
+        sb = new StringBuilder();
+        WindowManager wm = WindowManager.getDefault();
+        for(Mode m : wm.getModes()) {
+            sb.append("mode=").append(m.getName())
+                    .append(" isEdMode=").append(wm.isEditorMode(m))
+                    .append('\n');
+        }
+        super.dumpWinAction(e, sb);
     }
 
 }

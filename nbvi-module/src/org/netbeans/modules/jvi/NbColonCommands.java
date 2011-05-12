@@ -43,23 +43,16 @@ import com.raelity.jvi.manager.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
+import javax.swing.text.JTextComponent;
+import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.util.ContextAwareAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
-import org.openide.windows.TopComponentGroup;
 import org.openide.windows.WindowManager;
 
 public class NbColonCommands {
@@ -126,12 +119,7 @@ public class NbColonCommands {
         delegate("rfintrofie","rfintrofield", FsAct.RF_INTRODUCE_FIELD, null);
         delegate("rfintromet","rfintromethod", FsAct.RF_INTRODUCE_METHOD, null);
 
-        /* run and debug are now make targets
-        ColonCommands.register("run", "run",
-        ColonCommands.register("deb", "debug",
-         */
-
-        ColonCommands.register("tog", "toggle", toggleAction, null);
+        ColonCommands.register("tog", "toggle", new ToggleAction(), null);
     }
 
     private NbColonCommands() {
@@ -437,20 +425,51 @@ public class NbColonCommands {
     //
     // :tog[gle] bo[ttom] | ou[tput] | de[bug]
     //
-    // This is one hack after another...
+    // FORMERLY: This is one hack after another...
+    // Now implemented with documented APIs,
+    // but there is some workaround code in SimpleToggleOutput
     //
+
+    /**
+     * This is the toggle command action.
+     * It bounces to the right action as indicate by args.
+     *
+     */
+    private static class ToggleAction extends AbstractColonAction {
+        @Override
+        public void actionPerformed(ActionEvent ev) {
+            initToggleCommand();
+            ColonEvent cev = (ColonEvent)ev;
+            if( cev.getNArg() == 0 || cev.getNArg() == 1) {
+                String arg = cev.getNArg() == 0 ? "output" : cev.getArg(1);
+                ColonCommandItem ce = toggles.lookupCommand(arg);
+                if(ce != null) {
+                    // pass on the same event that we got
+                    ((ActionListener)ce.getValue()).actionPerformed(ev);
+                } else {
+                    Msg.emsg("Unknown toggle argument: " + cev.getArg(1));
+                }
+            } else {
+                Msg.emsg("Only zero or one argument allowed");
+            }
+        }
+    };
 
     private static AbbrevLookup toggles;
 
     private static final String M_OUT = "output";
     private static final String M_DBG = "debugger";
-    private static ToggleStuff toggleOutput;
 
-    static void initToggleCommand() {
+    /**
+     * set up the sub-actions for the toggle command
+     */
+    private static void initToggleCommand() {
         if(toggles  != null)
             return;
         toggles = new AbbrevLookup();
 
+        toggles.add("ou", "output", new SimpleToggleOutput(), null);
+        /*
         toggleOutput = new ToggleOutput(M_OUT);
 
         toggles.add("ou", "output", toggleOutput, null);
@@ -467,287 +486,59 @@ public class NbColonCommands {
                 ToggleStuff.focusEditor(e.getSource());
             }
         }, null);
-    }
-
-    //private static class ToggleTC implements ActionListener {
-    //}
-
-    /** Do both output and debugger
-     */
-    private static class ToggleBottom implements ActionListener {
-        boolean didCloseDebug;
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            ToggleGroup toggleDebug = new ToggleGroup(M_DBG);
-            boolean tOutputWindowFlag = toggleOutput.isOpen();
-            boolean tDebugWindowFlag = toggleDebug.isOpen();
-            if(tOutputWindowFlag || tDebugWindowFlag) {
-                if(tDebugWindowFlag) {
-                    toggleDebug.doClose();
-                    didCloseDebug = true;
-                }
-                if(tOutputWindowFlag)
-                    toggleOutput.doClose();
-            } else {
-                // only open the debug window if we previously closed it
-                if(didCloseDebug) {
-                    toggleDebug.doOpen();
-                    didCloseDebug = false;
-                }
-                toggleOutput.doOpen();
-            }
-            ToggleStuff.focusEditor(e.getSource());
-        }
-    }
-
-    @Deprecated // really just want to replace it with legit API
-    static Object runMethod(TopComponentGroup tcg, String methodName)
-    {
-        Object o = null;
-        Exception ex1 = null;
-
-        try {
-            Class c = tcg.getClass();
-            @SuppressWarnings("unchecked")
-            Method getTopComponentsMethod = c.getMethod(methodName);
-            o = getTopComponentsMethod.invoke(tcg);
-        } catch (IllegalAccessException ex) {
-            ex1 = ex;
-        } catch (IllegalArgumentException ex) {
-            ex1 = ex;
-        } catch (InvocationTargetException ex) {
-            ex1 = ex;
-        } catch (NoSuchMethodException ex) {
-            ex1 = ex;
-        } catch (SecurityException ex) {
-            ex1 = ex;
-        }
-        if(ex1 != null)
-            LOG.log(Level.SEVERE, "Can't run method " + methodName, ex1);
-
-        return o;
-    }
-
-    /**
-     * @param tcg
-     * @return null if can't determine
-     */
-    static boolean isOpened(TopComponentGroup tcg)
-    {
-        return (Boolean) runMethod(tcg, "isOpened");
-    }
-
-    /**
-     * @param tcg
-     * @return null if can't determine
-     */
-    @SuppressWarnings("unchecked")
-    static Set<TopComponent> getTopComponents(TopComponentGroup tcg)
-    {
-        return (Set<TopComponent>) runMethod(tcg, "getTopComponents");
-    }
-
-    private abstract static class ToggleStuff
-    {
-        abstract boolean isOpen();
-
-        abstract void doOpen();
-        abstract void doClose();
-
-        static boolean isMainOutputWindow(TopComponent tc)
-        {
-            //String cName = tc.getClass().getName();
-            return tc.getName().equals("Output");
-            //   && (cName.equals("org.netbeans.core.io.ui"
-            //                    + ".IOWindow$IOWindowImpl")
-            //       || cName.equals("org.netbeans.core.output2.OutputWindow"));
-        }
-
-        static void focusEditor(Object o)
-        {
-            if(o instanceof JEditorPane) {
-                JEditorPane ep = (JEditorPane) o;
-                ep.requestFocus();
-            }
-        }
-
-        /** keep track of what has been closed */
-        //static void closeMode(String modeName,
-        //                      List<WeakReference<TopComponent>> closedList) {
-        //    closedList.clear();
-        //    Mode mode = WindowManager.getDefault().findMode(modeName);
-        //    for (TopComponent tc : mode.getTopComponents()) {
-        //        if(tc.isOpened()) {
-        //            closedList.add(new WeakReference<TopComponent>(tc));
-        //            tc.close();
-        //        }
-        //    }
-        //}
-
-        //static void openMode(String modeName,
-        //                     List<WeakReference<TopComponent>> closedList) {
-        //    for (WeakReference<TopComponent> wr : closedList) {
-        //        TopComponent tc = wr.get();
-        //        if(tc != null)
-        //            tc.open();
-        //    }
-        //    closedList.clear();
-        //}
-        
-        // static boolean isOpenMode(String modeName) {
-        //     boolean open = false;
-        //     Mode mode = WindowManager.getDefault().findMode(modeName);
-        //     if(mode != null) {
-        //         for (TopComponent tc : mode.getTopComponents()) {
-        //             if(tc.isOpened()) {
-        //                 open = true;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        //     return open;
-        // }
-    }
-    
-    private static class ToggleOutput extends ToggleStuff
-                                    implements ActionListener {
-        String modeName;
-        List<WeakReference<TopComponent>> closedList;
-
-        public ToggleOutput(String modeName) {
-            this.modeName = modeName;
-            closedList = new ArrayList<WeakReference<TopComponent>>();
-        }
-
-        @Override
-        boolean isOpen() {
-            return closedList.isEmpty() && isOpenOutput();
-        }
-
-        @Override
-        void doOpen() {
-            for (WeakReference<TopComponent> wr : closedList) {
-                TopComponent tc = wr.get();
-                if(tc != null)
-                    tc.open();
-            }
-            closedList.clear();
-        }
-
-        @Override
-        void doClose() {
-            // Close output stuff while keeping track of what is closed.
-            // But do NOT close if it is part of the debugger.
-            // Except close main output window even though part fo debug stuff.
-            ToggleGroup tg = new ToggleGroup(M_DBG);
-            Set<TopComponent> dbgSet = getTopComponents(tg.tcg);
-            closedList.clear();
-            Mode mode = WindowManager.getDefault().findMode(modeName);
-            for (TopComponent tc : mode.getTopComponents()) {
-                if(dbgSet.contains(tc) && !isMainOutputWindow(tc))
-                    continue;
-                if(tc.isOpened()) {
-                    closedList.add(new WeakReference<TopComponent>(tc));
-                    tc.close();
-                }
-            }
-        }
-
-        private boolean isOpenOutput() {
-            boolean open = false;
-            Mode mode = WindowManager.getDefault().findMode(modeName);
-            if(mode != null) {
-                ToggleGroup tg = new ToggleGroup(M_DBG);
-                Set<TopComponent> dbgSet = getTopComponents(tg.tcg);
-
-                for (TopComponent tc : mode.getTopComponents()) {
-                    if(dbgSet.contains(tc) && !isMainOutputWindow(tc))
-                        continue;
-                    if(tc.isOpened()) {
-                        open = true;
-                        break;
-                    }
-                }
-            }
-            return open;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if(isOpen()) {
-                doClose();
-            } else {
-                doOpen();
-            }
-            focusEditor(e.getSource());
-        }
-    }
-    
-    /**
-     * Create this on demand, do not keep it around; it holds references
-     * to all the top components in the group.
-     */
-    private static class ToggleGroup extends ToggleStuff {
-        String groupName;
-        TopComponentGroup tcg;
-        
-        ToggleGroup(String groupName) {
-            this.groupName = groupName;
-            tcg = findGroup(groupName);
-        }
-
-        @Override
-        boolean isOpen() {
-            return tcg != null ? isOpened(tcg) : false;
-        }
-
-        @Override
-        void doOpen() {
-            if(tcg != null)
-                tcg.open();
-        }
-
-        @Override
-        void doClose() {
-            if(tcg != null)
-                tcg.close();
-        }
-
-        /**
-         * Find the group. Also get the list of TopComponents in the group.
-         * @return the group
          */
-        private TopComponentGroup findGroup(String name)
-        {
-            TopComponentGroup t
-                = WindowManager.getDefault().findTopComponentGroup(name);
-
-            if(t == null)
-                ViManager.dumpStack("Unknown TCGroup: " + name);
-
-            return t;
-        }
     }
-    
-    /** hide/show stuff as seen in view menu */
-    static ColonAction toggleAction = new AbstractColonAction() {
+
+    /**
+     * This sub-action handles the output window.
+     */
+    private static class SimpleToggleOutput implements ActionListener
+    {
+        String restoreToModeName;
+        String hideToModeName = "bottomSlidingSide";
+
+        public SimpleToggleOutput()
+        {
+        }
+
         @Override
-        public void actionPerformed(ActionEvent ev) {
-            initToggleCommand();
-            ColonEvent cev = (ColonEvent)ev;
-            if( cev.getNArg() == 0 || cev.getNArg() == 1) {
-                String arg = cev.getNArg() == 0 ? "bottom" : cev.getArg(1);
-                ColonCommandItem ce = toggles.lookupCommand(arg);
-                if(ce != null) {
-                    // pass on the same event that we got
-                    ((ActionListener)ce.getValue()).actionPerformed(ev);
-                } else {
-                    Msg.emsg("Unknown toggle option: " + cev.getArg(1));
+        public void actionPerformed(ActionEvent e)
+        {
+            TopComponent tc = Module.getOutput();
+            WindowManager wm = WindowManager.getDefault();
+            Mode mHide = wm.findMode(hideToModeName);
+            Mode mCurrent = wm.findMode(tc);
+            if(mHide.equals(mCurrent)) {
+                // make the output visible
+                Mode restore = null;
+                if(restoreToModeName != null)
+                    restore = wm.findMode(restoreToModeName);
+                if(restore == null)
+                    restore = wm.findMode(M_OUT);
+                if(restore != null) {
+                    restoreToModeName = null;
+                    restore.dockInto(tc);
+                    tc.open();
+                    tc.requestVisible();
+                    //
+                    if(e.getSource() instanceof JTextComponent) {
+                        // need this because if there had not been something
+                        // in the output, then the "Quick Search in the System"
+                        // ends up with the focus. Seems like NB bug.
+                        JTextComponent jtc = (JTextComponent)e.getSource();
+                        TopComponent t = NbEditorUtilities.getTopComponent(jtc);
+                        t.requestActive();
+                    }
+                    //System.err.println("TOGGLE: SHOW");
                 }
             } else {
-                Msg.emsg("Only zero or one argument allowed");
+                // hide the output
+                restoreToModeName = mCurrent.getName();
+                mHide.dockInto(tc);
+                tc.open();
+                //System.err.println("TOGGLE: HIDE");
             }
         }
-    };
+
+    }
 }

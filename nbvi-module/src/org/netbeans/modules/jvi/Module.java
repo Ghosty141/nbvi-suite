@@ -733,4 +733,35 @@ public class Module extends ModuleInstall
         }
         return tc;
     }
+
+    /**
+     * Taken from core.windows/src/org/netbeans/core/windows/actions/ActionUtils
+     * @param tc 
+     */
+    static void cloneEditor(TopComponent tc) {
+        if(tc instanceof TopComponent.Cloneable) {
+            Mode m = WindowManager.getDefault().findMode(tc);
+            if(WindowManager.getDefault().isEditorMode(m)) {
+                TopComponent clone = ((TopComponent.Cloneable)tc).cloneComponent();
+                int openIndex = -1;
+                if( null != m ) {
+                    TopComponent[] tcs = m.getTopComponents();
+                    for( int i=0; i<tcs.length; i++ ) {
+                        if( tcs[i] == tc ) {
+                            openIndex = i + 1;
+                            break;
+                        }
+                    }
+                    if( openIndex >= tcs.length )
+                        openIndex = -1;
+                }
+                if( openIndex >= 0 ) {
+                    clone.openAtTabPosition(openIndex);
+                } else {
+                    clone.open();
+                }
+                clone.requestActive();
+            }
+        }
+    }
 }

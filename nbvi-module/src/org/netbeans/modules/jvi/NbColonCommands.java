@@ -50,6 +50,7 @@ import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.text.JTextComponent;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.impl.NbAppView;
 import org.openide.util.ContextAwareAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -63,6 +64,9 @@ public class NbColonCommands {
     {
         //
         delegate("pin", "pin", FsAct.EDITOR_PIN, null);
+
+        // clone an editor
+        ColonCommands.register("clon", "clone", new Clone(), null);
 
         // goto editor tab
         ColonCommands.register("tabn", "tabnext", ACTION_tabnext, null);
@@ -161,6 +165,19 @@ public class NbColonCommands {
                                  Set<CcFlag> flags) {
         ColonCommands.register(abrev, name, new DelegateFileSystemAction(fsAct),
                                flags);
+    }
+
+    static private class Clone implements ActionListener
+    {
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
+            NbAppView av = (NbAppView)ViManager.getFactory()
+                    .getAppView((JTextComponent)e.getSource());
+            if(av != null && av.getTopComponent() != null)
+                Module.cloneEditor(av.getTopComponent());
+        }
+
     }
 
     static private class FixIO extends AbstractColonAction {

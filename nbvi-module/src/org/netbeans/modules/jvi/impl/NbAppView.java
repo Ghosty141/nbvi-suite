@@ -81,11 +81,13 @@ public class NbAppView implements ViAppView
             this.ep = ep;
     }
 
+    @Override
     public JEditorPane getEditor()
     {
         return ep;
     }
 
+    @Override
     public boolean isNomad()
     {
         if(tc == null || isNomad)
@@ -95,6 +97,7 @@ public class NbAppView implements ViAppView
         return NbEditorUtilities.getFileObject(ep.getDocument()) == null;
     }
 
+    @Override
     public boolean isShowing()
     {
         if(ep != null)
@@ -105,6 +108,7 @@ public class NbAppView implements ViAppView
         return false;
     }
 
+    @Override
     public int getWNum()
     {
         return wnum;

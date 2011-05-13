@@ -1,5 +1,8 @@
 package org.netbeans.modules.jvi.impl;
 
+import org.openide.windows.Mode;
+import com.raelity.jvi.core.Misc01;
+import com.raelity.jvi.core.lib.WindowTreeBuilder;
 import org.netbeans.modules.jvi.JViOptionWarning;
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.core.Buffer;
@@ -60,6 +63,7 @@ import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.filesystems.FileObject;
 import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 import static com.raelity.jvi.core.lib.Constants.*;
 
 /**
@@ -501,19 +505,76 @@ public class NbTextView extends SwingTextView
             Util.beep_flush();
     }
     
+    //////////////////////////////////////////////////////////////////////
     //
     // Widow manipulation operations
     //
     
     @Override
+    public void win_split(int n) {
+        super.win_split(n);
+    }
+
+    public void XXXwin_move(Direction dir)
+    {
+        List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
+        if(avs == null)
+            return;
+
+        WindowTreeBuilder tree
+                = ViManager.getFactory().getWindowTreeBuilder(avs);
+        tree.processAppViews();
+
+        NbAppView av = (NbAppView)AppViews.currentAppView(avs);
+        if(av == null) {
+            G.dbgEditorActivation.println("win_move: NULL av");
+            return;
+        }
+
+        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
+        if(avTarget == null) {
+            G.dbgEditorActivation.println("win_move: NULL avTarget");
+            return;
+        }
+
+        // move the av to the avTarget's mode
+        TopComponent tc = av.getTopComponent();
+        if(tc != null) {
+            Mode m = WindowManager.getDefault().findMode(tc);
+
+            TopComponent tcOther = null;
+            for(TopComponent tc01 : m.getTopComponents()) {
+                if(!tc.equals(tc01)) {
+                    tcOther = tc01;
+                    break;
+                }
+            }
+            if(tcOther == null) {
+                Util.vim_beep();
+                return; // NEEDSWORK: should support win_move that clears mode
+            }
+            tcOther.requestActive();
+
+            boolean isOpened = tc.isOpened();
+            boolean isActive = tc.equals(TopComponent.getRegistry().getActivated());
+            G.dbgEditorActivation.printf(
+                    "win_move: isOpened=%s isActive=%s\n", tc.isOpened(),
+                    tc.equals(TopComponent.getRegistry().getActivated()));
+            if(m.dockInto(tc)) {
+                G.dbgEditorActivation.printf(
+                        "win_move: docked: isOpened=%s isActive=%s\n",
+                        tc.isOpened(),
+                        tc.equals(TopComponent.getRegistry().getActivated()));
+                tc.open();
+                tc.requestActive();
+            }
+        }
+    }
+
+    @Override
     public void win_quit() {
         // if split, close this half; otherwise close view
         win_close(false);
-    }
-    
-    @Override
-    public void win_split(int n) {
-        super.win_split(n);
     }
 
     @Override

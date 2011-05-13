@@ -415,6 +415,7 @@ public class NbTextView extends SwingTextView
         // get the fold containing the offset,
         // expand it and all its parents
         getEditor().getDocument().render(new Runnable() {
+            @Override
             public void run() {
                 fh.lock();
                 try {
@@ -750,6 +751,7 @@ public class NbTextView extends SwingTextView
     
     public static class HighlightsFactory implements HighlightsLayerFactory {
 
+        @Override
         public HighlightsLayer[] createLayers(Context context) {
             ArrayList<HighlightsLayer> layers
                     = new ArrayList<HighlightsLayer>();
@@ -796,6 +798,7 @@ public class NbTextView extends SwingTextView
         private Color selectFgColor;
         private AttributeSet selectAttribs;
 
+        @SuppressWarnings("LeakingThisInConstructor")
         VisualSelectHighlighter(String name, JEditorPane ep) {
             super(name, ep);
 
@@ -845,6 +848,7 @@ public class NbTextView extends SwingTextView
             return selectAttribs;
         }
 
+        @Override
         protected boolean isEnabled() {
             return G.VIsual_active || G.drawSavedVisualBounds;
         }
@@ -865,6 +869,7 @@ public class NbTextView extends SwingTextView
         private AttributeSet searchAttribs;
 
         /** Creates a new instance of TextSearchHighlighter */
+        @SuppressWarnings("LeakingThisInConstructor")
         public SearchResultsHighlighter(String name, JEditorPane ep) {
             super(name, ep);
 
@@ -910,7 +915,8 @@ public class NbTextView extends SwingTextView
             }
             return searchAttribs;
         }
-        
+
+        @Override
         protected boolean isEnabled() {
             return Options.doHighlightSearch();
         }
@@ -933,6 +939,7 @@ public class NbTextView extends SwingTextView
         protected static int gen;
         String tvTag = "";
 
+        @SuppressWarnings("LeakingThisInConstructor")
         BlocksHighlighter(String name, JEditorPane ep) {
             this.name = name;
             this.ep = ep;
@@ -980,14 +987,16 @@ public class NbTextView extends SwingTextView
                 System.err.println(displayName() + " BlocksHighlighter reset:");
             fillInTheBag();
         }
-        
+
+        @Override
         public void highlightChanged(HighlightsChangeEvent event) {
             if(dbgHL(this))
                 System.err.println(displayName() + " highlightChanged: "
                     + event.getStartOffset() + "," + event.getEndOffset());
             fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
         }
-        
+
+        @Override
         public HighlightsSequence getHighlights(int startOffset, int endOffset) {
             if(dbgHL(this)) {
                 System.err.println(displayName() + " getHighlights: "
@@ -997,7 +1006,8 @@ public class NbTextView extends SwingTextView
             }
             return bag.getHighlights(startOffset, endOffset);
         }
-        
+
+        @Override
         public void insertUpdate(DocumentEvent e) {
             if(isDiscarded)
                 return;
@@ -1013,7 +1023,8 @@ public class NbTextView extends SwingTextView
                              false);
             }
         }
-        
+
+        @Override
         public void removeUpdate(DocumentEvent e) {
             if(isDiscarded)
                 return;
@@ -1033,7 +1044,8 @@ public class NbTextView extends SwingTextView
                              false);
             }
         }
-        
+
+        @Override
         public void changedUpdate(DocumentEvent e) {
             // not interested
         }
@@ -1052,6 +1064,7 @@ public class NbTextView extends SwingTextView
                                   final int endOffset,
                                   final boolean replaceAll) {
             document.render(new Runnable() {
+                @Override
                 public void run() {
                     if(isDiscarded)
                         return;

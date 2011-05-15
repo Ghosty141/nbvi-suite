@@ -608,7 +608,8 @@ public class NbTextView extends SwingTextView
                 = ViManager.getFactory().getWindowTreeBuilder(avs);
         tree.processAppViews();
 
-        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
+        // "true" means target must touch this window
+        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1, true);
         if(avTarget == null) {
             G.dbgEditorActivation.println("win_move: NULL avTarget");
             return;

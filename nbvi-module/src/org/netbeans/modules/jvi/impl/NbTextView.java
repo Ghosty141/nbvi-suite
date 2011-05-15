@@ -1,5 +1,7 @@
 package org.netbeans.modules.jvi.impl;
 
+import java.lang.reflect.Method;
+import org.openide.util.Lookup;
 import org.openide.windows.Mode;
 import com.raelity.jvi.core.Misc01;
 import com.raelity.jvi.core.lib.WindowTreeBuilder;
@@ -512,12 +514,91 @@ public class NbTextView extends SwingTextView
     //
     
     @Override
-    public void win_split(int n) {
-        super.win_split(n);
+    public void win_split(Direction dir, int n) {
+        NbAppView av = (NbAppView)getAppView();
+        if(av == null) {
+            G.dbgEditorActivation.println("win_split: NULL av");
+            return;
+        }
+
+        List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
+        if(avs == null)
+            return;
+
+        WindowTreeBuilder tree = ViManager.getFactory().getWindowTreeBuilder(avs);
+        tree.processAppViews();
+
+        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
+        if(avTarget == null)
+            avTarget = (NbAppView)tree.jump(dir.getOpposite(), av, 1);
+        if(avTarget != null) {
+            TopComponent clone = tcClone();
+            Mode m = WindowManager.getDefault().findMode(avTarget.getTopComponent());
+            m.dockInto(clone);
+            clone.open();
+            clone.requestActive();
+        }
     }
 
-    public void XXXwin_move(Direction dir)
+    private TopComponent tcClone()
     {
+        NbAppView av = (NbAppView)getAppView();
+        TopComponent tc = av.getTopComponent();
+        TopComponent clone = null;
+        if(tc instanceof TopComponent.Cloneable) {
+            clone = ((TopComponent.Cloneable)tc).cloneComponent();
+        }
+        return clone;
+    }
+
+    /**
+     * Essentially taken from
+     * core.windows/src/org/netbeans/core/windows/actions/ActionUtils
+     * @param tc
+     */
+    @Override
+    public void win_clone()
+    {
+        TopComponent tc = ((NbAppView)getAppView()).getTopComponent();
+        TopComponent clone = tcClone();
+        if(clone != null) {
+            int openIndex = -1;
+                        // original had: if (null != m) ....
+            Mode m = WindowManager.getDefault().findMode(tc);
+            TopComponent[] tcs = m.getTopComponents();
+            for( int i=0; i<tcs.length; i++ ) {
+                if( tcs[i] == tc ) {
+                    openIndex = i + 1;
+                    break;
+                }
+            }
+
+            if( openIndex >= tcs.length )
+                openIndex = -1;
+            if( openIndex >= 0 ) {
+                clone.openAtTabPosition(openIndex);
+            } else {
+                clone.open();
+            }
+            clone.requestActive();
+        }
+    }
+
+    @Override
+    public void win_move(Direction dir)
+    {
+        NbAppView av = (NbAppView)getAppView();
+        if(av == null) {
+            G.dbgEditorActivation.println("win_move: NULL av");
+            return;
+        }
+        TopComponent tc = av.getTopComponent();
+        Mode m = WindowManager.getDefault().findMode(tc);
+        if(m.getTopComponents().length ==1) {
+            // don't empty out a mode
+            return;
+        }
+
         List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
         if(avs == null)
             return;
@@ -526,49 +607,74 @@ public class NbTextView extends SwingTextView
                 = ViManager.getFactory().getWindowTreeBuilder(avs);
         tree.processAppViews();
 
-        NbAppView av = (NbAppView)AppViews.currentAppView(avs);
-        if(av == null) {
-            G.dbgEditorActivation.println("win_move: NULL av");
-            return;
-        }
-
         NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
         if(avTarget == null) {
             G.dbgEditorActivation.println("win_move: NULL avTarget");
             return;
         }
 
-        // move the av to the avTarget's mode
-        TopComponent tc = av.getTopComponent();
-        if(tc != null) {
-            Mode m = WindowManager.getDefault().findMode(tc);
+        // move the av's tc to the avTarget's mode
+        TopComponent tcTarget = avTarget.getTopComponent();
+        if(tc != null && tcTarget != null) {
+            m = WindowManager.getDefault().findMode(tcTarget);
+            TopComponent[] tcs = new TopComponent[] {tc};
+            userDroppedTopComponents(m, tcs);
+        }
+    }
 
-            TopComponent tcOther = null;
-            for(TopComponent tc01 : m.getTopComponents()) {
-                if(!tc.equals(tc01)) {
-                    tcOther = tc01;
-                    break;
+    private static Method meth_getCentral;
+    private static Method meth_userDroppedTopComponents;
+    private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
+    {
+        try {
+            Object wmi = WindowManager.getDefault();
+            if(meth_userDroppedTopComponents== null) {
+                // could use WeakRef's for method's
+                Method[] meths = wmi.getClass().getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getCentral")) {
+                        m.setAccessible(true);
+                        meth_getCentral = m;
+                        break;
+                    }
                 }
+                ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+                Class<?> c_central = cl.loadClass(
+                        "org.netbeans.core.windows.Central");
+                Class<?> c_modeImpl = cl.loadClass(
+                        "org.netbeans.core.windows.ModeImpl");
+                meth_userDroppedTopComponents
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, tcs.getClass());
+                meth_userDroppedTopComponents.setAccessible(true);
             }
-            if(tcOther == null) {
-                Util.vim_beep();
-                return; // NEEDSWORK: should support win_move that clears mode
-            }
-            tcOther.requestActive();
+            Object central = meth_getCentral.invoke(wmi);
 
-            boolean isOpened = tc.isOpened();
-            boolean isActive = tc.equals(TopComponent.getRegistry().getActivated());
-            G.dbgEditorActivation.printf(
-                    "win_move: isOpened=%s isActive=%s\n", tc.isOpened(),
-                    tc.equals(TopComponent.getRegistry().getActivated()));
-            if(m.dockInto(tc)) {
-                G.dbgEditorActivation.printf(
-                        "win_move: docked: isOpened=%s isActive=%s\n",
-                        tc.isOpened(),
-                        tc.equals(TopComponent.getRegistry().getActivated()));
-                tc.open();
-                tc.requestActive();
-            }
+            meth_userDroppedTopComponents.invoke(central, mode, tcs);
+
+            // From Central:
+            //     public void userDroppedTopComponents(ModeImpl mode,
+            //                                          TopComponent[] tcs) {
+            //         updateViewAfterDnD(moveTopComponentsIntoMode(mode, tcs));
+            //     }
+            // tried doing:
+            //          moveTopComponentsIntoMode(...)
+            // that doesn't work.
+            //
+            // Then tried:
+            //          moved = moveTopComponentsIntoMode(...)
+            //          if(moved)
+            //              switchMaximizedMode(null)
+            // that doesn't work
+            //
+            // Then tried:
+            //
+            //          moved = moveTopComponentsIntoMode(...)
+            //          updateViewAfterDnD(moved)
+            // so all the little pieces of userDroppedTopComponents are needed
+            //
+        } catch(Exception ex) {
+            ex.printStackTrace();
         }
     }
 

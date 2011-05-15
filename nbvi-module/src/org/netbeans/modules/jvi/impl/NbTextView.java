@@ -594,8 +594,9 @@ public class NbTextView extends SwingTextView
         }
         TopComponent tc = av.getTopComponent();
         Mode m = WindowManager.getDefault().findMode(tc);
-        if(m.getTopComponents().length ==1) {
+        if(false && m.getTopComponents().length ==1) {
             // don't empty out a mode
+            Msg.smsg("Can not remove last editor from \"Editor Mode\"");
             return;
         }
 
@@ -623,7 +624,9 @@ public class NbTextView extends SwingTextView
     }
 
     private static Method meth_getCentral;
-    private static Method meth_userDroppedTopComponents;
+    private static Method meth_userDroppedTopComponents; // (mode, TC[])
+    // following creates new mode
+    // private static Method meth_userDroppedTopComponents; // (mode, TC[], String)
     private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
     {
         try {

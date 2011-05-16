@@ -665,8 +665,6 @@ public class NbTextView extends SwingTextView
         }
     }
 
-    // following creates new mode
-    // private static Method meth_userDroppedTopComponents; // (mode, TC[], String)
     private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
     {
         try {

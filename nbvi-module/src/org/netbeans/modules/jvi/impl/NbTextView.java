@@ -626,13 +626,18 @@ public class NbTextView extends SwingTextView
 
     private static Method meth_getCentral;
     private static Method meth_userDroppedTopComponents; // (mode, TC[])
-    // following creates new mode
-    // private static Method meth_userDroppedTopComponents; // (mode, TC[], String)
-    private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
-    {
-        try {
+    static Method meth_getCentral() {
+        populateCoreWindowMethods();
+        return meth_getCentral;
+    }
+    static Method meth_userDroppedTopComponents() {
+        populateCoreWindowMethods();
+        return meth_userDroppedTopComponents;
+    }
+    private static void populateCoreWindowMethods() {
+        if(meth_userDroppedTopComponents== null) {
             Object wmi = WindowManager.getDefault();
-            if(meth_userDroppedTopComponents== null) {
+            try {
                 // could use WeakRef's for method's
                 Method[] meths = wmi.getClass().getDeclaredMethods();
                 for(Method m : meths) {
@@ -642,19 +647,33 @@ public class NbTextView extends SwingTextView
                         break;
                     }
                 }
+
                 ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
                 Class<?> c_central = cl.loadClass(
                         "org.netbeans.core.windows.Central");
                 Class<?> c_modeImpl = cl.loadClass(
                         "org.netbeans.core.windows.ModeImpl");
+                TopComponent[] tcs = new TopComponent[0];
                 meth_userDroppedTopComponents
                         = c_central.getMethod("userDroppedTopComponents",
                                               c_modeImpl, tcs.getClass());
                 meth_userDroppedTopComponents.setAccessible(true);
+            } catch(NoSuchMethodException ex) {
+            } catch(SecurityException ex) {
+            } catch(ClassNotFoundException ex) {
             }
-            Object central = meth_getCentral.invoke(wmi);
+        }
+    }
 
-            meth_userDroppedTopComponents.invoke(central, mode, tcs);
+    // following creates new mode
+    // private static Method meth_userDroppedTopComponents; // (mode, TC[], String)
+    private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
+    {
+        try {
+            Object wmi = WindowManager.getDefault();
+            Object central = meth_getCentral().invoke(wmi);
+
+            meth_userDroppedTopComponents().invoke(central, mode, tcs);
 
             // From Central:
             //     public void userDroppedTopComponents(ModeImpl mode,

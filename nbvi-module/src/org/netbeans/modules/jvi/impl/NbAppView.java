@@ -221,10 +221,15 @@ public class NbAppView implements ViAppView
             av = createAppViewOrphan(ep);
         } else {
             // make sure the TC has the set.
-            s = (Set<NbAppView>)tc.getClientProperty(SwingFactory.PROP_AV);
-            if(s == null) {
-                s = new WeakSet<NbAppView>(1);
-                tc.putClientProperty(SwingFactory.PROP_AV, s);
+            {
+                @SuppressWarnings("unchecked")
+                Set<NbAppView> s01 = (Set<NbAppView>)
+                        tc.getClientProperty(SwingFactory.PROP_AV);
+                s = s01;
+                if(s == null) {
+                    s = new WeakSet<NbAppView>(1);
+                    tc.putClientProperty(SwingFactory.PROP_AV, s);
+                }
             }
 
             if(ep == null) {

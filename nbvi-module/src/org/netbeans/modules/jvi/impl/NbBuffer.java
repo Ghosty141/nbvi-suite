@@ -376,7 +376,7 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     protected void do_runUndoable(final Runnable r) {
-        G.dbgUndo.printf("NbBuf:RunUndoable: \n");
+        G.dbgUndo.printf("{NbBuf:RunUndoable: \n");
         final Document doc = getDocument();
         if(doc instanceof BaseDocument) {
             r.run();
@@ -396,11 +396,12 @@ public class NbBuffer extends SwingBuffer {
         } else {
             r.run();
         }
+        G.dbgUndo.printf("}NbBuf:RunUndoable: \n");
     }
     
     @Override
     public void do_beginUndo() {
-        G.dbgUndo.printf("NbBuf:do_beginUndo: \n");
+        G.dbgUndo.printf("{NbBuf:do_beginUndo: \n");
         clearExceptions();
         Document doc = getDocument();
         if(doc instanceof BaseDocument) {
@@ -410,7 +411,7 @@ public class NbBuffer extends SwingBuffer {
     
     @Override
     public void do_endUndo() {
-        G.dbgUndo.printf("NbBuf:do_endUndo: \n");
+        G.dbgUndo.printf("}NbBuf:do_endUndo: \n");
         Document doc = getDocument();
         if(doc instanceof BaseDocument) {
             if(isAnyExecption()) {
@@ -445,7 +446,7 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     public void do_beginInsertUndo() {
-        G.dbgUndo.printf("NbBuf:do_beginInsertUndo: \n");
+        G.dbgUndo.printf("{NbBuf:do_beginInsertUndo: \n");
         // NEDSWORK: when development on NB6, and method in NB6, use boolean
         //           for method is available and ifso invoke directly.
         if(G.isClassicUndo.getBoolean()) {
@@ -455,7 +456,7 @@ public class NbBuffer extends SwingBuffer {
 
     @Override
     public void do_endInsertUndo() {
-        G.dbgUndo.printf("NbBuf:do_beginInsertUndo: \n");
+        G.dbgUndo.printf("}NbBuf:do_beginInsertUndo: \n");
         if(G.isClassicUndo.getBoolean()) {
             sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
         }

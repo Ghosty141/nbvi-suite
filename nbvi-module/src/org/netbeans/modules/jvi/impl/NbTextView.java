@@ -619,8 +619,13 @@ public class NbTextView extends SwingTextView
         TopComponent tcTarget = avTarget.getTopComponent();
         if(tc != null && tcTarget != null) {
             m = WindowManager.getDefault().findMode(tcTarget);
-            TopComponent[] tcs = new TopComponent[] {tc};
-            userDroppedTopComponents(m, tcs);
+            if(WindowManager.getDefault().isEditorMode(m)) {
+                TopComponent[] tcs = new TopComponent[] {tc};
+                userDroppedTopComponents(m, tcs);
+            } else
+                Msg.smsg("\"" + m.getSelectedTopComponent().getName()
+                        + "\" target is not in an \"editor mode\"");
+
         }
     }
 

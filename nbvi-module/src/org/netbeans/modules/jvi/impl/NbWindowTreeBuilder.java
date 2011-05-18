@@ -21,14 +21,11 @@
 package org.netbeans.modules.jvi.impl;
 
 import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.ViTextView.Direction;
 import com.raelity.jvi.ViTextView.Orientation;
 import com.raelity.jvi.core.lib.WindowTreeBuilder;
-import com.raelity.jvi.lib.MutableInt;
 import com.raelity.jvi.manager.ViManager;
 import java.awt.Component;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;

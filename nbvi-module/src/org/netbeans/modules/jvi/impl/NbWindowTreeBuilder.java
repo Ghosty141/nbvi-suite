@@ -120,14 +120,11 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
     // }
 
 
-
-
     @Override
-    public List<ViAppView> processAppViews()
+    protected void initTree()
     {
-        List<ViAppView> avs = super.processAppViews();
+        super.initTree();
         realToDo = null;
-        return avs;
     }
 
     @Override

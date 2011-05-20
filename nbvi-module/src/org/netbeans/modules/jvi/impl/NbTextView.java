@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import org.netbeans.core.windows.SplitConstraint;
 import org.openide.util.Lookup;
 import org.openide.windows.Mode;
-import com.raelity.jvi.core.Misc01;
 import com.raelity.jvi.core.lib.WindowTreeBuilder;
 import org.netbeans.modules.jvi.JViOptionWarning;
 import com.raelity.jvi.ViAppView;
@@ -22,6 +21,7 @@ import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
+import com.raelity.jvi.ViWindowNavigator;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
@@ -526,16 +526,11 @@ public class NbTextView extends SwingTextView
             return;
         }
 
-        List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
-        if(avs == null)
-            return;
-
-        WindowTreeBuilder tree = ViManager.getFactory().getWindowTreeBuilder(avs);
-        tree.processAppViews();
-
-        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+        NbAppView avTarget = (NbAppView)nav.getTarget(dir, av, 1);
         if(avTarget == null)
-            avTarget = (NbAppView)tree.jump(dir.getOpposite(), av, 1);
+            avTarget = (NbAppView)nav.getTarget(dir.getOpposite(), av, 1);
+
         TopComponent clone = tcClone();
         if(avTarget != null) {
             // move the window into the mode we found
@@ -615,19 +610,13 @@ public class NbTextView extends SwingTextView
             return;
         }
 
-        List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
-        if(avs == null)
-            return;
-
-        WindowTreeBuilder tree
-                = ViManager.getFactory().getWindowTreeBuilder(avs);
-        tree.processAppViews();
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
 
         // "true" means target must touch this window
-        NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1, true);
+        NbAppView avTarget = (NbAppView)nav.getTarget(dir, av, 1, true);
 
         if(false && avTarget != null)
-            findConstraints(tree, avTarget); // FOR TESTING
+            findConstraints(nav, avTarget); // FOR TESTING
 
         TopComponent[] tcs = new TopComponent[] {tc};
         if(avTarget != null) {
@@ -650,12 +639,12 @@ public class NbTextView extends SwingTextView
         }
     }
 
-    private void findConstraints(WindowTreeBuilder tree, NbAppView av)
+    private void findConstraints(ViWindowNavigator nav, NbAppView av)
     {
         TopComponent tc = av.getTopComponent();
         Mode m = WindowManager.getDefault().findMode(tc);
         Model md = getModel();
-        Siblings sibs = tree.Siblings(av);
+        Siblings sibs = ((WindowTreeBuilder)nav).Siblings(av);
 
         List<SplitConstraint[]> l = new ArrayList<SplitConstraint[]>();
         for(ViAppView av01 : sibs.siblings) {

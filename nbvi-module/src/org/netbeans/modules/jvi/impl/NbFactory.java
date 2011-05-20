@@ -28,8 +28,9 @@ import com.raelity.jvi.core.G;
 import com.raelity.jvi.*;
 import com.raelity.jvi.swing.*;
 import com.raelity.jvi.ViTextView.TAGOP;
+import com.raelity.jvi.core.Misc01;
 import com.raelity.jvi.core.Options;
-import com.raelity.jvi.core.lib.WindowTreeBuilder;
+import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
 
@@ -98,7 +99,16 @@ final public class NbFactory extends SwingFactory {
     }
 
     @Override
-    public WindowTreeBuilder getWindowTreeBuilder(List<ViAppView> avs)
+    public ViWindowNavigator getWindowNavigator()
+    {
+        List<ViAppView> avs = Misc01.getVisibleAppViews(AppViews.ALL);
+        if(avs == null)
+            return null;
+        return new NbWindowTreeBuilder(avs);
+    }
+
+    @Override
+    public ViWindowNavigator getWindowNavigator(List<ViAppView> avs)
     {
         return new NbWindowTreeBuilder(avs);
     }

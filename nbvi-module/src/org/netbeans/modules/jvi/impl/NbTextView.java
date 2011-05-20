@@ -1,6 +1,7 @@
 package org.netbeans.modules.jvi.impl;
 
 import java.lang.reflect.Method;
+import org.netbeans.core.windows.SplitConstraint;
 import org.openide.util.Lookup;
 import org.openide.windows.Mode;
 import com.raelity.jvi.core.Misc01;
@@ -67,6 +68,10 @@ import org.openide.util.WeakListeners;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import static com.raelity.jvi.core.lib.Constants.*;
+import com.raelity.jvi.core.lib.WindowTreeBuilder.Siblings;
+import java.lang.reflect.Field;
+import org.netbeans.core.windows.ModeImpl;
+import org.netbeans.core.windows.model.Model;
 
 /**
  * Pretty much the SwingTextView used for standard swing.
@@ -531,13 +536,23 @@ public class NbTextView extends SwingTextView
         NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1);
         if(avTarget == null)
             avTarget = (NbAppView)tree.jump(dir.getOpposite(), av, 1);
+        TopComponent clone = tcClone();
         if(avTarget != null) {
-            TopComponent clone = tcClone();
-            Mode m = WindowManager.getDefault().findMode(avTarget.getTopComponent());
+            // move the window into the mode we found
+            Mode m = WindowManager.getDefault()
+                    .findMode(avTarget.getTopComponent());
             m.dockInto(clone);
-            clone.open();
-            clone.requestActive();
+        } else {
+            // create a new mode
+            Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
+            userDroppedTopComponents(m, new TopComponent[] {clone},
+                                     dir.getSplitSide());
+            // adjust the size of the new mode
+            m = WindowManager.getDefault().findMode(clone);
+            adjustNewModeSize(m, dir.getOrientation(), n);
         }
+        clone.open();
+        clone.requestActive();
     }
 
     private TopComponent tcClone()
@@ -585,7 +600,7 @@ public class NbTextView extends SwingTextView
     }
 
     @Override
-    public void win_move(Direction dir)
+    public void win_move(Direction dir, int n)
     {
         NbAppView av = (NbAppView)getAppView();
         if(av == null) {
@@ -610,27 +625,64 @@ public class NbTextView extends SwingTextView
 
         // "true" means target must touch this window
         NbAppView avTarget = (NbAppView)tree.jump(dir, av, 1, true);
-        if(avTarget == null) {
-            G.dbgEditorActivation.println("win_move: NULL avTarget");
-            return;
-        }
 
-        // move the av's tc to the avTarget's mode
-        TopComponent tcTarget = avTarget.getTopComponent();
-        if(tc != null && tcTarget != null) {
-            m = WindowManager.getDefault().findMode(tcTarget);
-            if(WindowManager.getDefault().isEditorMode(m)) {
-                TopComponent[] tcs = new TopComponent[] {tc};
-                userDroppedTopComponents(m, tcs);
-            } else
-                Msg.smsg("\"" + m.getSelectedTopComponent().getName()
-                        + "\" target is not in an \"editor mode\"");
+        if(false && avTarget != null)
+            findConstraints(tree, avTarget); // FOR TESTING
 
+        TopComponent[] tcs = new TopComponent[] {tc};
+        if(avTarget != null) {
+            // move the av's tc to the avTarget's mode
+            TopComponent tcTarget = avTarget.getTopComponent();
+            if(tcTarget != null) {
+                m = WindowManager.getDefault().findMode(tcTarget);
+                if(WindowManager.getDefault().isEditorMode(m)) {
+                    userDroppedTopComponents(m, tcs);
+                } else
+                    Msg.smsg("\"" + m.getSelectedTopComponent().getName()
+                            + "\" target is not in an \"editor mode\"");
+
+            }
+        } else {
+            userDroppedTopComponentsAroundEditor(tcs, dir.getSplitSide());
+            // adjust the size of the new mode
+            m = WindowManager.getDefault().findMode(tc);
+            adjustNewModeSize(m, dir.getOrientation(), n);
         }
     }
 
+    private void findConstraints(WindowTreeBuilder tree, NbAppView av)
+    {
+        TopComponent tc = av.getTopComponent();
+        Mode m = WindowManager.getDefault().findMode(tc);
+        Model md = getModel();
+        Siblings sibs = tree.Siblings(av);
+
+        List<SplitConstraint[]> l = new ArrayList<SplitConstraint[]>();
+        for(ViAppView av01 : sibs.siblings) {
+            TopComponent tc01 = ((NbAppView)av01).getTopComponent();
+            Mode m01 = WindowManager.getDefault().findMode(tc01);
+            l.add(md.getModeConstraints((ModeImpl)m01));
+        }
+
+        SplitConstraint[] c1 = md.getModeConstraints((ModeImpl)m);
+
+        // following produced indexes of 40,60
+        SplitConstraint[] c2 = md.getEditorAreaConstraints();
+
+        System.err.println("BOO");
+    }
+
+    private void adjustNewModeSize(Mode m, Orientation orientation,
+                                   int n)
+    {
+        System.err.println("FAR");
+    }
+
     private static Method meth_getCentral;
-    private static Method meth_userDroppedTopComponents; // (mode, TC[])
+    private static Method meth_userDroppedTopComponents; //mode,TC[]
+    private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
+    private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
+    private static Field field_model;
     static Method meth_getCentral() {
         populateCoreWindowMethods();
         return meth_getCentral;
@@ -638,6 +690,14 @@ public class NbTextView extends SwingTextView
     static Method meth_userDroppedTopComponents() {
         populateCoreWindowMethods();
         return meth_userDroppedTopComponents;
+    }
+    static Method meth_userDroppedTopComponents_side() {
+        populateCoreWindowMethods();
+        return meth_userDroppedTopComponents_side;
+    }
+    static Method meth_userDroppedTopComponentsAroundEditor() {
+        populateCoreWindowMethods();
+        return meth_userDroppedTopComponentsAroundEditor;
     }
     private static void populateCoreWindowMethods() {
         if(meth_userDroppedTopComponents== null) {
@@ -663,11 +723,42 @@ public class NbTextView extends SwingTextView
                         = c_central.getMethod("userDroppedTopComponents",
                                               c_modeImpl, tcs.getClass());
                 meth_userDroppedTopComponents.setAccessible(true);
+                meth_userDroppedTopComponents_side
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, tcs.getClass(),
+                                              String.class);
+                meth_userDroppedTopComponents_side.setAccessible(true);
+                meth_userDroppedTopComponentsAroundEditor
+                        = c_central.getMethod(
+                                "userDroppedTopComponentsAroundEditor",
+                                tcs.getClass(), String.class, int.class);
+                meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
+
+                for(Field f : c_central.getDeclaredFields()) {
+                    if(f.getName().equals("model")) {
+                        f.setAccessible(true);
+                        field_model = f;
+                        break;
+                    }
+                }
             } catch(NoSuchMethodException ex) {
             } catch(SecurityException ex) {
             } catch(ClassNotFoundException ex) {
             }
         }
+    }
+
+    private Model getModel()
+    {
+        try {
+            Object wmi = WindowManager.getDefault();
+            Object central = meth_getCentral().invoke(wmi);
+            Object model = field_model.get(central);
+            return (Model)model;
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 
     private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
@@ -699,6 +790,35 @@ public class NbTextView extends SwingTextView
             //          updateViewAfterDnD(moved)
             // so all the little pieces of userDroppedTopComponents are needed
             //
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void userDroppedTopComponents(
+            Mode mode, TopComponent[] tcs, String side)
+    {
+        try {
+            Object wmi = WindowManager.getDefault();
+            Object central = meth_getCentral().invoke(wmi);
+
+            meth_userDroppedTopComponents_side()
+                    .invoke(central, mode, tcs, side);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /** different from NB in that modeKind is forced to editor */
+    private void userDroppedTopComponentsAroundEditor(
+            TopComponent[] tcs, String side)
+    {
+        try {
+            Object wmi = WindowManager.getDefault();
+            Object central = meth_getCentral().invoke(wmi);
+
+            meth_userDroppedTopComponentsAroundEditor()
+                    .invoke(central, tcs, side, 1);// 1 ==> MODE_KIND_EDITOR
         } catch(Exception ex) {
             ex.printStackTrace();
         }

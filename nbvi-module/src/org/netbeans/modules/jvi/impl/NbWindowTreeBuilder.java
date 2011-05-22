@@ -26,6 +26,7 @@ import com.raelity.jvi.core.lib.WindowTreeBuilder;
 import com.raelity.jvi.manager.ViManager;
 import java.awt.Component;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -68,56 +70,22 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
         return c.getRootPane().getContentPane();
     }
 
-    // private Component findModePanel(Component c)
-    // {
-    //     Component modePanel = null;
-    //     do {
-    //         if("org.netbeans.core.windows.view.ui.DefaultSplitContainer$ModePanel".equals(c.getClass().getName())) {
-    //             modePanel = c;
-    //             break;
-    //         }
-    //     } while((c = c.getParent()) != null);
-    //     return modePanel;
-    // }
+    // would like to use mode.getBounds, but it doesn't work
+    @Override
+    protected Rectangle getNodeRectangle(Node n)
+    {
+        // Since modeImpl.getBounds does not work,
+        // looking for an enclosing ModelPanel work pretty good.
+        // Using that, the distance between left-right is 4 (instead of ~70)
+        Component c = NbTextView.findModePanel(n.getPeer());
+        if(c != null) {
+            Rectangle r = SwingUtilities.getLocalBounds(c);
+            r = SwingUtilities.convertRectangle(c, r, null);
+            return r;
+        }
+        return super.getNodeRectangle(n);
+    }
 
-    // // Because mode.getBounds doesn't work, don't like using findModePanel
-    // private static final boolean USE_MODE_RECT = false;
-    // @Override
-    // protected Rectangle getNodeRectangle(Node n)
-    // {
-    //     if(USE_MODE_RECT) {
-    //         if(false) {
-    //             // DOESN'T WORK, bounds always 0,0,0,0
-    //             TopComponent tc = getAppView(n.getPeer()).getTopComponent();
-    //             Mode m = WindowManager.getDefault().findMode(tc);
-    //             Rectangle r = m.getBounds();
-    //             return r;
-    //         }
-
-    //         // Since modeImpl.getBounds does not work,
-    //         // looking for an enclosing ModelPanel work pretty good.
-    //         // Using that, the distance between left-right is 4 (instead of ~70)
-    //         Component c = findModePanel(n.getPeer());
-    //         if(c != null) {
-    //             Rectangle r = SwingUtilities.getLocalBounds(c);
-    //             r = SwingUtilities.convertRectangle(c, r, null);
-    //             return r;
-    //         }
-    //     }
-    //     return super.getNodeRectangle(n);
-    // }
-
-    // @Override
-    // protected boolean touches(Node n, Direction dir, Node nOther,
-    //                           MutableInt distance)
-    // {
-    //     if(!USE_MODE_RECT)
-    //         return super.touches(n, dir, nOther, distance);
-
-    //     MutableInt d = new MutableInt();
-    //     super.touches(n, dir, nOther, d);
-    //     return d.getValue() < 10;
-    // }
 
 
     @Override

@@ -33,6 +33,8 @@ import com.raelity.jvi.core.Options;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import java.util.Collections;
 import java.util.List;
@@ -270,10 +272,18 @@ final public class NbFactory extends SwingFactory {
         String fromFile;
     }
     
-    Stack<Tag> tagStack = new Stack<Tag>(); // Stack allows big shrink
-    int iActiveTag;
+    private static Stack<Tag> tagStack = new Stack<Tag>();
+    private static int iActiveTag;
     
-    static Tag pushingTag;
+    private static Tag pushingTag;
+    private static ActionListener finishTagPush = new ActionListener()
+            {
+                @Override
+                public void actionPerformed(ActionEvent e)
+                {
+                    finishTagPush(e);
+                }
+            };
     
     private static int calcColumnOffset(Document doc, int offset) {
         Element root = doc.getDefaultRootElement();
@@ -392,16 +402,15 @@ final public class NbFactory extends SwingFactory {
         pushingTag.toIdent = ident;
         
         fillTagFrom(pushingTag, tv);
+        Scheduler.putKeyStrokeTodo(finishTagPush);
     }
     
     /**
      * This is called from any number of places to indicate that an ed
      * is in use, and if a tagPush is in progress, the target has been reached.
      */
-    @Override
-    public final void finishTagPush(ViTextView tv) {
-        if(tv == null)
-            return;
+    private static void finishTagPush(ActionEvent e) {
+        ViTextView tv = (ViTextView)e.getSource();
         if(pushingTag == null)
             return;
         

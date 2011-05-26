@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- expect basedir to be already defined -->
+<project name="patch">
+    <!-- default patch src and class directories -->
+    <target name="patch-init">
+        <property name="patch.src.dir"
+                  value="patchsrc"/>
+        <property name="patch.build.classes.dir"
+                  value="build/patchclasses"/>
+        <property name="patch.cluster.dir"
+                  value="${cluster}/modules/patches/${patch.module}"/>
+    </target>
+
+    <target name="patch-compile">
+        <mkdir dir="${patch.build.classes.dir}"/>
+        <depend srcdir="${patch.src.dir}"
+                destdir="${patch.build.classes.dir}"
+                cache="${build.dir}/patchdepcache">
+            <classpath refid="cp"/>
+        </depend>
+        <nb-javac srcdir="${patch.src.dir}"
+                  destdir="${patch.build.classes.dir}"
+                  debug="${build.compiler.debug}"
+                  debuglevel="${build.compiler.debuglevel}"
+                  encoding="UTF-8"
+                  deprecation="${build.compiler.deprecation}"
+                  optimize="${build.compiler.optimize}"
+                  source="${javac.source}"
+                  target="${javac.target}"
+                  includeantruntime="false">
+            <classpath>
+                <pathelement location="${patch.classpath.extra}"/>
+                <path refid="cp"/>
+            </classpath>
+            <compilerarg line="${javac.compilerargs}"/>
+            <processorpath refid="processor.cp"/>
+        </nb-javac>
+    </target>
+
+    <target name="patch-jar">
+        <mkdir dir="${patch.cluster.dir}"/>
+        <jar destfile="${patch.cluster.dir}/${patch.file}"
+             basedir="${patch.build.classes.dir}"
+             compress="${build.package.compress}"/>
+    </target>
+
+    <target name="patch-clean">
+        <delete dir="${patch.cluster.dir}"/>
+        <delete dir="${patch.build.classes.dir}"/>
+        <delete dir="${build.dir/patchdepcache}"/>
+    </target>
+
+</project>

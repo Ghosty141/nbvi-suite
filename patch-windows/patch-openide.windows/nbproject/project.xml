@@ -45,8 +45,8 @@
             <extra-compilation-unit>
                 <package-root>patchsrc</package-root>
                 <classpath>${module.classpath}</classpath>
-                <built-to>build/patchclasses</built-to>
-                <built-to>${cluster}/modules/patches/${patch.module}/${patch.file}</built-to>
+                <built-to>${patch.build.classes.dir}</built-to>
+                <built-to>${patch.jar.file}</built-to>
             </extra-compilation-unit>
         </data>
     </configuration>

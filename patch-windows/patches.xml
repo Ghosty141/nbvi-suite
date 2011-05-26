@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- expect basedir to be already defined -->
 <project name="patch">
     <!-- default patch src and class directories -->
     <target name="patch-init">
@@ -7,8 +6,15 @@
                   value="patchsrc"/>
         <property name="patch.build.classes.dir"
                   value="build/patchclasses"/>
-        <property name="patch.cluster.dir"
-                  value="${cluster}/modules/patches/${patch.module}"/>
+        <property name="patch.cluster.rel.dir"
+                  value="modules/patches/${patch.module}"/>
+        <property name="patch.cluster.rel.jarfile"
+                  value="${patch.cluster.rel.dir}/${patch.filename}"/>
+        <property name="patch.jar.dir"
+                  value="${cluster}/${patch.cluster.rel.dir}"/>
+        <property name="patch.jar.file"
+                  value="${patch.jar.dir}/${patch.filename}"/>
+
     </target>
 
     <target name="patch-compile">
@@ -38,14 +44,14 @@
     </target>
 
     <target name="patch-jar">
-        <mkdir dir="${patch.cluster.dir}"/>
-        <jar destfile="${patch.cluster.dir}/${patch.file}"
+        <mkdir dir="${patch.jar.dir}"/>
+        <jar destfile="${patch.jar.file}"
              basedir="${patch.build.classes.dir}"
              compress="${build.package.compress}"/>
     </target>
 
     <target name="patch-clean">
-        <delete dir="${patch.cluster.dir}"/>
+        <delete dir="${patch.jar.dir}"/>
         <delete dir="${patch.build.classes.dir}"/>
         <delete dir="${build.dir/patchdepcache}"/>
     </target>

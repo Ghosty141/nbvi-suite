@@ -15,5 +15,5 @@
     <target name="jar"
             depends="projectized-common.jar, patch.patch-jar"/>
     <target name="clean"
-            depends="projectized-common.clean, patch.patch-clean"/>
+            depends="patch.patch-clean, projectized-common.clean"/>
 </project>

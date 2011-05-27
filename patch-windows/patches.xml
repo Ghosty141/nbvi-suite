@@ -6,12 +6,8 @@
                   value="patchsrc"/>
         <property name="patch.build.classes.dir"
                   value="build/patchclasses"/>
-        <property name="patch.cluster.rel.dir"
-                  value="modules/patches/${patch.module}"/>
-        <property name="patch.cluster.rel.jarfile"
-                  value="${patch.cluster.rel.dir}/${patch.filename}"/>
         <property name="patch.jar.dir"
-                  value="${cluster}/${patch.cluster.rel.dir}"/>
+                  value="${cluster}/modules/patches/${patch.module}"/>
         <property name="patch.jar.file"
                   value="${patch.jar.dir}/${patch.filename}"/>
 

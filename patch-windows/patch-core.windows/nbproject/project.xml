@@ -57,7 +57,9 @@
                     </run-dependency>
                 </dependency>
             </module-dependencies>
-            <public-packages/>
+            <public-packages>
+                <package>com.raelity.jvi.nb.patches.org.netbeans.core.windows</package>
+            </public-packages>
             <extra-compilation-unit>
                 <package-root>patchsrc</package-root>
                 <classpath>${patch.classpath.extra}:${module.classpath}</classpath>

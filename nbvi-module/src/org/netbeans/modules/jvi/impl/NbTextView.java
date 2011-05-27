@@ -534,34 +534,28 @@ public class NbTextView extends SwingTextView
         }
 
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        NbAppView avTarget = (NbAppView)nav.getTarget(dir, av, 1);
-        if(avTarget == null)
-            avTarget = (NbAppView)nav.getTarget(dir.getOpposite(), av, 1);
-
+        //
+        // split used to do a move if there was something on either side
+        // where it could move to. Instead always doing the split.
+        // And for me: map <Ctrl-W><Right> <Ctrl-W>T<Ctrl-W>L
+        //
         TopComponent clone = tcClone();
-        if(avTarget != null) {
-            // move the window into the mode we found
-            Mode m = WindowManager.getDefault()
-                    .findMode(avTarget.getTopComponent());
-            m.dockInto(clone);
-            clone.open();
-        } else {
-            double targetWeight = calcTargetWeight(
-                    n, dir.getOrientation(), nav.getParentSplitter(av));
+        double targetWeight = calcTargetWeight(
+                n, dir.getOrientation(), nav.getParentSplitter(av));
 
-            clone.open();
-            // create a new mode
-            Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
-            WindowManager.getDefault().addModeOnSide(m, dir.getSplitSide(), clone);
+        clone.open();
+        // create a new mode
+        Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
+        WindowManager.getDefault().addModeOnSide(m, dir.getSplitSide(), clone);
 
-            // userDroppedTopComponents(m, new TopComponent[] {clone},
-            //                          dir.getSplitSide());
+        // userDroppedTopComponents(m, new TopComponent[] {clone},
+        //                          dir.getSplitSide());
 
-            // adjust the size of the new mode
-            m = WindowManager.getDefault().findMode(clone);
-            WindowManager.getDefault().adjustSizes(m, new AdjustSize(targetWeight));
-        }
+        // adjust the size of the new mode
+        m = WindowManager.getDefault().findMode(clone);
+        WindowManager.getDefault().adjustSizes(m, new AdjustSize(targetWeight));
         clone.requestActive();
+        ViManager.requestRunEventQueue(3);
     }
 
     private TopComponent tcClone()
@@ -605,6 +599,7 @@ public class NbTextView extends SwingTextView
                 clone.open();
             }
             clone.requestActive();
+            ViManager.requestRunEventQueue(3);
         }
     }
 

@@ -10,8 +10,30 @@
 
     <target name="basic-init"
             depends="harness.basic-init, patch.patch-init"/>
+
+
+<!--
     <target name="compile"
             depends="projectized-common.compile,patch.patch-compile"/>
+-->
+    <target name="compile"
+            depends="harness.init,patch.patch-compile,projectized-common.up-to-date,projectized-common.compile"/>
+
+    <!-- following makes cp.extra first by flipping order of pathelement -->
+    <target name="-javac-init" depends="harness.build-init,projectized-common.-javac-init-bootclasspath-prepend,projectized-common.-javac-init-no-bootclasspath-prepend">
+        <path id="cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.classpath}"/>
+        </path>
+        <path id="processor.cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.run.classpath}"/>
+        </path>
+        <!-- Unlike ${module.classpath}, this does not use publicPackageJarDir, since processors need not be in public packages. -->
+        <!-- Also needs to include transitive dependencies. -->
+    </target>
+
+
     <target name="jar"
             depends="projectized-common.jar, patch.patch-jar"/>
     <target name="clean"

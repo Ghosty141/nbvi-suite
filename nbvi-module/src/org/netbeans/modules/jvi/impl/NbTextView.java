@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,6 @@ import org.netbeans.spi.editor.highlighting.ZOrder;
 import org.netbeans.spi.editor.highlighting.support.AbstractHighlightsContainer;
 import org.netbeans.spi.editor.highlighting.support.OffsetsBag;
 import org.openide.filesystems.FileObject;
-import org.openide.util.Lookup;
 import org.openide.util.WeakListeners;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -69,24 +67,28 @@ import com.raelity.jvi.options.ColorOption;
 import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
-import java.awt.Rectangle;
+import org.netbeans.modules.jvi.reflect.NbWindows;
 
 import static com.raelity.jvi.core.lib.Constants.*;
-import java.awt.Dimension;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
-import org.openide.windows.WindowManager.SiblingState;
-import org.openide.windows.WindowManager.WeightCalculator;
+import org.netbeans.modules.jvi.spi.WindowsProvider;
+import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
+import org.openide.util.Lookup;
 
 /**
  * Pretty much the SwingTextView used for standard swing.
  */
 public class NbTextView extends SwingTextView
 {
+    private static WindowsProvider wp;
 
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
+        if(wp == null) {
+            wp = Lookup.getDefault().lookup(WindowsProvider.class);
+            if(wp == null)
+                wp = NbWindows.getReflectionWindowsProvider();
+        }
     }
     
     @Override
@@ -540,20 +542,21 @@ public class NbTextView extends SwingTextView
         // And for me: map <Ctrl-W><Right> <Ctrl-W>T<Ctrl-W>L
         //
         TopComponent clone = tcClone();
-        double targetWeight = calcTargetWeight(
-                n, dir.getOrientation(), nav.getParentSplitter(av));
 
+        EditorHandle eh = new EH(clone, nav.getParentSplitter(av));
+        double targetWeight = wp.getWeight(n, dir.getOrientation().name(), eh);
         clone.open();
+
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
-        WindowManager.getDefault().addModeOnSide(m, dir.getSplitSide(), clone);
+        wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
         // userDroppedTopComponents(m, new TopComponent[] {clone},
         //                          dir.getSplitSide());
 
         // adjust the size of the new mode
         m = WindowManager.getDefault().findMode(clone);
-        WindowManager.getDefault().adjustSizes(m, new AdjustSize(targetWeight));
+        wp.setSize(m, targetWeight);
         clone.requestActive();
         ViManager.requestRunEventQueue(3);
     }
@@ -631,7 +634,7 @@ public class NbTextView extends SwingTextView
             if(tcTarget != null) {
                 m = WindowManager.getDefault().findMode(tcTarget);
                 if(WindowManager.getDefault().isEditorMode(m)) {
-                    userDroppedTopComponents(m, tcs);
+                    wp.move(m, new EH(tc, null));
                 } else
                     Msg.smsg("\"" + m.getSelectedTopComponent().getName()
                             + "\" target is not in an \"editor mode\"");
@@ -644,231 +647,28 @@ public class NbTextView extends SwingTextView
             // If the window does not have a left/right neighbor which
             // it toches, then do a split.
             //
-            double targetWeight = calcTargetWeight(
-                    n, dir.getOrientation(), nav.getParentSplitter(av));
 
+            EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
+            double targetWeight = wp.getWeight(n, dir.getOrientation().name(), eh);
+
+            // NEEDSWORK: exactly what's going on with this check?
+            //            why checking both directions?
+            //            Might be ok.
             if(nav.getTarget(dir.getClockwise(), av, 1, true) != null
                     || nav.getTarget(dir.getClockwise().getOpposite(),
                                      av, 1, true) != null)
             {
-                WindowManager.getDefault().addModeAround(m, dir.getSplitSide(), tc);
+                wp.addModeAround(m, dir.getSplitSide(), eh);
             } else {
                 // nothing on the left or right so split it
-                WindowManager.getDefault().addModeOnSide(m, dir.getSplitSide(), tc);
+                wp.addModeOnSide(m, dir.getSplitSide(), eh);
             }
 
             // userDroppedTopComponentsAroundEditor(tcs, dir.getSplitSide());
 
             // adjust the size of the new mode
             m = WindowManager.getDefault().findMode(tc);
-            WindowManager.getDefault().adjustSizes(m, new AdjustSize(targetWeight));
-        }
-    }
-
-    class AdjustSize implements WeightCalculator
-    {
-        double targetWeight;
-
-        public AdjustSize(double targetWeight)
-        {
-            this.targetWeight = targetWeight;
-        }
-
-        @Override
-        public List<Double> getWeights(SiblingState currentState)
-        {
-            List<Double> w = currentState.getWeights();
-            if(targetWeight >= 1D)
-                targetWeight = 0D;
-            if(targetWeight == 0D) {
-                // make equal
-                for(int i = 0; i < w.size(); i++) {
-                    w.set(i, 1D / w.size());
-                }
-            } else {
-                double otherWeight = (1 - targetWeight) / (w.size() - 1);
-                for(int i = 0; i < w.size(); i++) {
-                    w.set(i, i == currentState.getTargetIndex()
-                            ? targetWeight : otherWeight);
-                }
-            }
-            return w;
-        }
-
-    }
-
-    private double calcTargetWeight(int n, Orientation orientation,
-                                    Component splitter)
-    {
-        if(n == 0)
-            return 0;
-
-        // NEEDSWORK: splitter should never be null
-        //            fix it in WindowTreeBuilder
-
-        Component c;
-        c = getEditor();
-        if(c.getParent() instanceof JViewport)
-            c = c.getParent();
-        Dimension dEd = c.getSize();
-        Dimension dMode = findModePanel(getEditor()).getSize();
-        Dimension dSplitter = splitter == null ? dMode : splitter.getSize();
-        // The general formula is: w = (n * perChar + decoration) / total
-        // where decoration is the extra stuff in the mode
-        // add a few extra pixels to get a complete line/column
-        double targetWeight;
-        if(orientation == Orientation.UP_DOWN) {
-            targetWeight = (n * getLineHeight(1, 0)
-                            + (dMode.height - dEd.height)
-                            + 4) / (double)dSplitter.height;
-        } else {
-            targetWeight = (n * getMaxCharWidth()
-                            + (dMode.width - dEd.width)
-                            + 4) / (double)dSplitter.width;
-        }
-        return targetWeight;
-    }
-
-    static Component findModePanel(Component c)
-    {
-        Component modePanel = null;
-        do {
-            if("org.netbeans.core.windows.view.ui.DefaultSplitContainer$ModePanel".equals(c.getClass().getName())) {
-                modePanel = c;
-                break;
-            }
-        } while((c = c.getParent()) != null);
-        return modePanel;
-    }
-
-    private static Rectangle getRect(Component c)
-    {
-        Rectangle r = SwingUtilities.getLocalBounds(c);
-        r = SwingUtilities.convertRectangle(c, r, null);
-        return r;
-    }
-
-    private static Method meth_getCentral;
-    private static Method meth_userDroppedTopComponents; //mode,TC[]
-    private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
-    private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
-    static Method meth_getCentral() {
-        populateCoreWindowMethods();
-        return meth_getCentral;
-    }
-    static Method meth_userDroppedTopComponents() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponents;
-    }
-    static Method meth_userDroppedTopComponents_side() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponents_side;
-    }
-    static Method meth_userDroppedTopComponentsAroundEditor() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponentsAroundEditor;
-    }
-    private static void populateCoreWindowMethods() {
-        if(meth_userDroppedTopComponents== null) {
-            Object wmi = WindowManager.getDefault();
-            try {
-                // could use WeakRef's for method's
-                Method[] meths = wmi.getClass().getDeclaredMethods();
-                for(Method m : meths) {
-                    if(m.getName().equals("getCentral")) {
-                        m.setAccessible(true);
-                        meth_getCentral = m;
-                        break;
-                    }
-                }
-
-                ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
-                Class<?> c_central = cl.loadClass(
-                        "org.netbeans.core.windows.Central");
-                Class<?> c_modeImpl = cl.loadClass(
-                        "org.netbeans.core.windows.ModeImpl");
-                TopComponent[] tcs = new TopComponent[0];
-                meth_userDroppedTopComponents
-                        = c_central.getMethod("userDroppedTopComponents",
-                                              c_modeImpl, tcs.getClass());
-                meth_userDroppedTopComponents.setAccessible(true);
-                meth_userDroppedTopComponents_side
-                        = c_central.getMethod("userDroppedTopComponents",
-                                              c_modeImpl, tcs.getClass(),
-                                              String.class);
-                meth_userDroppedTopComponents_side.setAccessible(true);
-                meth_userDroppedTopComponentsAroundEditor
-                        = c_central.getMethod(
-                                "userDroppedTopComponentsAroundEditor",
-                                tcs.getClass(), String.class, int.class);
-                meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
-            } catch(NoSuchMethodException ex) {
-            } catch(SecurityException ex) {
-            } catch(ClassNotFoundException ex) {
-            }
-        }
-    }
-
-    private void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
-    {
-        try {
-            Object wmi = WindowManager.getDefault();
-            Object central = meth_getCentral().invoke(wmi);
-
-            meth_userDroppedTopComponents().invoke(central, mode, tcs);
-
-            // From Central:
-            //     public void userDroppedTopComponents(ModeImpl mode,
-            //                                          TopComponent[] tcs) {
-            //         updateViewAfterDnD(moveTopComponentsIntoMode(mode, tcs));
-            //     }
-            // tried doing:
-            //          moveTopComponentsIntoMode(...)
-            // that doesn't work.
-            //
-            // Then tried:
-            //          moved = moveTopComponentsIntoMode(...)
-            //          if(moved)
-            //              switchMaximizedMode(null)
-            // that doesn't work
-            //
-            // Then tried:
-            //
-            //          moved = moveTopComponentsIntoMode(...)
-            //          updateViewAfterDnD(moved)
-            // so all the little pieces of userDroppedTopComponents are needed
-            //
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void userDroppedTopComponents(
-            Mode mode, TopComponent[] tcs, String side)
-    {
-        try {
-            Object wmi = WindowManager.getDefault();
-            Object central = meth_getCentral().invoke(wmi);
-
-            meth_userDroppedTopComponents_side()
-                    .invoke(central, mode, tcs, side);
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /** different from NB in that modeKind is forced to editor */
-    private void userDroppedTopComponentsAroundEditor(
-            TopComponent[] tcs, String side)
-    {
-        try {
-            Object wmi = WindowManager.getDefault();
-            Object central = meth_getCentral().invoke(wmi);
-
-            meth_userDroppedTopComponentsAroundEditor()
-                    .invoke(central, tcs, side, 1);// 1 ==> MODE_KIND_EDITOR
-        } catch(Exception ex) {
-            ex.printStackTrace();
+            wp.setSize(m, targetWeight);
         }
     }
 
@@ -911,6 +711,55 @@ public class NbTextView extends SwingTextView
         // and close the one requested
         if(!avClose.getTopComponent().close())
             Msg.emsg(getBuffer().getDisplayFileName() + " not closed");
+    }
+
+    public static Component findModePanel(Component c)
+    {
+        return NbWindows.findModePanel(c);
+    }
+
+    private final class EH implements EditorHandle
+    {
+        private TopComponent tc;
+        private Component parentSplitter;
+
+        public EH(TopComponent tc, Component parentSplitter)
+        {
+            this.tc = tc;
+            this.parentSplitter = parentSplitter;
+        }
+
+
+        @Override
+        public TopComponent getTC()
+        {
+            return tc;
+        }
+
+        @Override
+        public Component getEd()
+        {
+            return getEditor();
+        }
+
+        @Override
+        public Component getParentSplitter()
+        {
+            return parentSplitter;
+        }
+
+        @Override
+        public double getLineHeight()
+        {
+            return NbTextView.this.getLineHeight(1, 0);
+        }
+
+        @Override
+        public double getMaxCharWidth()
+        {
+            return NbTextView.this.getMaxCharWidth();
+        }
+
     }
     
     //////////////////////////////////////////////////////////////////////

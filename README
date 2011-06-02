@@ -1,7 +1,7 @@
 Both jvi and nbvi should be checked out of the Mercurial repository, and they 
 should reside in the same directory.
 
-To build everything with NetBeans, open nbvi (aka nbvi-suite)
+To build almost everything with NetBeans, open nbvi (aka nbvi-suite)
 and build it with "Build All". If you want to install it, you'll need the
 NBMs; run target "Package as > NBMs" and look in nbvi/build/updates.
 
@@ -13,3 +13,11 @@ jvi-wrapper (aka jVi Core) is a module wrapper for the standalone, independent
 of NetBeans, jVi project. Clean and build on the wrapper, do clean and build
 on the project.
 
+There are some additional modules that can be built and installed.
+
+jvi-help is a placeholder for future work.
+
+patch-windows is a module suite that patches the NetBeans IDE. Its installation
+is optional. It provides support for resizing an editor window. It is used
+by jVi to set the size of a window as part of a window split/move and to
+implement the window resize commands.

@@ -67,6 +67,7 @@ import com.raelity.jvi.options.ColorOption;
 import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
+import java.util.Arrays;
 import org.netbeans.modules.jvi.reflect.NbWindows;
 
 import static com.raelity.jvi.core.lib.Constants.*;
@@ -501,22 +502,54 @@ public class NbTextView extends SwingTextView
 
     @Override
     public void tabOperation(TABOP op, int count) {
-        FsAct fsAct = null;
-        switch(op) {
-        case NEXT_TAB:
-            fsAct = FsAct.TAB_NEXT;
-            break;
-        case PREV_TAB:
-            fsAct = FsAct.TAB_PREV;
-            break;
+        boolean error = false;
+
+        if(count == 0) {
+            FsAct fsAct = null;
+            switch(op) {
+            case NEXT_TAB:
+                fsAct = FsAct.TAB_NEXT;
+                break;
+            case PREV_TAB:
+                fsAct = FsAct.TAB_PREV;
+                break;
+            }
+
+            if(fsAct != null) {
+                ActionEvent e = new ActionEvent(
+                        getEditor(), ActionEvent.ACTION_PERFORMED, "");
+                Module.execFileSystemAction(fsAct, e);
+            } else
+                error = true;
+        } else {
+            NbAppView av = (NbAppView)getAppView();
+            if(av == null) {
+                error = true;
+            } else {
+                TopComponent tc = av.getTopComponent();
+                TopComponent tcNext = null;
+                Mode m = WindowManager.getDefault().findMode(tc);
+                TopComponent[] tcs
+                        = WindowManager.getDefault().getOpenedTopComponents(m);
+                if(op == TABOP.NEXT_TAB) {
+                    if(count > tcs.length)
+                        error = true;
+                    else
+                        tcNext = tcs[count - 1];
+                } else {
+                    int idx = (Arrays.asList(tcs).indexOf(tc) - count)
+                                % tcs.length;
+                    if(idx < 0)
+                        idx += tcs.length;
+                    tcNext = tcs[idx];
+                }
+                if(tcNext != null) {
+                    tcActivate(tcNext);
+                }
+            }
         }
 
-        if(fsAct != null) {
-            ActionEvent e = new ActionEvent(getEditor(),
-                                            ActionEvent.ACTION_PERFORMED,
-                                            "");
-            Module.execFileSystemAction(fsAct, e);
-        } else
+        if(error)
             Util.beep_flush();
     }
     
@@ -526,6 +559,17 @@ public class NbTextView extends SwingTextView
     //
     // win_split, win_clone, win_move, ...
     //
+
+    /**
+     * The idea behind the run event q is to let the top component
+     * become fully active and focused. Then if there are keys queued up
+     * they can operate on the newly focused editor.
+     */
+    static void tcActivate(TopComponent tc)
+    {
+        tc.requestActive();
+        ViManager.requestRunEventQueue(3);
+    }
 
     @Override
     public void win_split(Direction dir, int n) {
@@ -557,8 +601,7 @@ public class NbTextView extends SwingTextView
         // adjust the size of the new mode
         m = WindowManager.getDefault().findMode(clone);
         wp.setSize(m, targetWeight);
-        clone.requestActive();
-        ViManager.requestRunEventQueue(3);
+        tcActivate(clone);
     }
 
     private TopComponent tcClone()
@@ -601,8 +644,7 @@ public class NbTextView extends SwingTextView
             } else {
                 clone.open();
             }
-            clone.requestActive();
-            ViManager.requestRunEventQueue(3);
+            tcActivate(clone);
         }
     }
 
@@ -706,7 +748,7 @@ public class NbTextView extends SwingTextView
         if(avPrev != null)
                 prevTC = avPrev.getTopComponent();
         if(prevTC != null)
-            prevTC.requestActive();
+            tcActivate(prevTC);
         
         // and close the one requested
         if(!avClose.getTopComponent().close())

@@ -54,6 +54,7 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
 import com.raelity.jvi.ViWindowNavigator;
+import com.raelity.jvi.ViWindowNavigator.SplitterNode;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
 import com.raelity.jvi.core.G;
@@ -571,6 +572,19 @@ public class NbTextView extends SwingTextView
         ViManager.requestRunEventQueue(3);
     }
 
+    /**
+     * verify the orientation matches.
+     */
+    static double getTargetWeight(int n, Orientation orientation,
+                                  EditorHandle eh)
+    {
+        SplitterNode node = ((EH)eh).parentSplitter;
+        if(node == null || orientation != node.getOrientation())
+            return 0;
+        double targetWeight = wp.getWeight(n, orientation.name(), eh);
+        return targetWeight;
+    }
+
     @Override
     public void win_split(Direction dir, int n) {
         NbAppView av = (NbAppView)getAppView();
@@ -588,7 +602,7 @@ public class NbTextView extends SwingTextView
         TopComponent clone = tcClone();
 
         EditorHandle eh = new EH(clone, nav.getParentSplitter(av));
-        double targetWeight = wp.getWeight(n, dir.getOrientation().name(), eh);
+        double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
         clone.open();
 
         // create a new mode
@@ -691,7 +705,7 @@ public class NbTextView extends SwingTextView
             //
 
             EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
-            double targetWeight = wp.getWeight(n, dir.getOrientation().name(), eh);
+            double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
 
             // NEEDSWORK: exactly what's going on with this check?
             //            why checking both directions?
@@ -712,6 +726,36 @@ public class NbTextView extends SwingTextView
             m = WindowManager.getDefault().findMode(tc);
             wp.setSize(m, targetWeight);
         }
+    }
+
+    @Override
+    public void win_size(SIZOP op, Orientation orientation, int n)
+    {
+        if(getViewport() == null)
+            return;
+
+        if(n == 0)
+            n = 1;
+        int size = orientation == Orientation.UP_DOWN
+                ? (int)(getViewport().getExtentSize().height/getLineHeight(1, 0))
+                : (int)(getViewport().getExtentSize().width/getMaxCharWidth());
+        if(op == SIZOP.ADJUST)
+            size += n;
+        else if(op == SIZOP.SET)
+            size = n;
+        if(size < 0)
+            size = 1;
+
+        NbAppView av = (NbAppView)getAppView();
+        TopComponent tc = av.getTopComponent();
+        Mode m = WindowManager.getDefault().findMode(tc);
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+        EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
+
+        double targetWeight = op == SIZOP.SAME
+                ? 0
+                : getTargetWeight(size, orientation, eh);
+        wp.setSize(m, targetWeight);
     }
 
     @Override
@@ -763,9 +807,9 @@ public class NbTextView extends SwingTextView
     private final class EH implements EditorHandle
     {
         private TopComponent tc;
-        private Component parentSplitter;
+        private SplitterNode parentSplitter;
 
-        public EH(TopComponent tc, Component parentSplitter)
+        public EH(TopComponent tc, SplitterNode parentSplitter)
         {
             this.tc = tc;
             this.parentSplitter = parentSplitter;
@@ -787,7 +831,7 @@ public class NbTextView extends SwingTextView
         @Override
         public Component getParentSplitter()
         {
-            return parentSplitter;
+            return parentSplitter.getComponent();
         }
 
         @Override

@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+
+main=/b/main
+
+
+diff_module() {
+    nb=$1
+    patch=patch-$nb
+
+    echo
+    echo "Checking $nb"
+    echo
+
+    files=$(hgfileInDiff $main/.hg/patches/AddAdjustModesAPI.diff \
+        | grep $nb|sed "s/$nb\/src\///")
+
+
+    for f in $files
+    do
+        echo ===== $f
+        diff $patch/patchsrc/$f $main/$nb/src/$f
+    done
+}
+
+diff_module core.windows
+diff_module openide.windows

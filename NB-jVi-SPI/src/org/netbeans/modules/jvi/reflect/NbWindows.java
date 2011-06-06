@@ -142,10 +142,30 @@ public class NbWindows
         }
     }
 
+    /**
+     * Invoke setWeights on splitter/MultiSplitPane.
+     * This method is available in a NB patch.
+     * Do nothing if method not found.
+     * @param splitter
+     * @param weights
+     */
+    public static void setWeights(Component splitter, double[] weights)
+    {
+        Method setWeights = meth_setWeights_multiSplitPane();
+        if(setWeights == null)
+            return;
+        try {
+            setWeights.invoke(splitter, weights);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     private static Method meth_getCentral;
     private static Method meth_userDroppedTopComponents; //mode,TC[]
     private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
     private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
+    private static Method meth_setWeights_multiSplitPane; //TC[],side
     private static Method meth_getCentral() {
         populateCoreWindowMethods();
         return meth_getCentral;
@@ -161,6 +181,10 @@ public class NbWindows
     static Method meth_userDroppedTopComponentsAroundEditor() {
         populateCoreWindowMethods();
         return meth_userDroppedTopComponentsAroundEditor;
+    }
+    static Method meth_setWeights_multiSplitPane() {
+        populateCoreWindowMethods();
+        return meth_setWeights_multiSplitPane;
     }
 
     private static void populateCoreWindowMethods() {
@@ -182,7 +206,10 @@ public class NbWindows
                         "org.netbeans.core.windows.Central");
                 Class<?> c_modeImpl = cl.loadClass(
                         "org.netbeans.core.windows.ModeImpl");
+                Class<?> c_multiSplitPane = cl.loadClass(
+                        "org.netbeans.core.windows.view.ui.MultiSplitPane");
                 TopComponent[] tcs = new TopComponent[0];
+                double[] ds = new double[0];
                 meth_userDroppedTopComponents
                         = c_central.getMethod("userDroppedTopComponents",
                                               c_modeImpl, tcs.getClass());
@@ -197,6 +224,8 @@ public class NbWindows
                                 "userDroppedTopComponentsAroundEditor",
                                 tcs.getClass(), String.class, int.class);
                 meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
+                meth_setWeights_multiSplitPane = c_multiSplitPane.getMethod(
+                        "setWeights", ds.getClass());
             } catch(NoSuchMethodException ex) {
             } catch(SecurityException ex) {
             } catch(ClassNotFoundException ex) {

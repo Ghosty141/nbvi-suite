@@ -576,13 +576,43 @@ public class NbTextView extends SwingTextView
      * verify the orientation matches.
      */
     static double getTargetWeight(int n, Orientation orientation,
-                                  EditorHandle eh)
+                                  EditorHandle eh,
+                                  boolean errorOrienationMismatch)
     {
         SplitterNode node = ((EH)eh).parentSplitter;
-        if(node == null || orientation != node.getOrientation())
+        if(node == null)
             return 0;
+        if(orientation != node.getOrientation())
+            return errorOrienationMismatch ? -1 : 0;
         double targetWeight = wp.getWeight(n, orientation.name(), eh);
         return targetWeight;
+    }
+
+    /**
+     * HACK set the weights for a splitter.
+     * @param splitter
+     * @param weight
+     */
+    static void setWeight(SplitterNode splitter, double targetWeight)
+    {
+        double[] w = new double[splitter.getChildCount()];
+
+        if(targetWeight >= 1D)
+            targetWeight = 0D;
+
+        if(targetWeight == 0D) {
+            // make equal
+            for(int i = 0; i < w.length; i++) {
+                w[i] = 1D / w.length;
+            }
+        } else {
+            double otherWeight = (1 - targetWeight) / (w.length - 1);
+            for(int i = 0; i < w.length; i++) {
+                w[i] = i == splitter.getTargetIndex()
+                        ? targetWeight : otherWeight;
+            }
+        }
+        NbWindows.setWeights(splitter.getComponent(), w);
     }
 
     @Override
@@ -602,7 +632,8 @@ public class NbTextView extends SwingTextView
         TopComponent clone = tcClone();
 
         EditorHandle eh = new EH(clone, nav.getParentSplitter(av));
-        double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+        double targetWeight = getTargetWeight(n, dir.getOrientation(),
+                                              eh, false);
         clone.open();
 
         // create a new mode
@@ -705,7 +736,8 @@ public class NbTextView extends SwingTextView
             //
 
             EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
-            double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+            double targetWeight = getTargetWeight(n, dir.getOrientation(),
+                                                  eh, false);
 
             // NEEDSWORK: exactly what's going on with this check?
             //            why checking both directions?
@@ -750,12 +782,16 @@ public class NbTextView extends SwingTextView
         TopComponent tc = av.getTopComponent();
         Mode m = WindowManager.getDefault().findMode(tc);
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
+        SplitterNode splitterNode = nav.getParentSplitter(av);
+        EditorHandle eh = new EH(tc, splitterNode);
 
         double targetWeight = op == SIZOP.SAME
                 ? 0
-                : getTargetWeight(size, orientation, eh);
-        wp.setSize(m, targetWeight);
+                : getTargetWeight(size, orientation, eh, true);
+        ///// wp.setSize(m, targetWeight);
+        if(targetWeight < 0)
+            return;
+        setWeight(splitterNode, targetWeight);
     }
 
     @Override

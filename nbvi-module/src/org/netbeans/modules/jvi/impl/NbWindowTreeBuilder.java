@@ -188,13 +188,15 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
         //
 
         sb = new StringBuilder();
+        super.dumpWinAction(e, sb);
+
+        // add mode information
         WindowManager wm = WindowManager.getDefault();
         for(Mode m : wm.getModes()) {
             sb.append("mode=").append(m.getName())
                     .append(" isEdMode=").append(wm.isEditorMode(m))
                     .append('\n');
         }
-        super.dumpWinAction(e, sb);
     }
 
 }

@@ -8,6 +8,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.prefs.Preferences;
 
@@ -74,7 +75,6 @@ import org.netbeans.modules.jvi.reflect.NbWindows;
 import static com.raelity.jvi.core.lib.Constants.*;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
-import org.openide.util.Lookup;
 
 /**
  * Pretty much the SwingTextView used for standard swing.
@@ -87,7 +87,7 @@ public class NbTextView extends SwingTextView
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
         if(wp == null) {
-            wp = Lookup.getDefault().lookup(WindowsProvider.class);
+            // wp = Lookup.getDefault().lookup(WindowsProvider.class);
             if(wp == null)
                 wp = NbWindows.getReflectionWindowsProvider();
         }
@@ -569,7 +569,7 @@ public class NbTextView extends SwingTextView
     static void tcActivate(TopComponent tc)
     {
         tc.requestActive();
-        ViManager.requestRunEventQueue(3);
+        ViManager.requestCharBreakPauseRunEventQueue(3);
     }
 
     /**
@@ -580,16 +580,14 @@ public class NbTextView extends SwingTextView
                                   boolean errorOrienationMismatch)
     {
         SplitterNode node = ((EH)eh).parentSplitter;
-        if(node == null)
-            return 0;
-        if(orientation != node.getOrientation())
+        if(node != null && orientation != node.getOrientation())
             return errorOrienationMismatch ? -1 : 0;
         double targetWeight = wp.getWeight(n, orientation.name(), eh);
         return targetWeight;
     }
 
     /**
-     * HACK set the weights for a splitter.
+     * set the weights for a splitter.
      * @param splitter
      * @param weight
      */
@@ -615,6 +613,150 @@ public class NbTextView extends SwingTextView
         NbWindows.setWeights(splitter.getComponent(), w);
     }
 
+    static void setWeight(TopComponent tc, double targetWeight)
+    {
+        Set<NbAppView> tcSet = NbAppView.fetchAvFromTC(tc);
+        if(tcSet.isEmpty())
+            return;
+        NbAppView av = tcSet.iterator().next();
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+        SplitterNode sn = nav.getParentSplitter(av);
+        //System.err.println("setWeight: " + targetWeight);
+        setWeight(sn, targetWeight);
+    }
+
+    /** operate on mode that holds tc */
+    static void setWeightLater(final TopComponent tc, final double targetWeight)
+    {
+        ViManager.nInvokeLater(1, new Runnable() {
+            @Override
+            public void run()
+            {
+                setWeight(tc, targetWeight);
+            }
+        });
+    }
+
+    /**
+     * Calculate some initial state for a split
+     */
+    private static SplitParams doEditorSplit1(EH eh)
+    {
+        SplitterNode sn = eh.parentSplitter;
+        SplitParams sp = new SplitParams();
+
+        if(sn == null) {
+            sp.idxToSplit = 0;
+            sp.originalWeights = new double[] { 1D };
+            return sp;
+        }
+
+        Component[] children = sn.getChildren();
+        double[] weights = new double[children.length];
+        double full = getDim(sn.getOrientation(), sn.getComponent());
+
+        for(int i = 0; i < children.length; i++) {
+            Component c = children[i];
+            if(c instanceof JTextComponent) {
+                c = wp.findModePanel(c);
+                children[i] = c;
+            }
+            weights[i] = getDim(sn.getOrientation(), c) / full;
+        }
+
+        sp.idxToSplit = sn.getTargetIndex();
+        sp.originalWeights = weights;
+
+        return sp;
+    }
+
+    /**
+     * A new mode has been created and tc installed in it;
+     * Set the new weights.
+     */
+    private static void doEditorSplit2(TopComponent tc,
+                                       SplitParams sp)
+    {
+        List<Double> wl = new ArrayList<Double>(sp.originalWeights.length + 1);
+        for(double d : sp.originalWeights) {
+            wl.add(d);
+        }
+
+        Set<NbAppView> tcSet = NbAppView.fetchAvFromTC(tc);
+        if(tcSet.isEmpty())
+            return;
+        NbAppView av = tcSet.iterator().next();
+
+        // determine position index of new editor and prev editor
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+        SplitterNode sn = nav.getParentSplitter(av);
+        if(sn.getChildCount() != sp.originalWeights.length + 1)
+            return;
+        int idxOfNew = sn.getTargetIndex();
+        assert idxOfNew == sp.idxToSplit || idxOfNew == sp.idxToSplit + 1;
+        int idxOfOther = idxOfNew == sp.idxToSplit ? idxOfNew + 1 : idxOfNew - 1;
+
+        // make room for the weight of the new editor, put back into an array
+        wl.add(idxOfNew, 0D);
+        double[] newWeights = new double[wl.size()];
+        for(int i = 0; i < newWeights.length; i++) {
+            newWeights[i] = wl.get(i);
+        }
+
+        if(sp.targetWeight == 0D) {
+            // do an even split
+            sp.targetWeight = 100; // as long as its bigger than 1
+        }
+        if(sp.targetWeight < sp.originalWeights[sp.idxToSplit]) {
+            newWeights[idxOfNew] = sp.targetWeight;
+            newWeights[idxOfOther] -= sp.targetWeight;
+        } else {
+            // asking for more than was originally there.
+            if(sp.targetWeight < .9) {
+                // take what weight asked for, evenly split the rest
+                newWeights[idxOfNew] = sp.targetWeight;
+                double distrubutedWeight
+                        = (1 - sp.targetWeight)/(newWeights.length - 1);
+                for(int i = 0; i < newWeights.length; i++) {
+                    if(i != idxOfNew)
+                        newWeights[i] = distrubutedWeight;
+
+                }
+            } else {
+                // distribute evently, at least for now
+                double distrubutedWeight = 1D / newWeights.length;
+                for(int i = 0; i < newWeights.length; i++) {
+                    newWeights[i] = distrubutedWeight;
+                }
+            }
+        }
+        NbWindows.setWeights(sn.getComponent(), newWeights);
+    }
+
+    private static class SplitParams {
+        int idxToSplit;
+        double[] originalWeights;
+        double targetWeight; // of new
+    }
+
+    private static int getDim(Orientation orientation, Component c)
+    {
+        return orientation == Orientation.LEFT_RIGHT
+                ? c.getWidth() : c.getHeight();
+    }
+
+    private static void finishSplitLater(final TopComponent tc,
+                                         final SplitParams sp)
+    {
+        ViManager.nInvokeLater(1, new Runnable() {
+            @Override
+            public void run()
+            {
+                doEditorSplit2(tc, sp);
+            }
+        });
+    }
+
     @Override
     public void win_split(Direction dir, int n) {
         NbAppView av = (NbAppView)getAppView();
@@ -624,29 +766,21 @@ public class NbTextView extends SwingTextView
         }
 
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        //
-        // split used to do a move if there was something on either side
-        // where it could move to. Instead always doing the split.
-        // And for me: map <Ctrl-W><Right> <Ctrl-W>T<Ctrl-W>L
-        //
         TopComponent clone = tcClone();
 
-        EditorHandle eh = new EH(clone, nav.getParentSplitter(av));
+        EH eh = new EH(clone, nav.getParentSplitter(av));
         double targetWeight = getTargetWeight(n, dir.getOrientation(),
                                               eh, false);
         clone.open();
+        SplitParams sp = doEditorSplit1(eh);
+        sp.targetWeight = targetWeight;
 
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
         wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
-        // userDroppedTopComponents(m, new TopComponent[] {clone},
-        //                          dir.getSplitSide());
-
-        // adjust the size of the new mode
-        m = WindowManager.getDefault().findMode(clone);
-        wp.setSize(m, targetWeight);
         tcActivate(clone);
+        finishSplitLater(clone, sp);
     }
 
     private TopComponent tcClone()
@@ -730,12 +864,12 @@ public class NbTextView extends SwingTextView
         } else {
             //
             // Might do either addModeOnSide or addModeAround
-            // Consider creating vertical splitter (move up/down jVi command)
-            // If the window does not have a left/right neighbor which
+            // Consider creating vertical splitter (move up/down jVi command);
+            // if the window does not have a left/right neighbor which
             // it toches, then do a split.
             //
 
-            EditorHandle eh = new EH(tc, nav.getParentSplitter(av));
+            EH eh = new EH(tc, nav.getParentSplitter(av));
             double targetWeight = getTargetWeight(n, dir.getOrientation(),
                                                   eh, false);
 
@@ -755,8 +889,9 @@ public class NbTextView extends SwingTextView
             // userDroppedTopComponentsAroundEditor(tcs, dir.getSplitSide());
 
             // adjust the size of the new mode
-            m = WindowManager.getDefault().findMode(tc);
-            wp.setSize(m, targetWeight);
+            ///// m = WindowManager.getDefault().findMode(tc);
+            ///// wp.setSize(m, targetWeight);
+            setWeightLater(tc, targetWeight);
         }
     }
 
@@ -783,7 +918,7 @@ public class NbTextView extends SwingTextView
         Mode m = WindowManager.getDefault().findMode(tc);
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
         SplitterNode splitterNode = nav.getParentSplitter(av);
-        EditorHandle eh = new EH(tc, splitterNode);
+        EH eh = new EH(tc, splitterNode);
 
         double targetWeight = op == SIZOP.SAME
                 ? 0
@@ -867,7 +1002,7 @@ public class NbTextView extends SwingTextView
         @Override
         public Component getParentSplitter()
         {
-            return parentSplitter.getComponent();
+            return parentSplitter != null ? parentSplitter.getComponent() : null;
         }
 
         @Override

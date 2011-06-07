@@ -5,7 +5,9 @@
 package org.netbeans.modules.jvi.reflect;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.lang.reflect.Method;
+import javax.swing.JViewport;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
 import org.openide.util.Lookup;
@@ -54,8 +56,7 @@ public class NbWindows
             @Override
             public double getWeight(int n, String orientation, EditorHandle eh)
             {
-                // not supported through reflection
-                return 0;
+                return NbWindows.getWeight(n, orientation, eh);
             }
 
             @Override
@@ -64,6 +65,40 @@ public class NbWindows
                 return NbWindows.findModePanel(c);
             }
         };
+    }
+
+    public static double getWeight(int n, String orientation, EditorHandle eh)
+    {
+        Component splitter = eh.getParentSplitter();
+        if(n == 0)
+            return 0;
+
+        // NEEDSWORK: splitter should never be null
+        //            fix it in WindowTreeBuilder
+
+        Component c;
+        c = eh.getEd();
+        if(c.getParent() instanceof JViewport)
+            c = c.getParent();
+        Dimension dEd = c.getSize();
+        Dimension dMode = findModePanel(eh.getEd()).getSize();
+        // NEEDSWORK: splitter should never be null
+        //            fix it in WindowTreeBuilder
+        Dimension dSplitter = splitter == null ? dMode : splitter.getSize();
+        // The general formula is: w = (n * perChar + decoration) / total
+        // where decoration is the extra stuff in the mode
+        // add a few extra pixels to get a complete line/column
+        double targetWeight;
+        if(orientation.equals("UP_DOWN")) {
+            targetWeight = (n * eh.getLineHeight()
+                            + (dMode.height - dEd.height)
+                            + 4) / (double)dSplitter.height;
+        } else {
+            targetWeight = (n * eh.getMaxCharWidth()
+                            + (dMode.width - dEd.width)
+                            + 4) / (double)dSplitter.width;
+        }
+        return targetWeight;
     }
 
     /** an ugly hack */

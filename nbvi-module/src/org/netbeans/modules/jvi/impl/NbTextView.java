@@ -642,7 +642,8 @@ public class NbTextView extends SwingTextView
 
     /**
      * A new mode has been created and tc installed in it;
-     * Set the new weights.
+     * Set the new weights and adjust other weights.
+     * Pay attention to equalalways option.
      */
     private static void doEditorSplit2(TopComponent tc,
                                        SplitParams sp)
@@ -672,31 +673,43 @@ public class NbTextView extends SwingTextView
             newWeights[i] = wl.get(i);
         }
 
-        if(sp.targetWeight == 0D) {
-            // do an even split
-            sp.targetWeight = 100; // as long as its bigger than 1
+        boolean ea = G.p_ea.getBoolean();
+        if(sp.sizeSpecified) {
+            // in vim if size specified then only change size of current window
+            ea = false;
         }
-        if(sp.targetWeight < sp.originalWeights[sp.idxToSplit]) {
-            newWeights[idxOfNew] = sp.targetWeight;
-            newWeights[idxOfOther] -= sp.targetWeight;
-        } else {
-            // asking for more than was originally there.
-            if(sp.targetWeight < .9) {
+        // NEEDSWORK: when !ea and request bigger than current
+        //            should take extra space from window
+        //            as specified by splitbottom/splitright options.
+        if(!ea) {
+            if(sp.targetWeight < sp.originalWeights[sp.idxToSplit] - .03) {
+                // If no size was specified, split current in half
+                if(sp.targetWeight == 0D)
+                    sp.targetWeight = newWeights[idxOfOther] / 2;
+                // take space with current editor view
+                newWeights[idxOfNew] = sp.targetWeight;
+                newWeights[idxOfOther] -= sp.targetWeight;
+            } else {
+                //
+                // asking for more than was originally there.
+                //
+                // don't let it take more than 90% of everything
+                if(sp.targetWeight > .9)
+                    sp.targetWeight = .9;
                 // take what weight asked for, evenly split the rest
                 newWeights[idxOfNew] = sp.targetWeight;
-                double distrubutedWeight
+                double distributedWeight
                         = (1 - sp.targetWeight)/(newWeights.length - 1);
                 for(int i = 0; i < newWeights.length; i++) {
                     if(i != idxOfNew)
-                        newWeights[i] = distrubutedWeight;
-
+                        newWeights[i] = distributedWeight;
                 }
-            } else {
-                // distribute evently, at least for now
-                double distrubutedWeight = 1D / newWeights.length;
-                for(int i = 0; i < newWeights.length; i++) {
-                    newWeights[i] = distrubutedWeight;
-                }
+            }
+        } else {
+            // distribute evenly
+            double distributedWeight = 1D / newWeights.length;
+            for(int i = 0; i < newWeights.length; i++) {
+                newWeights[i] = distributedWeight;
             }
         }
         NbWindows.setWeights(sn.getComponent(), newWeights);
@@ -706,6 +719,7 @@ public class NbTextView extends SwingTextView
         int idxToSplit;
         double[] originalWeights;
         double targetWeight; // of new
+        boolean sizeSpecified;
 
         SplitParams()
         {
@@ -750,6 +764,7 @@ public class NbTextView extends SwingTextView
         clone.open();
         SplitParams sp = doEditorSplit1(eh, sn);
         sp.targetWeight = targetWeight;
+        sp.sizeSpecified = n != 0;
 
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
@@ -853,6 +868,7 @@ public class NbTextView extends SwingTextView
             double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
             SplitParams sp = doEditorSplit1(eh, sn);
             sp.targetWeight = targetWeight;
+            sp.sizeSpecified = n != 0;
 
             if(addOuter)
                 wp.addModeAround(m, dir.getSplitSide(), eh);

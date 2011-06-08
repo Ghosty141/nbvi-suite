@@ -18,7 +18,7 @@
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
-package org.netbeans.modules.jvi.util;
+package org.netbeans.modules.jvi.reflect;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,7 +33,10 @@ import org.openide.util.Lookup;
  */
 public class NbUtil
 {
+    private NbUtil() { }
+
     private static final Logger LOG = Logger.getLogger(NbUtil.class.getName());
+
     /**
      *
      * :e# file name completion based on NB code completion
@@ -43,7 +46,7 @@ public class NbUtil
         Exception ex1 = null;
 
         try {
-            Class c = Lookup.getDefault().lookup(ClassLoader.class).loadClass(
+            Class<?> c = Lookup.getDefault().lookup(ClassLoader.class).loadClass(
                             "org.netbeans.modules.editor.lib2"
                             + ".EditorApiPackageAccessor");
             Method get = c.getMethod("get");

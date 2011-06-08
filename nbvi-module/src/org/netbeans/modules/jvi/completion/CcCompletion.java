@@ -46,7 +46,7 @@ import javax.swing.text.TextAction;
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.lib.editor.util.swing.DocumentUtilities;
 import org.netbeans.modules.jvi.Module;
-import org.netbeans.modules.jvi.util.NbUtil;
+import org.netbeans.modules.jvi.reflect.NbUtil;
 
 /**
  * Colon Command code completion.

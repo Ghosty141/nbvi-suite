@@ -576,17 +576,15 @@ public class NbTextView extends SwingTextView
      * verify the orientation matches.
      */
     static double getTargetWeight(int n, Orientation orientation,
-                                  EditorHandle eh,
-                                  boolean errorOrienationMismatch)
+                                  EditorHandle eh)
     {
-        SplitterNode node = ((EH)eh).parentSplitter;
-        if(node != null && orientation != node.getOrientation())
-            return errorOrienationMismatch ? -1 : 0;
         double targetWeight = wp.getWeight(n, orientation.name(), eh);
         return targetWeight;
     }
 
     /**
+     * NEEDSWORK: either get rid of this or have it used
+     *            from doEditorSplit2
      * set the weights for a splitter.
      * @param splitter
      * @param weight
@@ -613,43 +611,15 @@ public class NbTextView extends SwingTextView
         NbWindows.setWeights(splitter.getComponent(), w);
     }
 
-    static void setWeight(TopComponent tc, double targetWeight)
-    {
-        Set<NbAppView> tcSet = NbAppView.fetchAvFromTC(tc);
-        if(tcSet.isEmpty())
-            return;
-        NbAppView av = tcSet.iterator().next();
-        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        SplitterNode sn = nav.getParentSplitter(av);
-        //System.err.println("setWeight: " + targetWeight);
-        setWeight(sn, targetWeight);
-    }
-
-    /** operate on mode that holds tc */
-    static void setWeightLater(final TopComponent tc, final double targetWeight)
-    {
-        ViManager.nInvokeLater(1, new Runnable() {
-            @Override
-            public void run()
-            {
-                setWeight(tc, targetWeight);
-            }
-        });
-    }
-
     /**
      * Calculate some initial state for a split
      */
-    private static SplitParams doEditorSplit1(EH eh)
+    private static SplitParams doEditorSplit1(EH eh, SplitterNode sn)
     {
-        SplitterNode sn = eh.parentSplitter;
         SplitParams sp = new SplitParams();
 
-        if(sn == null) {
-            sp.idxToSplit = 0;
-            sp.originalWeights = new double[] { 1D };
+        if(sn == null)
             return sp;
-        }
 
         Component[] children = sn.getChildren();
         double[] weights = new double[children.length];
@@ -677,11 +647,6 @@ public class NbTextView extends SwingTextView
     private static void doEditorSplit2(TopComponent tc,
                                        SplitParams sp)
     {
-        List<Double> wl = new ArrayList<Double>(sp.originalWeights.length + 1);
-        for(double d : sp.originalWeights) {
-            wl.add(d);
-        }
-
         Set<NbAppView> tcSet = NbAppView.fetchAvFromTC(tc);
         if(tcSet.isEmpty())
             return;
@@ -696,7 +661,11 @@ public class NbTextView extends SwingTextView
         assert idxOfNew == sp.idxToSplit || idxOfNew == sp.idxToSplit + 1;
         int idxOfOther = idxOfNew == sp.idxToSplit ? idxOfNew + 1 : idxOfNew - 1;
 
-        // make room for the weight of the new editor, put back into an array
+        // make room for the weight of the new editor; put back into an array
+        List<Double> wl = new ArrayList<Double>(sp.originalWeights.length + 1);
+        for(double d : sp.originalWeights) {
+            wl.add(d);
+        }
         wl.add(idxOfNew, 0D);
         double[] newWeights = new double[wl.size()];
         for(int i = 0; i < newWeights.length; i++) {
@@ -737,6 +706,12 @@ public class NbTextView extends SwingTextView
         int idxToSplit;
         double[] originalWeights;
         double targetWeight; // of new
+
+        SplitParams()
+        {
+            // initialize as 1 thing, gets full weight
+            originalWeights = new double[] { 1D };
+        }
     }
 
     private static int getDim(Orientation orientation, Component c)
@@ -768,11 +743,12 @@ public class NbTextView extends SwingTextView
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
         TopComponent clone = tcClone();
 
-        EH eh = new EH(clone, nav.getParentSplitter(av));
+        SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
+        EH eh = new EH(clone, sn.getComponent());
         double targetWeight = getTargetWeight(n, dir.getOrientation(),
-                                              eh, false);
+                                              eh);
         clone.open();
-        SplitParams sp = doEditorSplit1(eh);
+        SplitParams sp = doEditorSplit1(eh, sn);
         sp.targetWeight = targetWeight;
 
         // create a new mode
@@ -837,11 +813,6 @@ public class NbTextView extends SwingTextView
         }
         TopComponent tc = av.getTopComponent();
         Mode m = WindowManager.getDefault().findMode(tc);
-        if(false && m.getTopComponents().length ==1) {
-            // don't empty out a mode
-            Msg.smsg("Can not remove last editor from \"Editor Mode\"");
-            return;
-        }
 
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
 
@@ -869,29 +840,26 @@ public class NbTextView extends SwingTextView
             // it toches, then do a split.
             //
 
-            EH eh = new EH(tc, nav.getParentSplitter(av));
-            double targetWeight = getTargetWeight(n, dir.getOrientation(),
-                                                  eh, false);
-
-            // NEEDSWORK: exactly what's going on with this check?
-            //            why checking both directions?
-            //            Might be ok.
-            if(nav.getTarget(dir.getClockwise(), av, 1, true) != null
+            // when addOuter false, same as win_split
+            boolean addOuter
+                = nav.getTarget(dir.getClockwise(), av, 1, true) != null
                     || nav.getTarget(dir.getClockwise().getOpposite(),
-                                     av, 1, true) != null)
-            {
+                                     av, 1, true) != null;
+
+            SplitterNode sn = addOuter
+                    ? nav.getRootSplitter(av, dir.getOrientation())
+                    : nav.getParentSplitter(av, dir.getOrientation());
+            EH eh = new EH(tc, sn.getComponent());
+            double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+            SplitParams sp = doEditorSplit1(eh, sn);
+            sp.targetWeight = targetWeight;
+
+            if(addOuter)
                 wp.addModeAround(m, dir.getSplitSide(), eh);
-            } else {
-                // nothing on the left or right so split it
+            else
                 wp.addModeOnSide(m, dir.getSplitSide(), eh);
-            }
 
-            // userDroppedTopComponentsAroundEditor(tcs, dir.getSplitSide());
-
-            // adjust the size of the new mode
-            ///// m = WindowManager.getDefault().findMode(tc);
-            ///// wp.setSize(m, targetWeight);
-            setWeightLater(tc, targetWeight);
+            finishSplitLater(tc, sp);
         }
     }
 
@@ -917,16 +885,19 @@ public class NbTextView extends SwingTextView
         TopComponent tc = av.getTopComponent();
         Mode m = WindowManager.getDefault().findMode(tc);
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        SplitterNode splitterNode = nav.getParentSplitter(av);
-        EH eh = new EH(tc, splitterNode);
+        SplitterNode sn = nav.getParentSplitter(av);
+
+        // if can't resize in the direction, then bail
+        // NEEDSWORK: find a splitter to adjust
+        if(orientation != sn.getOrientation())
+            return;
+
+        EH eh = new EH(tc, sn.getComponent());
 
         double targetWeight = op == SIZOP.SAME
                 ? 0
-                : getTargetWeight(size, orientation, eh, true);
-        ///// wp.setSize(m, targetWeight);
-        if(targetWeight < 0)
-            return;
-        setWeight(splitterNode, targetWeight);
+                : getTargetWeight(size, orientation, eh);
+        setWeight(sn, targetWeight);
     }
 
     @Override
@@ -978,12 +949,12 @@ public class NbTextView extends SwingTextView
     private final class EH implements EditorHandle
     {
         private TopComponent tc;
-        private SplitterNode parentSplitter;
+        private Component resizeTargetContainer;
 
-        public EH(TopComponent tc, SplitterNode parentSplitter)
+        public EH(TopComponent tc, Component resizeTargetContainer)
         {
             this.tc = tc;
-            this.parentSplitter = parentSplitter;
+            this.resizeTargetContainer = resizeTargetContainer;
         }
 
 
@@ -1000,9 +971,9 @@ public class NbTextView extends SwingTextView
         }
 
         @Override
-        public Component getParentSplitter()
+        public Component getResizeTargetContainer()
         {
-            return parentSplitter != null ? parentSplitter.getComponent() : null;
+            return resizeTargetContainer;
         }
 
         @Override

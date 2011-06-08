@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
+import org.netbeans.modules.jvi.reflect.NbWindows;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -143,6 +144,13 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
         return new MyNode(orientation, peer, children);
     }
 
+    @Override
+    protected Component getDummySplitterComponent(Component c)
+    {
+        Component c1 = NbWindows.findModePanel(c);
+        return c1 != null ? c1 : c;
+    }
+
     protected class MyNode extends Node {
 
         public MyNode(
@@ -181,22 +189,24 @@ public class NbWindowTreeBuilder extends WindowTreeBuilder
     }
 
     @Override
-    protected void dumpWinAction(ActionEvent e, StringBuilder sb)
+    protected void dumpWinAction(ActionEvent e, StringBuilder sb, boolean verbose)
     {
+        sb = new StringBuilder();
+
         //
         // prepend a list of modes
         //
-
-        sb = new StringBuilder();
-        super.dumpWinAction(e, sb);
-
-        // add mode information
-        WindowManager wm = WindowManager.getDefault();
-        for(Mode m : wm.getModes()) {
-            sb.append("mode=").append(m.getName())
-                    .append(" isEdMode=").append(wm.isEditorMode(m))
-                    .append('\n');
+        if(verbose) {
+            WindowManager wm = WindowManager.getDefault();
+            for(Mode m : wm.getModes()) {
+                sb.append("mode=").append(m.getName())
+                        .append(" isEdMode=").append(wm.isEditorMode(m))
+                        .append('\n');
+            }
         }
+
+        super.dumpWinAction(e, sb, verbose);
+
     }
 
 }

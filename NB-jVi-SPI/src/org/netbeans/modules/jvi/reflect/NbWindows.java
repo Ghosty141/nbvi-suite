@@ -69,7 +69,7 @@ public class NbWindows
 
     public static double getWeight(int n, String orientation, EditorHandle eh)
     {
-        Component splitter = eh.getParentSplitter();
+        Component resizeTargetContainer = eh.getResizeTargetContainer();
         if(n == 0)
             return 0;
 
@@ -84,7 +84,8 @@ public class NbWindows
         Dimension dMode = findModePanel(eh.getEd()).getSize();
         // NEEDSWORK: splitter should never be null
         //            fix it in WindowTreeBuilder
-        Dimension dSplitter = splitter == null ? dMode : splitter.getSize();
+        Dimension dContainer = resizeTargetContainer == null
+                ? dMode : resizeTargetContainer.getSize();
         // The general formula is: w = (n * perChar + decoration) / total
         // where decoration is the extra stuff in the mode
         // add a few extra pixels to get a complete line/column
@@ -92,11 +93,11 @@ public class NbWindows
         if(orientation.equals("UP_DOWN")) {
             targetWeight = (n * eh.getLineHeight()
                             + (dMode.height - dEd.height)
-                            + 4) / (double)dSplitter.height;
+                            + 4) / (double)dContainer.height;
         } else {
             targetWeight = (n * eh.getMaxCharWidth()
                             + (dMode.width - dEd.width)
-                            + 4) / (double)dSplitter.width;
+                            + 4) / (double)dContainer.width;
         }
         return targetWeight;
     }

@@ -47,8 +47,8 @@ public interface WindowsProvider
         TopComponent getTC();
         Component getEd();
 
-        // following only used for setSize
-        Component getParentSplitter();
+        // following used for size calculations
+        Component getResizeTargetContainer();
         double getLineHeight();
         double getMaxCharWidth();
     }

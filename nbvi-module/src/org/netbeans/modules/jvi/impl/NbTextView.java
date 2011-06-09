@@ -612,7 +612,7 @@ public class NbTextView extends SwingTextView
     }
 
     /**
-     * Calculate some initial state for a split
+     * Calculate initial state for a split; weights and targetIndex
      */
     private static SplitParams doEditorSplit1(EH eh, SplitterNode sn)
     {
@@ -656,25 +656,41 @@ public class NbTextView extends SwingTextView
         // determine position index of new editor and prev editor
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
         SplitterNode sn = nav.getParentSplitter(av);
-        if(sn.getChildCount() != sp.originalWeights.length + 1)
-            return;
-        int idxOfNew = sn.getTargetIndex();
-        assert idxOfNew == sp.idxToSplit || idxOfNew == sp.idxToSplit + 1;
-        int idxOfOther = idxOfNew == sp.idxToSplit ? idxOfNew + 1 : idxOfNew - 1;
+        int idxOfNew;
+        int idxOfOther;
+        double[] newWeights;
+        if(sp.addOuter) {
+            // toss the old weight info; get current info
+            SplitParams sp2 = doEditorSplit1(null, sn);
+            newWeights = sp2.originalWeights;
+            idxOfNew = sp2.idxToSplit;
+            idxOfOther = -1; // should never be referenced
+        } else {
+            if(sn.getChildCount() != sp.originalWeights.length + 1)
+                return;
+            idxOfNew = sn.getTargetIndex();
+            assert idxOfNew == sp.idxToSplit || idxOfNew == sp.idxToSplit + 1;
+            idxOfOther = idxOfNew == sp.idxToSplit ? idxOfNew + 1 : idxOfNew - 1;
 
-        // make room for the weight of the new editor; put back into an array
-        List<Double> wl = new ArrayList<Double>(sp.originalWeights.length + 1);
-        for(double d : sp.originalWeights) {
-            wl.add(d);
-        }
-        wl.add(idxOfNew, 0D);
-        double[] newWeights = new double[wl.size()];
-        for(int i = 0; i < newWeights.length; i++) {
-            newWeights[i] = wl.get(i);
+            // make room for the weight of the new editor; back into an array
+            List<Double> wl
+                    = new ArrayList<Double>(sp.originalWeights.length + 1);
+            for(double d : sp.originalWeights) {
+                wl.add(d);
+            }
+            wl.add(idxOfNew, 0D);
+            newWeights = new double[wl.size()];
+            for(int i = 0; i < newWeights.length; i++) {
+                newWeights[i] = wl.get(i);
+            }
         }
 
         boolean ea = G.p_ea.getBoolean();
-        if(sp.sizeSpecified) {
+        if(sp.addOuter && !sp.sizeSpecified) {
+            // size not specified and doing addOuter doesn't split anything
+            // so treat it like equal always
+            ea = true;
+        } else if(sp.sizeSpecified) {
             // in vim if size specified then only change size of current window
             ea = false;
         }
@@ -682,7 +698,20 @@ public class NbTextView extends SwingTextView
         //            should take extra space from window
         //            as specified by splitbottom/splitright options.
         if(!ea) {
-            if(sp.targetWeight < sp.originalWeights[sp.idxToSplit] - .03) {
+            if(sp.addOuter) {
+                // keep target weight, keep existing proportions on the rest
+                newWeights[idxOfNew] = sp.targetWeight;
+                double sumOtherWeights = 0;
+                for(int i = 0; i < newWeights.length; i++) {
+                    if(i != idxOfNew)
+                        sumOtherWeights += newWeights[i];
+                }
+                double factor = (1 - newWeights[idxOfNew]) / sumOtherWeights;
+                for(int i = 0; i < newWeights.length; i++) {
+                    if(i != idxOfNew)
+                        newWeights[i] *= factor;
+                }
+            } else if(sp.targetWeight < sp.originalWeights[sp.idxToSplit] - .03) {
                 // If no size was specified, split current in half
                 if(sp.targetWeight == 0D)
                     sp.targetWeight = newWeights[idxOfOther] / 2;
@@ -691,7 +720,7 @@ public class NbTextView extends SwingTextView
                 newWeights[idxOfOther] -= sp.targetWeight;
             } else {
                 //
-                // asking for more than was originally there.
+                // asking for more weight than editor being split has.
                 //
                 // don't let it take more than 90% of everything
                 if(sp.targetWeight > .9)
@@ -720,6 +749,7 @@ public class NbTextView extends SwingTextView
         double[] originalWeights;
         double targetWeight; // of new
         boolean sizeSpecified;
+        boolean addOuter;
 
         SplitParams()
         {
@@ -870,9 +900,10 @@ public class NbTextView extends SwingTextView
             sp.targetWeight = targetWeight;
             sp.sizeSpecified = n != 0;
 
-            if(addOuter)
+            if(addOuter) {
                 wp.addModeAround(m, dir.getSplitSide(), eh);
-            else
+                sp.addOuter = true;
+            } else
                 wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
             finishSplitLater(tc, sp);

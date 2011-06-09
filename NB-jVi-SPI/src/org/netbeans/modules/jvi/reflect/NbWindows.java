@@ -54,7 +54,7 @@ public class NbWindows
             }
 
             @Override
-            public double getWeight(int n, String orientation, EditorHandle eh)
+            public double getWeight(double n, String orientation, EditorHandle eh)
             {
                 return NbWindows.getWeight(n, orientation, eh);
             }
@@ -67,7 +67,7 @@ public class NbWindows
         };
     }
 
-    public static double getWeight(int n, String orientation, EditorHandle eh)
+    public static double getWeight(double n, String orientation, EditorHandle eh)
     {
         Component resizeTargetContainer = eh.getResizeTargetContainer();
         if(n == 0)

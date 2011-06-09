@@ -81,7 +81,7 @@ public interface WindowsProvider
      * @param eh
      * @return target weight for eh's mode.
      */
-    double getWeight(int n, String orientation, EditorHandle eh);
+    double getWeight(double n, String orientation, EditorHandle eh);
 
     /** part of the size calculation */
     Component findModePanel(Component c);

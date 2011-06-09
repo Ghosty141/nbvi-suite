@@ -575,7 +575,7 @@ public class NbTextView extends SwingTextView
     /**
      * verify the orientation matches.
      */
-    static double getTargetWeight(int n, Orientation orientation,
+    static double getTargetWeight(double n, Orientation orientation,
                                   EditorHandle eh)
     {
         double targetWeight = wp.getWeight(n, orientation.name(), eh);
@@ -583,37 +583,8 @@ public class NbTextView extends SwingTextView
     }
 
     /**
-     * NEEDSWORK: either get rid of this or have it used
-     *            from doEditorSplit2x
-     * set the weights for a splitter.
-     * @param sn
-     * @param weight
-     */
-    static void XXXsetWeight(SplitterNode sn, double targetWeight)
-    {
-        double[] w = new double[sn.getChildCount()];
-
-        if(targetWeight >= 1D)
-            targetWeight = 0D;
-
-        if(targetWeight == 0D) {
-            // make equal
-            for(int i = 0; i < w.length; i++) {
-                w[i] = 1D / w.length;
-            }
-        } else {
-            double otherWeight = (1 - targetWeight) / (w.length - 1);
-            for(int i = 0; i < w.length; i++) {
-                w[i] = i == sn.getTargetIndex()
-                        ? targetWeight : otherWeight;
-            }
-        }
-        NbWindows.setWeights(sn.getComponent(), w);
-    }
-
-    /**
-     * Calculate initial state for a split; weights and targetIndex
-     * sets: idxToSplit, originalWeights, ea
+     * Calculate initial state for a split:
+     *          idxToSplit, originalWeights, ea (equalalways)
      */
     private static SplitParams doEditorSplit1(SplitterNode sn)
     {
@@ -666,7 +637,20 @@ public class NbTextView extends SwingTextView
         int idxOfNew;
         int idxOfOther;
         double[] newWeights;
-        if(sp.operateOnCurrent) { // NEEDSWORK: this belongs in win_move
+        if(sp.resizeOperation) {
+            // A new mode was not created, changing an existing mode
+            newWeights = sp.originalWeights;
+            idxOfNew = sp.idxToSplit;
+            idxOfOther = idxOfNew + 1;
+            // NEEDSWORK: could use splitbottom/splitright options to select other
+            //            but this is what vim does
+            // Take weight from next, but if adjusting last take from prev
+            if(idxOfOther >= newWeights.length)
+                idxOfOther = idxOfNew - 1;
+            // put all the weight into idxOfOther, so looks like a split
+            newWeights[idxOfOther] += newWeights[idxOfNew];
+            newWeights[idxOfNew] = 0D;
+        } else if(sp.operateOnCurrent) { // NEEDSWORK: this belongs in win_move?
             // toss the old weight info; get current info
             SplitParams sp2 = doEditorSplit1(sn);
             newWeights = sp2.originalWeights;
@@ -703,8 +687,8 @@ public class NbTextView extends SwingTextView
             sp.ea = false;
         }
 
-
         double targetWeight = sp.targetWeight;
+
         // NEEDSWORK: when !ea and request bigger than current
         //            should take extra space from window
         //            as specified by splitbottom/splitright options.
@@ -728,7 +712,7 @@ public class NbTextView extends SwingTextView
                     if(i != idxOfNew)
                         newWeights[i] *= factor;
                 }
-            } else if(targetWeight < sp.originalWeights[sp.idxToSplit] - .03) {
+            } else if(targetWeight < newWeights[idxOfOther] - .03) {
                 // If no size was specified, split current in half
                 if(targetWeight == 0D)
                     targetWeight = newWeights[idxOfOther] / 2;
@@ -765,6 +749,7 @@ public class NbTextView extends SwingTextView
         boolean addOuter;       // NEEDSWORK: rename
         boolean operateOnCurrent;
         boolean adjustOthersProportionally;
+        boolean resizeOperation;
 
         SplitParams()
         {
@@ -936,14 +921,14 @@ public class NbTextView extends SwingTextView
 
         if(n == 0)
             n = 1;
-        int size = orientation == Orientation.UP_DOWN
-                ? (int)(getViewport().getExtentSize().height/getLineHeight(1, 0))
-                : (int)(getViewport().getExtentSize().width/getMaxCharWidth());
+        double size = orientation == Orientation.UP_DOWN
+                ? getViewport().getExtentSize().height/getLineHeight(1, 0)
+                : getViewport().getExtentSize().width/getMaxCharWidth();
         if(op == SIZOP.ADJUST)
             size += n;
         else if(op == SIZOP.SET)
             size = n;
-        if(size < 0)
+        if(size < 1)
             size = 1;
 
         NbAppView av = (NbAppView)getAppView();
@@ -955,50 +940,21 @@ public class NbTextView extends SwingTextView
         if(op != SIZOP.SAME && orientation != sn.getOrientation())
             return;
 
-        EH eh = new EH(av.getTopComponent(), sn.getComponent());
+        SplitParams sp = doEditorSplit1(sn);
+        sp.resizeOperation = true;
+        //sp.adjustOthersProportionally = true;
+        if(op == SIZOP.SAME) {
+            sp.targetWeight = 0;
+            sp.ea = true;
+        } else {
+            EH eh = new EH(av.getTopComponent(), sn.getComponent());
+            sp.targetWeight = getTargetWeight(size, orientation, eh);
+            sp.sizeSpecified = true;
+            sp.ea = false; // like vim
+        }
 
-        double targetWeight = op == SIZOP.SAME
-                ? 0
-                : getTargetWeight(size, orientation, eh);
-        XXXsetWeight(sn, targetWeight);
+        doEditorSplit2(av.getTopComponent(), sp);
     }
-
-    // @Override
-    // public void win_size(SIZOP op, Orientation orientation, int n)
-    // {
-    //     if(getViewport() == null)
-    //         return;
-
-    //     if(n == 0)
-    //         n = 1;
-    //     int size = orientation == Orientation.UP_DOWN
-    //             ? (int)(getViewport().getExtentSize().height/getLineHeight(1, 0))
-    //             : (int)(getViewport().getExtentSize().width/getMaxCharWidth());
-    //     if(op == SIZOP.ADJUST)
-    //         size += n;
-    //     else if(op == SIZOP.SET)
-    //         size = n;
-    //     if(size < 0)
-    //         size = 1;
-
-    //     NbAppView av = (NbAppView)getAppView();
-    //     TopComponent tc = av.getTopComponent();
-    //     Mode m = WindowManager.getDefault().findMode(tc);
-    //     ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-    //     SplitterNode sn = nav.getParentSplitter(av);
-
-    //     // if can't resize in the direction, then bail
-    //     // NEEDSWORK: find a splitter to adjust
-    //     if(op != SIZOP.SAME && orientation != sn.getOrientation())
-    //         return;
-
-    //     EH eh = new EH(tc, sn.getComponent());
-
-    //     double targetWeight = op == SIZOP.SAME
-    //             ? 0
-    //             : getTargetWeight(size, orientation, eh);
-    //     XXXsetWeight(sn, targetWeight);
-    // }
 
     @Override
     public void win_quit() {

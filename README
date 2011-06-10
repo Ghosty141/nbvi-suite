@@ -13,10 +13,14 @@ jvi-wrapper (aka jVi Core) is a module wrapper for the standalone, independent
 of NetBeans, jVi project. Clean and build on the wrapper, do clean and build
 on the project.
 
+NB-jVi-SPI is an encapsulation of some NetBeans access though either reflection
+or patching
+
 There are some additional modules that can be built and installed.
 
 jvi-help is a placeholder for future work.
 
+NOTE: patch-windows is no longer needed.
 patch-windows is a module suite that patches the NetBeans IDE. Its installation
 is optional. It provides support for resizing an editor window. It is used
 by jVi to set the size of a window as part of a window split/move and to

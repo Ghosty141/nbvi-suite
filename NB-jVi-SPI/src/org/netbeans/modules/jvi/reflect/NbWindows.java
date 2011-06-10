@@ -261,7 +261,7 @@ public class NbWindows
     private static Method meth_userDroppedTopComponents; //mode,TC[]
     private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
     private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
-    private static Method meth_setWeights_multiSplitPane; //TC[],side
+    // private static Method meth_setWeights_multiSplitPane; //TC[],side
 
     private static Method meth_getCellCount_MSP;
     private static Method meth_cellAt_MSP;
@@ -287,14 +287,15 @@ public class NbWindows
         populateCoreWindowMethods();
         return meth_userDroppedTopComponentsAroundEditor;
     }
-    static Method meth_setWeights_multiSplitPane() {
-        populateCoreWindowMethods();
-        return meth_setWeights_multiSplitPane;
-    }
+    // static Method meth_setWeights_multiSplitPane() {
+    //     populateCoreWindowMethods();
+    //     return meth_setWeights_multiSplitPane;
+    // }
 
     private static void populateCoreWindowMethods() {
         if(meth_userDroppedTopComponents== null) {
             Object wmi = WindowManager.getDefault();
+            Exception ex1;
             try {
                 // could use WeakRef's for method's
                 Method[] meths = wmi.getClass().getDeclaredMethods();
@@ -331,8 +332,8 @@ public class NbWindows
                                 "userDroppedTopComponentsAroundEditor",
                                 tcs.getClass(), String.class, int.class);
                 meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
-                meth_setWeights_multiSplitPane = c_multiSplitPane.getMethod(
-                        "setWeights", ds.getClass());
+                // meth_setWeights_multiSplitPane = c_multiSplitPane.getMethod(
+                //         "setWeights", ds.getClass());
 
                 meths = c_multiSplitPane.getDeclaredMethods();
                 for(Method m : meths) {
@@ -372,8 +373,11 @@ public class NbWindows
                     }
                 }
             } catch(NoSuchMethodException ex) {
+                ex1 = ex;
             } catch(SecurityException ex) {
+                ex1 = ex;
             } catch(ClassNotFoundException ex) {
+                ex1 = ex;
             }
         }
     }

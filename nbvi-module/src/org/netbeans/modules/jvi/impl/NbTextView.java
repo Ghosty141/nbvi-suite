@@ -55,6 +55,7 @@ import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
 import com.raelity.jvi.ViTextView.WMOP;
 import com.raelity.jvi.ViWindowNavigator;
+import com.raelity.jvi.ViWindowNavigator.SplitterChildNode;
 import com.raelity.jvi.ViWindowNavigator.SplitterNode;
 import com.raelity.jvi.core.Buffer;
 import com.raelity.jvi.core.Edit;
@@ -572,14 +573,10 @@ public class NbTextView extends SwingTextView
         ViManager.requestCharBreakPauseRunEventQueue(3);
     }
 
-    /**
-     * verify the orientation matches.
-     */
     static double getTargetWeight(double n, Orientation orientation,
                                   EditorHandle eh)
     {
-        double targetWeight = wp.getWeight(n, orientation.name(), eh);
-        return targetWeight;
+        return wp.getWeight(n, orientation.name(), eh);
     }
 
     /**
@@ -593,16 +590,15 @@ public class NbTextView extends SwingTextView
         if(sn == null)
             return sp;
 
-        Component[] children = sn.getChildren();
+        SplitterChildNode[] children = sn.getChildren();
         double[] weights = new double[children.length];
         double full = getDim(sn.getOrientation(), sn.getComponent());
 
         for(int i = 0; i < children.length; i++) {
-            Component c = children[i];
-            if(c instanceof JTextComponent) {
-                c = wp.findModePanel(c);
-                children[i] = c;
-            }
+            SplitterChildNode scn = children[i];
+            Component c = scn.getComponent();
+            if(scn.isEditor())
+                c = wp.findModePanel(scn.getComponent());
             weights[i] = getDim(sn.getOrientation(), c) / full;
         }
 
@@ -736,7 +732,7 @@ public class NbTextView extends SwingTextView
                 }
             }
         }
-        NbWindows.setWeights(sn.getComponent(), newWeights);
+        wp.setWeights(sn.getComponent(), newWeights);
     }
 
     private static class SplitParams {

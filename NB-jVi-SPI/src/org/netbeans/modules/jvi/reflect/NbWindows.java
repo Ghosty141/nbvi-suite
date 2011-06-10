@@ -6,7 +6,12 @@ package org.netbeans.modules.jvi.reflect;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JPanel;
 import javax.swing.JViewport;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
@@ -48,9 +53,9 @@ public class NbWindows
             }
 
             @Override
-            public void setSize(Mode m, double weight)
+            public void setWeights(Component splitter, double[] weights)
             {
-                // not supported through reflection
+                NbWindows.setWeights(splitter, weights);
             }
 
             @Override
@@ -93,11 +98,11 @@ public class NbWindows
         if(orientation.equals("UP_DOWN")) {
             targetWeight = (n * eh.getLineHeight()
                             + (dMode.height - dEd.height)
-                            + 4) / (double)dContainer.height;
+                            + 0) / (double)dContainer.height;
         } else {
             targetWeight = (n * eh.getMaxCharWidth()
                             + (dMode.width - dEd.width)
-                            + 4) / (double)dContainer.width;
+                            + 0) / (double)dContainer.width;
         }
         return targetWeight;
     }
@@ -180,12 +185,48 @@ public class NbWindows
 
     /**
      * Invoke setWeights on splitter/MultiSplitPane.
-     * This method is available in a NB patch.
-     * Do nothing if method not found.
+     * See comment that follows for code that was tested in a NB patch.
      * @param splitter
      * @param weights
      */
     public static void setWeights(Component splitter, double[] weights)
+    {
+        populateCoreWindowMethods();
+        if(        null == meth_getCellCount_MSP
+                || null == meth_cellAt_MSP
+                || null == field_userMovedSplit_MSP
+
+                || null == meth_getComponent_MSC
+                || null == field_initialSplitWeight_MSC
+                || null == field_requiredSize_MSC)
+            return;
+        Exception ex1 = null;
+        try {
+            int nCell = (Integer)meth_getCellCount_MSP.invoke(splitter);
+            if(nCell != weights.length)
+                return;
+            for(int i = 0; i < weights.length; i++) {
+                Object cell = meth_cellAt_MSP.invoke(splitter, i);
+                field_initialSplitWeight_MSC.set(cell, weights[i]);
+                field_requiredSize_MSC.set(cell, -1);
+                ((Component)meth_getComponent_MSC.invoke(cell)).setSize(0,0);
+            }
+            field_userMovedSplit_MSP.set(splitter, true);
+            ((JPanel)splitter).revalidate();
+        } catch(IllegalAccessException ex) {
+            ex1 = ex;
+        } catch(IllegalArgumentException ex) {
+            ex1 = ex;
+        } catch(InvocationTargetException ex) {
+            ex1 = ex;
+        }
+        if(ex1 != null)
+            Logger.getLogger(NbWindows.class.getName())
+                    .log(Level.SEVERE, null, ex1);
+    }
+
+/*
+    public static void oldSetWeights(Component splitter, double[] weights)
     {
         Method setWeights = meth_setWeights_multiSplitPane();
         if(setWeights == null)
@@ -196,12 +237,40 @@ public class NbWindows
             ex.printStackTrace();
         }
     }
+    // FROM MultiSplitPane
+    public void setWeights(double[] splitWeights) {
+        if(splitWeights.length != cells.size())
+            return;
+        for(int i = 0; i < splitWeights.length; i++) {
+            double d = splitWeights[i];
+            cells.get(i).setWeight(d);
+        }
+        userMovedSplit = true; // send new dimensions to model
+        revalidate();
+    }
+    // FROM MultiSplitCell
+    void setWeight(double weight) {
+        initialSplitWeight = weight;
+        // Force calculation based on new weight
+        requiredSize = -1;
+        getComponent().setSize(0,0);
+    }
+*/
 
     private static Method meth_getCentral;
     private static Method meth_userDroppedTopComponents; //mode,TC[]
     private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
     private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
     private static Method meth_setWeights_multiSplitPane; //TC[],side
+
+    private static Method meth_getCellCount_MSP;
+    private static Method meth_cellAt_MSP;
+    private static Field field_userMovedSplit_MSP;
+
+    private static Method meth_getComponent_MSC;
+    private static Field field_initialSplitWeight_MSC;
+    private static Field field_requiredSize_MSC;
+
     private static Method meth_getCentral() {
         populateCoreWindowMethods();
         return meth_getCentral;
@@ -244,6 +313,8 @@ public class NbWindows
                         "org.netbeans.core.windows.ModeImpl");
                 Class<?> c_multiSplitPane = cl.loadClass(
                         "org.netbeans.core.windows.view.ui.MultiSplitPane");
+                Class<?> c_multiSplitCell = cl.loadClass(
+                        "org.netbeans.core.windows.view.ui.MultiSplitCell");
                 TopComponent[] tcs = new TopComponent[0];
                 double[] ds = new double[0];
                 meth_userDroppedTopComponents
@@ -262,6 +333,44 @@ public class NbWindows
                 meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
                 meth_setWeights_multiSplitPane = c_multiSplitPane.getMethod(
                         "setWeights", ds.getClass());
+
+                meths = c_multiSplitPane.getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getCellCount")) {
+                        m.setAccessible(true);
+                        meth_getCellCount_MSP = m;
+                    }
+                    if(m.getName().equals("cellAt")) {
+                        m.setAccessible(true);
+                        meth_cellAt_MSP = m;
+                    }
+                }
+                Field[] fields = c_multiSplitPane.getDeclaredFields();
+                for(Field f : fields) {
+                    if(f.getName().equals("userMovedSplit")) {
+                        f.setAccessible(true);
+                        field_userMovedSplit_MSP = f;
+                    }
+                }
+
+                meths = c_multiSplitCell.getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getComponent")) {
+                        m.setAccessible(true);
+                        meth_getComponent_MSC = m;
+                    }
+                }
+                fields = c_multiSplitCell.getDeclaredFields();
+                for(Field f : fields) {
+                    if(f.getName().equals("initialSplitWeight")) {
+                        f.setAccessible(true);
+                        field_initialSplitWeight_MSC = f;
+                    }
+                    if(f.getName().equals("requiredSize")) {
+                        f.setAccessible(true);
+                        field_requiredSize_MSC = f;
+                    }
+                }
             } catch(NoSuchMethodException ex) {
             } catch(SecurityException ex) {
             } catch(ClassNotFoundException ex) {

@@ -70,10 +70,10 @@ public interface WindowsProvider
     void addModeAround(Mode m, String side, EditorHandle eh);
 
     /**
-     * Set the weight of the mode within its splitter.
-     * Other modes in the splitter evenly take up the slack.
+     * Set the weight of the cells within this splitter.
+     * Do nothing if the number of weights does not match number children.
      */
-    void setSize(Mode m, double weight);
+    void setWeights(Component splitter, double[] weights);
 
     /**
      * @param n number of cols or lines depending on orientation.

@@ -614,13 +614,17 @@ public class NbTextView extends SwingTextView
      * Set the new weights and adjust other weights.
      * Pay attention to equalalways option.
      * <p/>
+     * The SplitterNode may be null and if null it is inferred.
+     * When specified, split that node; typically a resize opertaion.
+     * <p/>
      * NEEDSWORK: split this into two parts
      *                1 - setup idxOf{New,Other}, starting values for newWeights
      *                2 - adjust the weights and change the splitter
      *            Formalize how SplitParams controls/interacts...
      */
     private static void doEditorSplit2(TopComponent tc,
-                                       SplitParams sp)
+                                       SplitParams sp,
+                                       SplitterNode sn)
     {
         Set<NbAppView> tcSet = NbAppView.fetchAvFromTC(tc);
         if(tcSet.isEmpty())
@@ -628,8 +632,10 @@ public class NbTextView extends SwingTextView
         NbAppView av = tcSet.iterator().next();
 
         // determine weight index of new editor and prev editor
-        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
-        SplitterNode sn = nav.getParentSplitter(av);
+        if(sn == null) {
+            ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+            sn = nav.getParentSplitter(av);
+        }
         int idxOfNew;
         int idxOfOther;
         double[] newWeights;
@@ -762,13 +768,14 @@ public class NbTextView extends SwingTextView
     }
 
     private static void finishSplitLater(final TopComponent tc,
-                                         final SplitParams sp)
+                                         final SplitParams sp,
+                                         final SplitterNode sn)
     {
         ViManager.nInvokeLater(1, new Runnable() {
             @Override
             public void run()
             {
-                doEditorSplit2(tc, sp);
+                doEditorSplit2(tc, sp, sn);
             }
         });
     }
@@ -798,7 +805,7 @@ public class NbTextView extends SwingTextView
         wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
         tcActivate(clone);
-        finishSplitLater(clone, sp);
+        finishSplitLater(clone, sp, null);
     }
 
     private TopComponent tcClone()
@@ -905,7 +912,7 @@ public class NbTextView extends SwingTextView
             } else
                 wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
-            finishSplitLater(tc, sp);
+            finishSplitLater(tc, sp, null);
         }
     }
 
@@ -933,8 +940,11 @@ public class NbTextView extends SwingTextView
 
         // if can't resize in the direction, then bail
         // NEEDSWORK: find a splitter to adjust
-        if(op != SIZOP.SAME && orientation != sn.getOrientation())
-            return;
+        // if(op != SIZOP.SAME && orientation != sn.getOrientation())
+        //     return;
+        if(op != SIZOP.SAME && orientation != sn.getOrientation()) {
+            sn = nav.getAncestorSplitter(av, orientation);
+        }
 
         SplitParams sp = doEditorSplit1(sn);
         sp.resizeOperation = true;
@@ -949,7 +959,7 @@ public class NbTextView extends SwingTextView
             sp.ea = false; // like vim
         }
 
-        doEditorSplit2(av.getTopComponent(), sp);
+        doEditorSplit2(av.getTopComponent(), sp, sn);
     }
 
     @Override

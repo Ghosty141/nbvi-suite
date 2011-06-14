@@ -16,13 +16,16 @@ public class CommandNameProvider implements CompletionProvider {
         dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
     }
 
+    private String j(JTextComponent jtc) { return CcCompletion.state(jtc); }
+
     @Override
     public CompletionTask createTask(int queryType, JTextComponent jtc)
     {
         if(queryType != CompletionProvider.COMPLETION_QUERY_TYPE) {
             return null;
         }
-        dbgCompl.println(Level.INFO, "CREATE_TASK: CommandName");
+        if (dbgCompl.getBoolean())
+            dbgCompl.println(Level.INFO, "CREATE_TASK: CommandName " + j(jtc));
         return new CommandNameTask(jtc);
     }
 

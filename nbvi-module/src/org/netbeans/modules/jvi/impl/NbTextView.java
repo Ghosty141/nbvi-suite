@@ -780,8 +780,7 @@ public class NbTextView extends SwingTextView
         });
     }
 
-    @Override
-    public void win_split(Direction dir, int n) {
+    private void win_split(Direction dir, int n) {
         NbAppView av = (NbAppView)getAppView();
         if(av == null) {
             G.dbgEditorActivation.println("win_split: NULL av");
@@ -806,6 +805,41 @@ public class NbTextView extends SwingTextView
 
         tcActivate(clone);
         finishSplitLater(clone, sp, null);
+    }
+
+    @Override
+    public void win_split(Direction dir, int n, ViAppView _avToMove) {
+        if(_avToMove == null) {
+            // produce two views of the current file
+            win_split(dir, n);
+            return;
+        }
+
+        NbAppView avToMove = (NbAppView)_avToMove;
+        NbAppView av = (NbAppView)getAppView();
+        if(av == null) {
+            G.dbgEditorActivation.println("win_split: NULL av");
+            return;
+        }
+
+        // calculate targetWeight
+        ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
+        SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
+        EH eh = new EH(null, sn.getComponent());
+        double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+
+        SplitParams sp = doEditorSplit1(sn);
+        sp.targetWeight = targetWeight;
+        sp.sizeSpecified = n != 0;
+
+        // create a new mode
+        Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
+        // and put the eh in the new mode
+        eh = new EH(avToMove.getTopComponent(), null);
+        wp.addModeOnSide(m, dir.getSplitSide(), eh);
+
+        tcActivate(avToMove.getTopComponent());
+        finishSplitLater(avToMove.getTopComponent(), sp, null);
     }
 
     private TopComponent tcClone()
@@ -1008,11 +1042,31 @@ public class NbTextView extends SwingTextView
         return NbWindows.findModePanel(c);
     }
 
+    // NEEDSWORK: usage of EH is weird note that this inner class
+    //            uses this.getEditor and char Win/Height for weight
+    //            calculations but there is no guarentee that TC
+    //            corresponds to "TextView.this".
+    //            This is OK since all editors have the same
+    //            font (but some day who knows)
+    //
+    //            The general idea is that the calculations are based on
+    //            splitting the editor/view/mode associated with the
+    //            containing TextView. Which matches current usage, since
+    //            the focus'd TextView
+    //
+    //            PROBABLY SHOULD BE EXPLICIT AND MAKE THIS
+    //            static class, and pass in the TextView.
     private final class EH implements EditorHandle
     {
         private TopComponent tc;
         private Component resizeTargetContainer;
 
+        /**
+         * NOTE: when used for resize, both tc and resizeTargetContainer
+         *       may be null
+         * @param tc
+         * @param resizeTargetContainer
+         */
         public EH(TopComponent tc, Component resizeTargetContainer)
         {
             this.tc = tc;

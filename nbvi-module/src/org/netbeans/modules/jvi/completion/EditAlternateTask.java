@@ -80,6 +80,8 @@ public class EditAlternateTask implements CompletionTask
         dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
     }
 
+    private String jtc() { return CcCompletion.state(jtc); }
+
     private static boolean filterDigit(String filter)
     {
         return filter.length() > 0 && Character.isDigit(filter.charAt(0));
@@ -100,7 +102,8 @@ public class EditAlternateTask implements CompletionTask
     public void refresh(CompletionResultSet resultSet)
     {
         if(resultSet == null) {
-            dbgCompl.println("REFRESH EA with null resultSet");
+            if (dbgCompl.getBoolean())
+                dbgCompl.println("REFRESH EA with null resultSet " + jtc());
             return;
         }
         if(!CcCompletion.isEditAlternate(jtc.getDocument())) {
@@ -115,15 +118,14 @@ public class EditAlternateTask implements CompletionTask
     @Override
     public void cancel()
     {
-        dbgCompl.println("CANCEL EA:");
+        if (dbgCompl.getBoolean())
+            dbgCompl.println("CANCEL EA: " + jtc());
         Completion.get().hideAll();
         // drop the fonts
     }
 
     private void buildQueryResult()
     {
-        // NEEDSWORK: figure this out by looking at the JTextComponent
-        ciTextOffset = 2; // offset 2 is after "e#"
         for (ViAppView _av : AppViews.getList(AppViews.ACTIVE)) {
             NbAppView av = (NbAppView)_av;
             TopComponent tc = av.getTopComponent();
@@ -157,9 +159,10 @@ public class EditAlternateTask implements CompletionTask
             Document doc = jtc.getDocument();
             String text = doc.getText(0, doc.getLength());
             if (dbgCompl.getBoolean())
-                dbsString = tag + ": \'" + text + "\'";
+                dbsString = tag + ": \'" + jtc() + "\'";
             if (CcCompletion.isEditAlternate(doc)) {
-                int startOffset = ciTextOffset; // char after 'e#'
+                ciTextOffset = text.indexOf('#') + 1; // char after 'e#'
+                int startOffset = ciTextOffset;
                 // NEEDSWORK: can't count on the caret position since
                 // this is sometimes called from the event dispatch thread
                 // so just use the entire string. Set the caret to

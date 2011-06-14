@@ -70,6 +70,8 @@ public class CommandNameTask implements CompletionTask
         dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
     }
 
+    private String jtc() { return CcCompletion.state(jtc); }
+
     @Override
     public void query(CompletionResultSet resultSet)
     {
@@ -85,7 +87,8 @@ public class CommandNameTask implements CompletionTask
     public void refresh(CompletionResultSet resultSet)
     {
         if(resultSet == null) {
-            dbgCompl.println("REFRESH CN with null resultSet");
+            if (dbgCompl.getBoolean())
+                dbgCompl.println("REFRESH CN with null resultSet " + jtc());
             return;
         }
         if(CcCompletion.isEditAlternate(jtc.getDocument())) {
@@ -100,7 +103,8 @@ public class CommandNameTask implements CompletionTask
     @Override
     public void cancel()
     {
-        dbgCompl.println("CANCEL CN:");
+        if (dbgCompl.getBoolean())
+            dbgCompl.println("CANCEL CN: " + jtc());
         Completion.get().hideAll();
     }
 
@@ -123,7 +127,7 @@ public class CommandNameTask implements CompletionTask
             Document doc = jtc.getDocument();
             String text = doc.getText(0, doc.getLength());
             if (dbgCompl.getBoolean())
-                dbsString = tag + ": \'" + text + "\'";
+                dbsString = tag + ": \'" + jtc() + "\'";
             int off = 0;
             int caretOffset = text.length();
             if(text.trim().isEmpty())

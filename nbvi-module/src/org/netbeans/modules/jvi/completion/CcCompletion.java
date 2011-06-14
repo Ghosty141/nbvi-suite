@@ -24,6 +24,7 @@ import com.raelity.jvi.ViCmdEntry;
 import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
 import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.lib.CcFlag;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.DebugOption;
 import com.raelity.jvi.swing.CommandLine;
@@ -164,15 +165,33 @@ public class CcCompletion
                 return false;
             else {
                 ColonEvent ce = ColonCommands.parseCommandNoExec(s);
-                return ce != null
-                        && "edit".equals(ce.getNoExecCommandNameLookup())
-                        && ce.getNArg() > 0
-                        && ce.getArg(1).startsWith("#"); 
+                return isEditAlternate(ce);
             }
         } catch(BadLocationException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
         return false;
+    }
+
+    static boolean isEditAlternate(ColonEvent ce)
+    {
+        return ce != null
+                && ce.getColonCommandItem().getFlags().contains(CcFlag.COMPL_FN)
+                && ce.getNArg() > 0
+                && ce.getArg(1).startsWith("#");
+    }
+
+    static String state(JTextComponent jtc)
+    {
+        try {
+            Document doc = jtc.getDocument();
+            StringBuilder sb = new StringBuilder("\"");
+            sb.append(doc.getText(0, doc.getLength()));
+            sb.append('"').append('(').append(jtc.getCaretPosition()).append(')');
+            return sb.toString();
+        } catch(BadLocationException ex) {
+            return "(DOC-ERROR)";
+        }
     }
 }
 

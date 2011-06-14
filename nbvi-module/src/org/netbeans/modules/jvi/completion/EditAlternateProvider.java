@@ -22,13 +22,16 @@ public class EditAlternateProvider implements CompletionProvider
         dbgCompl = (DebugOption)Options.getOption(Options.dbgCompletion);
     }
 
+    private String j(JTextComponent jtc) { return CcCompletion.state(jtc); }
+
     @Override
     public CompletionTask createTask(int queryType, JTextComponent jtc)
     {
         if(queryType != CompletionProvider.COMPLETION_QUERY_TYPE) {
             return null;
         }
-        dbgCompl.println(Level.INFO, "CREATE_TASK: EditAlternate");
+        if (dbgCompl.getBoolean())
+            dbgCompl.println(Level.INFO, "CREATE_TASK: EditAlternate " + j(jtc));
         return new EditAlternateTask(jtc);
     }
 
@@ -36,7 +39,8 @@ public class EditAlternateProvider implements CompletionProvider
     public int getAutoQueryTypes(JTextComponent jtc, String typedText)
     {
         dbgCompl.printf(Level.CONFIG,
-                        "AUTO_QUERY_TYPES: EditAlternate: '%s'\n", typedText);
+                        "AUTO_QUERY_TYPES: EditAlternate: '%s' %s\n",
+                        typedText, j(jtc));
         Document doc = jtc.getDocument();
         if ("#".equals(typedText)
                 && Options.getOption(Options.autoPopupFN).getBoolean()

@@ -74,7 +74,7 @@ public class NbWindows
 
     public static double getWeight(double n, String orientation, EditorHandle eh)
     {
-        Component resizeTargetContainer = eh.getResizeTargetContainer();
+        Dimension resizeTargetContainer = eh.getResizeTargetContainer();
         if(n == 0)
             return 0;
 
@@ -90,7 +90,7 @@ public class NbWindows
         // NEEDSWORK: splitter should never be null
         //            fix it in WindowTreeBuilder
         Dimension dContainer = resizeTargetContainer == null
-                ? dMode : resizeTargetContainer.getSize();
+                ? dMode : resizeTargetContainer;
         // The general formula is: w = (n * perChar + decoration) / total
         // where decoration is the extra stuff in the mode
         // add a few extra pixels to get a complete line/column

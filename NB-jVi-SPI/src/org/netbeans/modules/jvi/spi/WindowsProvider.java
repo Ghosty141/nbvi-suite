@@ -20,6 +20,7 @@
 package org.netbeans.modules.jvi.spi;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 
@@ -48,7 +49,7 @@ public interface WindowsProvider
         Component getEd();
 
         // following used for size calculations
-        Component getResizeTargetContainer();
+        Dimension getResizeTargetContainer();
         double getLineHeight();
         double getMaxCharWidth();
     }

@@ -70,6 +70,7 @@ import com.raelity.jvi.options.ColorOption;
 import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
+import java.awt.Dimension;
 import java.util.Arrays;
 import org.netbeans.modules.jvi.reflect.NbWindows;
 
@@ -791,7 +792,7 @@ public class NbTextView extends SwingTextView
         TopComponent clone = tcClone();
 
         SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
-        EH eh = new EH(clone, sn.getComponent());
+        EH eh = new EH(clone, sn);
         double targetWeight = getTargetWeight(n, dir.getOrientation(),
                                               eh);
         clone.open();
@@ -825,7 +826,7 @@ public class NbTextView extends SwingTextView
         // calculate targetWeight
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
         SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
-        EH eh = new EH(null, sn.getComponent());
+        EH eh = new EH(null, sn);
         double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
 
         SplitParams sp = doEditorSplit1(sn);
@@ -835,7 +836,7 @@ public class NbTextView extends SwingTextView
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
         // and put the eh in the new mode
-        eh = new EH(avToMove.getTopComponent(), null);
+        eh = new EH(avToMove.getTopComponent(), (Component)null);
         wp.addModeOnSide(m, dir.getSplitSide(), eh);
 
         tcActivate(avToMove.getTopComponent());
@@ -909,7 +910,7 @@ public class NbTextView extends SwingTextView
             if(tcTarget != null) {
                 m = WindowManager.getDefault().findMode(tcTarget);
                 if(WindowManager.getDefault().isEditorMode(m)) {
-                    wp.move(m, new EH(tc, null));
+                    wp.move(m, new EH(tc, (Component)null));
                 } else
                     Msg.smsg("\"" + m.getSelectedTopComponent().getName()
                             + "\" target is not in an \"editor mode\"");
@@ -932,7 +933,7 @@ public class NbTextView extends SwingTextView
             SplitterNode sn = addOuter
                     ? nav.getRootSplitter(av, dir.getOrientation())
                     : nav.getParentSplitter(av, dir.getOrientation());
-            EH eh = new EH(tc, sn.getComponent());
+            EH eh = new EH(tc, sn);
             double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
             SplitParams sp = doEditorSplit1(sn);
             sp.targetWeight = targetWeight;
@@ -1058,8 +1059,8 @@ public class NbTextView extends SwingTextView
     //            static class, and pass in the TextView.
     private final class EH implements EditorHandle
     {
-        private TopComponent tc;
-        private Component resizeTargetContainer;
+        final private TopComponent tc;
+        final private Dimension resizeTargetContainer;
 
         /**
          * NOTE: when used for resize, both tc and resizeTargetContainer
@@ -1070,7 +1071,21 @@ public class NbTextView extends SwingTextView
         public EH(TopComponent tc, Component resizeTargetContainer)
         {
             this.tc = tc;
-            this.resizeTargetContainer = resizeTargetContainer;
+            this.resizeTargetContainer = resizeTargetContainer == null
+                    ? null : resizeTargetContainer.getSize();
+        }
+
+        /**
+         * When splitter node is specified assume that this is part of a split;
+         * and that means another divider will be in there.
+         * So take away a few pixels from the container height
+         * to compensate.
+         */
+        public EH(TopComponent tc, SplitterNode sn)
+        {
+            this.tc = tc;
+            Dimension dim = sn.getComponent().getSize();
+            this.resizeTargetContainer = new Dimension(dim.width, dim.height-4);
         }
 
 
@@ -1087,7 +1102,7 @@ public class NbTextView extends SwingTextView
         }
 
         @Override
-        public Component getResizeTargetContainer()
+        public Dimension getResizeTargetContainer()
         {
             return resizeTargetContainer;
         }

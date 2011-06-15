@@ -77,6 +77,7 @@ import org.netbeans.modules.jvi.reflect.NbWindows;
 import static com.raelity.jvi.core.lib.Constants.*;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
+import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
 
 /**
  * Pretty much the SwingTextView used for standard swing.
@@ -575,9 +576,9 @@ public class NbTextView extends SwingTextView
     }
 
     static double getTargetWeight(double n, Orientation orientation,
-                                  EditorHandle eh)
+                                  EditorSizerArgs era)
     {
-        return wp.getWeight(n, orientation.name(), eh);
+        return wp.getWeight(n, orientation.name(), era);
     }
 
     /**
@@ -792,9 +793,8 @@ public class NbTextView extends SwingTextView
         TopComponent clone = tcClone();
 
         SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
-        EH eh = new EH(clone, sn);
         double targetWeight = getTargetWeight(n, dir.getOrientation(),
-                                              eh);
+                                              new SizerArgs(sn));
         clone.open();
         SplitParams sp = doEditorSplit1(sn);
         sp.targetWeight = targetWeight;
@@ -802,7 +802,7 @@ public class NbTextView extends SwingTextView
 
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
-        wp.addModeOnSide(m, dir.getSplitSide(), eh);
+        wp.addModeOnSide(m, dir.getSplitSide(), new EH(clone));
 
         tcActivate(clone);
         finishSplitLater(clone, sp, null);
@@ -826,8 +826,8 @@ public class NbTextView extends SwingTextView
         // calculate targetWeight
         ViWindowNavigator nav = ViManager.getFactory().getWindowNavigator();
         SplitterNode sn = nav.getParentSplitter(av, dir.getOrientation());
-        EH eh = new EH(null, sn);
-        double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+        double targetWeight = getTargetWeight(n, dir.getOrientation(),
+                                              new SizerArgs(sn));
 
         SplitParams sp = doEditorSplit1(sn);
         sp.targetWeight = targetWeight;
@@ -835,9 +835,8 @@ public class NbTextView extends SwingTextView
 
         // create a new mode
         Mode m = WindowManager.getDefault().findMode(av.getTopComponent());
-        // and put the eh in the new mode
-        eh = new EH(avToMove.getTopComponent(), (Component)null);
-        wp.addModeOnSide(m, dir.getSplitSide(), eh);
+        // and put the av into the new mode
+        wp.addModeOnSide(m, dir.getSplitSide(), new EH(avToMove));
 
         tcActivate(avToMove.getTopComponent());
         finishSplitLater(avToMove.getTopComponent(), sp, null);
@@ -910,7 +909,7 @@ public class NbTextView extends SwingTextView
             if(tcTarget != null) {
                 m = WindowManager.getDefault().findMode(tcTarget);
                 if(WindowManager.getDefault().isEditorMode(m)) {
-                    wp.move(m, new EH(tc, (Component)null));
+                    wp.move(m, new EH(tc));
                 } else
                     Msg.smsg("\"" + m.getSelectedTopComponent().getName()
                             + "\" target is not in an \"editor mode\"");
@@ -933,19 +932,19 @@ public class NbTextView extends SwingTextView
             SplitterNode sn = addOuter
                     ? nav.getRootSplitter(av, dir.getOrientation())
                     : nav.getParentSplitter(av, dir.getOrientation());
-            EH eh = new EH(tc, sn);
-            double targetWeight = getTargetWeight(n, dir.getOrientation(), eh);
+            double targetWeight = getTargetWeight(
+                    n, dir.getOrientation(), new SizerArgs(sn));
             SplitParams sp = doEditorSplit1(sn);
             sp.targetWeight = targetWeight;
             sp.sizeSpecified = n != 0;
 
             if(addOuter) {
-                wp.addModeAround(m, dir.getSplitSide(), eh);
+                wp.addModeAround(m, dir.getSplitSide(), new EH(tc));
                 sp.addOuter = true;
                 sp.operateOnCurrent = true;
                 sp.adjustOthersProportionally = true;
             } else
-                wp.addModeOnSide(m, dir.getSplitSide(), eh);
+                wp.addModeOnSide(m, dir.getSplitSide(), new EH(tc));
 
             finishSplitLater(tc, sp, null);
         }
@@ -988,8 +987,8 @@ public class NbTextView extends SwingTextView
             sp.targetWeight = 0;
             sp.ea = true;
         } else {
-            EH eh = new EH(av.getTopComponent(), sn.getComponent());
-            sp.targetWeight = getTargetWeight(size, orientation, eh);
+            sp.targetWeight = getTargetWeight(size, orientation,
+                                              new SizerArgs(sn));
             sp.sizeSpecified = true;
             sp.ea = false; // like vim
         }
@@ -1043,49 +1042,18 @@ public class NbTextView extends SwingTextView
         return NbWindows.findModePanel(c);
     }
 
-    // NEEDSWORK: usage of EH is weird note that this inner class
-    //            uses this.getEditor and char Win/Height for weight
-    //            calculations but there is no guarentee that TC
-    //            corresponds to "TextView.this".
-    //            This is OK since all editors have the same
-    //            font (but some day who knows)
-    //
-    //            The general idea is that the calculations are based on
-    //            splitting the editor/view/mode associated with the
-    //            containing TextView. Which matches current usage, since
-    //            the focus'd TextView
-    //
-    //            PROBABLY SHOULD BE EXPLICIT AND MAKE THIS
-    //            static class, and pass in the TextView.
-    private final class EH implements EditorHandle
+    private static final class EH implements EditorHandle
     {
         final private TopComponent tc;
-        final private Dimension resizeTargetContainer;
 
-        /**
-         * NOTE: when used for resize, both tc and resizeTargetContainer
-         *       may be null
-         * @param tc
-         * @param resizeTargetContainer
-         */
-        public EH(TopComponent tc, Component resizeTargetContainer)
+        EH(NbAppView av)
         {
-            this.tc = tc;
-            this.resizeTargetContainer = resizeTargetContainer == null
-                    ? null : resizeTargetContainer.getSize();
+            this(av.getTopComponent());
         }
 
-        /**
-         * When splitter node is specified assume that this is part of a split;
-         * and that means another divider will be in there.
-         * So take away a few pixels from the container height
-         * to compensate.
-         */
-        public EH(TopComponent tc, SplitterNode sn)
+        EH(TopComponent tc)
         {
             this.tc = tc;
-            Dimension dim = sn.getComponent().getSize();
-            this.resizeTargetContainer = new Dimension(dim.width, dim.height-4);
         }
 
 
@@ -1098,23 +1066,64 @@ public class NbTextView extends SwingTextView
         @Override
         public Component getEd()
         {
+            // Might need something like this if split of an editor support in NB
+            return null; // getEditor()
+        }
+    }
+
+    private final class SizerArgs implements  EditorSizerArgs
+    {
+        final private Dimension resizeTargetContainer;
+
+        private SizerArgs(Dimension resizeTargetContainer)
+        {
+            this.resizeTargetContainer = resizeTargetContainer;
+        }
+
+        /**
+         * NOTE: when used for resize, resizeTargetContainer may be null
+         * @param resizeTargetContainer
+         */
+        SizerArgs(Component resizeTargetContainer)
+        {
+            this(resizeTargetContainer == null
+                        ? null : resizeTargetContainer.getSize());
+        }
+
+        /**
+         * When splitter node is specified assume that this is part of a split;
+         * and that means another divider will be in there.
+         * So take away a few pixels from the container height
+         * to compensate.
+         */
+        SizerArgs(SplitterNode sn)
+        {
+            this(new Dimension(sn.getComponent().getSize().width,
+                               sn.getComponent().getSize().height-4));
+        }
+
+        @Override
+        public Component getEditorToSplit()
+        {
             return getEditor();
         }
 
         @Override
         public Dimension getResizeTargetContainer()
         {
-            return resizeTargetContainer;
+            if(resizeTargetContainer != null)
+                return resizeTargetContainer;
+            return findModePanel(getEditorToSplit()).getSize();
         }
 
         @Override
-        public double getLineHeight()
+        public double charHeight()
         {
             return NbTextView.this.getLineHeight(1, 0);
         }
 
         @Override
-        public double getMaxCharWidth()
+        public double charWidth()
         {
             return NbTextView.this.getMaxCharWidth();
         }

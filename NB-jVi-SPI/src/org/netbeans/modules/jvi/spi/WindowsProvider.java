@@ -47,11 +47,19 @@ public interface WindowsProvider
     interface EditorHandle {
         TopComponent getTC();
         Component getEd();
+    }
 
-        // following used for size calculations
+    interface EditorSizerArgs {
+        /**
+         * Editor to split.
+         */
+        Component getEditorToSplit();
+        /**
+         * Size of container being split.
+         */
         Dimension getResizeTargetContainer();
-        double getLineHeight();
-        double getMaxCharWidth();
+        double charHeight();
+        double charWidth();
     }
 
     /**
@@ -82,7 +90,7 @@ public interface WindowsProvider
      * @param eh
      * @return target weight for eh's mode.
      */
-    double getWeight(double n, String orientation, EditorHandle eh);
+    double getWeight(double n, String orientation, EditorSizerArgs eh);
 
     /** part of the size calculation */
     Component findModePanel(Component c);

@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JViewport;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
+import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
 import org.openide.util.Lookup;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -59,7 +60,8 @@ public class NbWindows
             }
 
             @Override
-            public double getWeight(double n, String orientation, EditorHandle eh)
+            public double getWeight(double n, String orientation,
+                                    EditorSizerArgs eh)
             {
                 return NbWindows.getWeight(n, orientation, eh);
             }
@@ -72,9 +74,9 @@ public class NbWindows
         };
     }
 
-    public static double getWeight(double n, String orientation, EditorHandle eh)
+    public static double getWeight(double n, String orientation,
+                                   EditorSizerArgs eh)
     {
-        Dimension resizeTargetContainer = eh.getResizeTargetContainer();
         if(n == 0)
             return 0;
 
@@ -82,27 +84,22 @@ public class NbWindows
         //            fix it in WindowTreeBuilder
 
         Component c;
-        c = eh.getEd();
+        c = eh.getEditorToSplit();
         if(c.getParent() instanceof JViewport)
             c = c.getParent();
         Dimension dEd = c.getSize();
-        Dimension dMode = findModePanel(eh.getEd()).getSize();
-        // NEEDSWORK: splitter should never be null
-        //            fix it in WindowTreeBuilder
-        Dimension dContainer = resizeTargetContainer == null
-                ? dMode : resizeTargetContainer;
+        Dimension dMode = findModePanel(eh.getEditorToSplit()).getSize();
+        Dimension dContainer = eh.getResizeTargetContainer();
         // The general formula is: w = (n * perChar + decoration) / total
         // where decoration is the extra stuff in the mode
         // add a few extra pixels to get a complete line/column
         double targetWeight;
         if(orientation.equals("UP_DOWN")) {
-            targetWeight = (n * eh.getLineHeight()
-                            + (dMode.height - dEd.height)
-                            + 0) / (double)dContainer.height;
+            targetWeight = (n * eh.charHeight() + (dMode.height - dEd.height))
+                                / dContainer.height;
         } else {
-            targetWeight = (n * eh.getMaxCharWidth()
-                            + (dMode.width - dEd.width)
-                            + 0) / (double)dContainer.width;
+            targetWeight = (n * eh.charWidth() + (dMode.width - dEd.width))
+                                 / dContainer.width;
         }
         return targetWeight;
     }

@@ -987,8 +987,10 @@ public class NbTextView extends SwingTextView
             sp.targetWeight = 0;
             sp.ea = true;
         } else {
+            // use the Component SizeArgs constructor
+            // becuase this is not a split
             sp.targetWeight = getTargetWeight(size, orientation,
-                                              new SizerArgs(sn));
+                                              new SizerArgs(sn.getComponent()));
             sp.sizeSpecified = true;
             sp.ea = false; // like vim
         }
@@ -1099,7 +1101,8 @@ public class NbTextView extends SwingTextView
         SizerArgs(SplitterNode sn)
         {
             this(new Dimension(sn.getComponent().getSize().width,
-                               sn.getComponent().getSize().height-4));
+                               sn.getComponent().getSize().height
+                                - 4));
         }
 
         @Override

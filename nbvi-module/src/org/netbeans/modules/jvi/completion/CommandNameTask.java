@@ -75,7 +75,7 @@ public class CommandNameTask implements CompletionTask
     @Override
     public void query(CompletionResultSet resultSet)
     {
-        if(CcCompletion.isEditAlternate(jtc.getDocument())) {
+        if(CcCompletion.isAlternateFileCompletion(jtc.getDocument())) {
             resultSet.finish();
             return;
         }
@@ -91,7 +91,7 @@ public class CommandNameTask implements CompletionTask
                 dbgCompl.println("REFRESH CN with null resultSet " + jtc());
             return;
         }
-        if(CcCompletion.isEditAlternate(jtc.getDocument())) {
+        if(CcCompletion.isAlternateFileCompletion(jtc.getDocument())) {
             resultSet.finish();
             return;
         }

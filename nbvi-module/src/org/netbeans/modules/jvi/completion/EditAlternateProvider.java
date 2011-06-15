@@ -44,7 +44,7 @@ public class EditAlternateProvider implements CompletionProvider
         Document doc = jtc.getDocument();
         if ("#".equals(typedText)
                 && Options.getOption(Options.autoPopupFN).getBoolean()
-                && CcCompletion.isEditAlternate(doc)) {
+                && CcCompletion.isAlternateFileCompletion(doc)) {
             dbgCompl.println("SHOW:");
             return CompletionProvider.COMPLETION_QUERY_TYPE;
         }

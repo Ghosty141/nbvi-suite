@@ -148,7 +148,7 @@ public class CcCompletion
             JTextComponent jtc = (JTextComponent)e.getComponent();
             jtc.removeFocusListener(this);
             if(Options.getOption(Options.autoPopupFN).getBoolean()
-                        && isEditAlternate(jtc.getDocument())
+                        && isAlternateFileCompletion(jtc.getDocument())
                 || Options.getOption(Options.autoPopupCcName).getBoolean())
             {
                 dbgCompl.println("INIT SHOW:");
@@ -157,15 +157,27 @@ public class CcCompletion
         }
     };
 
-    static boolean isEditAlternate(Document doc)
+    // since the same string gets checked a lot, provide a cache
+    // could improve with document events detecting change
+    private static String cacheCommandString;
+    private static ColonEvent cacheCommandColonEvent;
+    private static ColonEvent getColonEvent(String command)
+    {
+        if(!command.equals(cacheCommandString)) {
+            cacheCommandColonEvent = ColonCommands.parseCommandNoExec(command);
+            cacheCommandString = command;
+        }
+        return cacheCommandColonEvent;
+    }
+
+    static boolean isAlternateFileCompletion(Document doc)
     {
         try {
             String s = doc.getText(0, doc.getLength());
             if(s.trim().isEmpty())
                 return false;
             else {
-                ColonEvent ce = ColonCommands.parseCommandNoExec(s);
-                return isEditAlternate(ce);
+                return isAlternateFileCompletion(s);
             }
         } catch(BadLocationException ex) {
             LOG.log(Level.SEVERE, null, ex);
@@ -173,8 +185,9 @@ public class CcCompletion
         return false;
     }
 
-    static boolean isEditAlternate(ColonEvent ce)
+    static boolean isAlternateFileCompletion(String command)
     {
+        ColonEvent ce = getColonEvent(command);
         return ce != null
                 && ce.getColonCommandItem().getFlags().contains(CcFlag.COMPL_FN)
                 && ce.getNArg() > 0

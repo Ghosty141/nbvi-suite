@@ -90,7 +90,7 @@ public class EditAlternateTask implements CompletionTask
     @Override
     public void query(CompletionResultSet resultSet)
     {
-        if(!CcCompletion.isEditAlternate(jtc.getDocument())) {
+        if(!CcCompletion.isAlternateFileCompletion(jtc.getDocument())) {
             resultSet.finish();
             return;
         }
@@ -106,7 +106,7 @@ public class EditAlternateTask implements CompletionTask
                 dbgCompl.println("REFRESH EA with null resultSet " + jtc());
             return;
         }
-        if(!CcCompletion.isEditAlternate(jtc.getDocument())) {
+        if(!CcCompletion.isAlternateFileCompletion(jtc.getDocument())) {
             resultSet.finish();
             return;
         }
@@ -160,7 +160,7 @@ public class EditAlternateTask implements CompletionTask
             String text = doc.getText(0, doc.getLength());
             if (dbgCompl.getBoolean())
                 dbsString = tag + ": \'" + jtc() + "\'";
-            if (CcCompletion.isEditAlternate(doc)) {
+            if (CcCompletion.isAlternateFileCompletion(doc)) {
                 ciTextOffset = text.indexOf('#') + 1; // char after 'e#'
                 int startOffset = ciTextOffset;
                 // NEEDSWORK: can't count on the caret position since

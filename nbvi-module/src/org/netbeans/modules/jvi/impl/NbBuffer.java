@@ -28,7 +28,6 @@ import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
-import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
@@ -200,25 +199,25 @@ public class NbBuffer extends SwingBuffer {
     //
 
     @Override
-    public void reindent(int line, int count) {
+    public void reindent(final int line, final int count) {
         if(getDocument() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument)getDocument();
-            boolean keepAtomicLock = doc.isAtomicLock();
-            if(keepAtomicLock)
-                doc.atomicUnlock();
-            Indent indent = Indent.get(doc);
+            final Indent indent = Indent.get(doc);
             indent.lock();
             try {
-                doc.atomicLock();
-                try {
-                    indent.reindent(getLineStartOffset(line),
-                                    getLineEndOffset2(line + count - 1));
-                } catch (BadLocationException ex) {
-                    LOG.log(Level.SEVERE, null, ex);
-                } finally {
-                    if(!keepAtomicLock)
-                        doc.atomicUnlock();
-                }
+                doc.runAtomicAsUser(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            indent.reindent(getLineStartOffset(line),
+                                        getLineEndOffset2(line + count - 1));
+                        } catch (BadLocationException ex) {
+                            processTextException(ex);
+                            LOG.log(Level.SEVERE, null, ex);
+                        }
+                    }
+                });
             } finally {
                 indent.unlock();
             }
@@ -228,25 +227,25 @@ public class NbBuffer extends SwingBuffer {
     }
 
     @Override
-    public void reformat(int line, int count) {
+    public void reformat(final int line, final int count) {
         if(getDocument() instanceof BaseDocument) {
             BaseDocument doc = (BaseDocument)getDocument();
-            boolean keepAtomicLock = doc.isAtomicLock();
-            if(keepAtomicLock)
-                doc.atomicUnlock();
-            Reformat reformat = Reformat.get(doc);
+            final Reformat reformat = Reformat.get(doc);
             reformat.lock();
             try {
-                doc.atomicLock();
-                try {
-                    reformat.reformat(getLineStartOffset(line),
-                                      getLineEndOffset2(line + count - 1));
-                } catch (BadLocationException ex) {
-                    LOG.log(Level.SEVERE, null, ex);
-                } finally {
-                    if(!keepAtomicLock)
-                        doc.atomicUnlock();
-                }
+                doc.runAtomicAsUser(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            reformat.reformat(getLineStartOffset(line),
+                                          getLineEndOffset2(line + count - 1));
+                        } catch (BadLocationException ex) {
+                            processTextException(ex);
+                            LOG.log(Level.SEVERE, null, ex);
+                        }
+                    }
+                });
             } finally {
                 reformat.unlock();
             }
@@ -282,19 +281,19 @@ public class NbBuffer extends SwingBuffer {
     private boolean fGuardedException;
     private boolean fException;
 
-    boolean isGuardedException() {
+    private boolean isGuardedException() {
         return fGuardedException;
     }
 
-    boolean isExecption() {
+    private boolean isException() {
         return fException;
     }
 
-    boolean isAnyExecption() {
+    private boolean isAnyException() {
         return fException || fGuardedException;
     }
 
-    void clearExceptions() {
+    private void clearExceptions() {
         fGuardedException = false;
         fException = false;
     }
@@ -303,9 +302,18 @@ public class NbBuffer extends SwingBuffer {
     protected void processTextException(BadLocationException ex) {
         if(ex instanceof GuardedException) {
             fGuardedException = true;
+            fException = true;
         } else {
             fException = true;
         }
+        Util.beep_flush();
+    }
+
+    @Override
+    public void readOnlyError(ViTextView tv)
+    {
+        fGuardedException = true;
+        fException = true;
         Util.beep_flush();
     }
 
@@ -367,72 +375,39 @@ public class NbBuffer extends SwingBuffer {
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
     }
 
-    //
-    // With NB, the atomic lock on the document groups undo
-    // so we can always do that for progromatic undo/redo, eg. "3dd".
-    // But for insert mode can not lock file (user interactions), so we
-    // continue to use the classic undo flag
-    //
+    private boolean fCheckForAutoUndo;
 
     @Override
-    protected void do_runUndoable(final Runnable r) {
-        G.dbgUndo.printf("{NbBuf:RunUndoable: \n");
-        final Document doc = getDocument();
-        if(doc instanceof BaseDocument) {
-            r.run();
-
-            // maybe someday
-            // ((BaseDocument)doc).runAtomicAsUser(new Runnable() {
-            //     public void run() {
-            //         try {
-            //             r.run();
-            //         } finally {
-            //             if(isAnyExecption()) {
-            //                 ((BaseDocument)doc).breakAtomicLock();
-            //             }
-            //         }
-            //     }
-            // });
-        } else {
-            r.run();
-        }
-        G.dbgUndo.printf("}NbBuf:RunUndoable: \n");
+    public void do_beginUndo()
+    {
+        super.do_beginUndo();
+        // exceptions during programmed doc changes, should roll back everything
+        fCheckForAutoUndo = true;
     }
-    
+
     @Override
-    public void do_beginUndo() {
-        G.dbgUndo.printf("{NbBuf:do_beginUndo: \n");
+    protected void beginAnyUndo() {
         clearExceptions();
-        Document doc = getDocument();
-        if(doc instanceof BaseDocument) {
-            ((BaseDocument)doc).atomicLock();
-        }
+        createDocChangeInfo();
+        sendUndoableEdit(CloneableEditorSupport.BEGIN_COMMIT_GROUP);
     }
-    
-    @Override
-    public void do_endUndo() {
-        G.dbgUndo.printf("}NbBuf:do_endUndo: \n");
-        Document doc = getDocument();
-        if(doc instanceof BaseDocument) {
-            if(isAnyExecption()) {
-                // get rid of the changes
-                ((BaseDocument)doc).breakAtomicLock();
-            }
-            
-            ((BaseDocument)doc).atomicUnlock();
 
-            if(isAnyExecption()) {
+    @Override
+    protected void endAnyUndo()
+    {
+        sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
+        if(fCheckForAutoUndo) {
+            DocChangeInfo info = getDocChangeInfo();
+            if(isAnyException() && info != null && info.isChange) {
+                G.dbgUndo.printf("endAnyUndo: exception rollback\n");
+                // NOTE: the undo is defered so that state can settle
+                // otherwise the undo might not take effect.
+                // Also defer the message so it won't be lost
                 final ViTextView tv = Scheduler.getCurrentTextView();
-                // This must come *after* atomicUnlock, otherwise it gets
-                // overwritten by a clear message due to scrolling.
-                
-                // Don't want this message lost, so defer until things
-                // settle down. The change/unlock-undo cause a lot of
-                // action
-                
-                SwingUtilities.invokeLater(new Runnable() {
+                ViManager.nInvokeLater(1, new Runnable() {
                     @Override
                     public void run() {
+                        undo();
                         tv.getStatusDisplay().displayErrorMessage(
                                 "No changes made."
                                 + (isGuardedException()
@@ -441,24 +416,7 @@ public class NbBuffer extends SwingBuffer {
                     }
                 });
             }
-        }
-    }
-
-    @Override
-    public void do_beginInsertUndo() {
-        G.dbgUndo.printf("{NbBuf:do_beginInsertUndo: \n");
-        // NEDSWORK: when development on NB6, and method in NB6, use boolean
-        //           for method is available and ifso invoke directly.
-        if(G.isClassicUndo.getBoolean()) {
-            sendUndoableEdit(CloneableEditorSupport.BEGIN_COMMIT_GROUP);
-        }
-    }
-
-    @Override
-    public void do_endInsertUndo() {
-        G.dbgUndo.printf("}NbBuf:do_beginInsertUndo: \n");
-        if(G.isClassicUndo.getBoolean()) {
-            sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
+            fCheckForAutoUndo = false;
         }
     }
 

@@ -9,6 +9,9 @@
 
 package org.netbeans.modules.jvi.impl;
 
+import org.openide.actions.UndoAction;
+import org.openide.awt.UndoRedo;
+import org.openide.util.actions.SystemAction;
 import org.openide.util.WeakListeners;
 import com.raelity.jvi.core.Options;
 import java.util.prefs.PreferenceChangeEvent;
@@ -321,6 +324,12 @@ public class NbBuffer extends SwingBuffer {
     //
     // Undo handling.
     //
+    // The main issue is handling automatic undo after an exception
+    // during a programmatic modification.
+    //
+    // NEEDSWORK: this code uses the text view to get
+    //            the undo/redo manager...
+    //
 
     @Override
     public void redo() {
@@ -333,19 +342,105 @@ public class NbBuffer extends SwingBuffer {
         //undoOrRedo("Undo", FsAct.UNDO);
         undoOrRedo("Undo", NbEditorKit.undoAction);
     }
-    
+
+    /** true while doing a programmatic change */
+    private boolean fCheckForAutoUndo;
+
+    @Override
+    public void do_beginUndo()
+    {
+        super.do_beginUndo();
+        // during programmed doc changes exceptions should roll back everything
+        fCheckForAutoUndo = true;
+    }
+
+    @Override
+    protected void beginAnyUndo() {
+        clearExceptions();
+        createDocChangeInfo();
+        sendUndoableEdit(CloneableEditorSupport.BEGIN_COMMIT_GROUP);
+    }
+
+    @Override
+    protected void endAnyUndo()
+    {
+        sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
+        if(fCheckForAutoUndo) {
+            DocChangeInfo info = getDocChangeInfo();
+            if(isAnyException() && info != null && info.isChange) {
+                handleAutoUndoException(isGuardedException(),
+                                        Scheduler.getCurrentTextView());
+            }
+            fCheckForAutoUndo = false;
+        }
+    }
+
+    private void sendUndoableEdit(UndoableEdit ue) {
+        Document d = getDocument();
+        if(d instanceof AbstractDocument) {
+            UndoableEditListener[] uels = ((AbstractDocument)d).getUndoableEditListeners();
+            UndoableEditEvent ev = new UndoableEditEvent(d, ue);
+            for(UndoableEditListener uel : uels) {
+                uel.undoableEditHappened(ev);
+            }
+        }
+    }
+
+    private void handleAutoUndoException(final boolean isGuarded,
+                                         ViTextView _tv)
+    {
+        final NbTextView tv = (NbTextView)_tv;
+        G.dbgUndo.printf("endAnyUndo: exception rollback\n");
+        doAutoUndo(tv);
+        // Defer the message so it won't be lost
+        ViManager.nInvokeLater(1, new Runnable() {
+            @Override
+            public void run() {
+                tv.getStatusDisplay().displayErrorMessage(
+                        "No changes made."
+                        + (isGuarded
+                           ? " Attempt to change guarded text."
+                           : " Document location error."));
+            }
+        });
+    }
+
+    private void doAutoUndo(NbTextView tv)
+    {
+        // Can't just do "undo()"
+        // because the action is not necessarily enabled.
+        // This code is taken from NbEditorKit.NbUndoAction
+        // and openide.action's UndoAction
+        if (getDocument().getProperty(BaseDocument.UNDO_MANAGER_PROP) != null) {
+            // Basic way of undo
+            UndoableEdit undoMgr = (UndoableEdit)getDocument().getProperty(
+                                       BaseDocument.UNDO_MANAGER_PROP);
+            if(undoMgr.canUndo())
+                undoMgr.undo();
+        } else { // Deleagte to system undo action
+            UndoAction ua = SystemAction.get(UndoAction.class);
+            NbAppView av = (NbAppView)tv.getAppView();
+            UndoRedo ur = av.getTopComponent().getUndoRedo();
+            if(ur.canUndo()) {
+                ur.undo();
+            }
+            // do isEnabled to make sure icons are in correct state
+            ua.isEnabled();
+        }
+    }
+
     private void undoOrRedo(String tag, String action) {
         NbTextView tv = (NbTextView)Scheduler.getCurrentTextView();
         if(tv == null || !tv.isEditable()) {
             Util.beep_flush();
             return;
         }
-        if(Misc.isInAnyUndo()) {
+        if(Misc.isInAnyUndo() || fCheckForAutoUndo) {
             ViManager.dumpStack(tag + " while in begin/endUndo");
             return;
         }
         // NEEDSWORK: check can undo for beep
-        
+
         createDocChangeInfo();
         int n = getLineCount();
         tv.getOps().xact(action);
@@ -353,7 +448,7 @@ public class NbBuffer extends SwingBuffer {
         /////                                 ActionEvent.ACTION_PERFORMED,
         /////                                 "");
         ///// Module.execFileSystemAction(action, e);
-        
+
         DocChangeInfo info = getDocChangeInfo();
         if(info.isChange) {
             try {
@@ -373,62 +468,6 @@ public class NbBuffer extends SwingBuffer {
         } else
             Util.beep_flush();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide
-    }
-
-    private boolean fCheckForAutoUndo;
-
-    @Override
-    public void do_beginUndo()
-    {
-        super.do_beginUndo();
-        // exceptions during programmed doc changes, should roll back everything
-        fCheckForAutoUndo = true;
-    }
-
-    @Override
-    protected void beginAnyUndo() {
-        clearExceptions();
-        createDocChangeInfo();
-        sendUndoableEdit(CloneableEditorSupport.BEGIN_COMMIT_GROUP);
-    }
-
-    @Override
-    protected void endAnyUndo()
-    {
-        sendUndoableEdit(CloneableEditorSupport.END_COMMIT_GROUP);
-        if(fCheckForAutoUndo) {
-            DocChangeInfo info = getDocChangeInfo();
-            if(isAnyException() && info != null && info.isChange) {
-                G.dbgUndo.printf("endAnyUndo: exception rollback\n");
-                // NOTE: the undo is defered so that state can settle
-                // otherwise the undo might not take effect.
-                // Also defer the message so it won't be lost
-                final ViTextView tv = Scheduler.getCurrentTextView();
-                ViManager.nInvokeLater(1, new Runnable() {
-                    @Override
-                    public void run() {
-                        undo();
-                        tv.getStatusDisplay().displayErrorMessage(
-                                "No changes made."
-                                + (isGuardedException()
-                                   ? " Attempt to change guarded text."
-                                   : " Document location error."));
-                    }
-                });
-            }
-            fCheckForAutoUndo = false;
-        }
-    }
-
-    void sendUndoableEdit(UndoableEdit ue) {
-        Document d = getDocument();
-        if(d instanceof AbstractDocument) {
-            UndoableEditListener[] uels = ((AbstractDocument)d).getUndoableEditListeners();
-            UndoableEditEvent ev = new UndoableEditEvent(d, ue);
-            for(UndoableEditListener uel : uels) {
-                uel.undoableEditHappened(ev);
-            }
-        }
     }
 
     //////////////////////////////////////////////////////////////////////

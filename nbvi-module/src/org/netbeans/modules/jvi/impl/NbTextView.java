@@ -868,9 +868,12 @@ public class NbTextView extends SwingTextView
                         // original had: if (null != m) ....
             Mode m = WindowManager.getDefault().findMode(tc);
             TopComponent[] tcs = m.getTopComponents();
+            // put the clone *before* the original in tab order,
+            // then if you move the clone, the original will be selected
+            // in the other window
             for( int i=0; i<tcs.length; i++ ) {
                 if( tcs[i] == tc ) {
-                    openIndex = i + 1;
+                    openIndex = i;
                     break;
                 }
             }

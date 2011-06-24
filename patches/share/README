@@ -1,0 +1,18 @@
+Files to share or template for NB patches
+
+Make a subproject of a suite, for example
+        patch-70-text
+            patch-70-openide.text
+Create patchsrc directory in project
+
+Into the module projects need to do
+
+=== build.xml
+put marked stuff from: build.xml-guts
+
+=== project.xml
+put marked stuff from: project.xml-extra-compilation-unit
+
+=== project.properties
+put marked stuff from: project.properties
+some edit required

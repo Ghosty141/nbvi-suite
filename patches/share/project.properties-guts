@@ -5,7 +5,7 @@ javac.compilerargs=-Xlint -Xlint:-serial
 # ========================================================
 # ========================================================
 
-license.file=../CDDL-GPL-2-CP
+license.file=../../share/CDDL-GPL-2-CP          <<<<<<<<<<<<
 nbm.homepage=http://jvi.sourceforge.net
 nbm.is.global=true
 nbm.module.author=Ernie Rael

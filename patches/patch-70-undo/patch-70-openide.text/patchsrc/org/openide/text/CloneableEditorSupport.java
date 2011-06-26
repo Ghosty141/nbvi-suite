@@ -3533,6 +3533,18 @@ public abstract class CloneableEditorSupport extends CloneableOpenSupport {
             public boolean isSignificant() {
                 return false;
             }
+
+            @Override
+            public boolean canRedo()
+            {
+                return true;
+            }
+
+            @Override
+            public boolean canUndo()
+            {
+                return true;
+            }
         }
 
         @Override

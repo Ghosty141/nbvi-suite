@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
 OpenIDE-Module: com.raelity.jvi.nb.patches.org.openide.text
 OpenIDE-Module-Localizing-Bundle: com/raelity/jvi/nb/patches/org/openide/text/Bundle.properties
-OpenIDE-Module-Specification-Version: 1.0
+OpenIDE-Module-Specification-Version: 1.1
 

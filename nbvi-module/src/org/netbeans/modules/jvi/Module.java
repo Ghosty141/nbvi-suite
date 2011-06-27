@@ -552,7 +552,7 @@ public class Module extends ModuleInstall
         public void propertyChange(PropertyChangeEvent evt) {
             assert(EventQueue.isDispatchThread());
             if(false && dbgAct.getBoolean()) {
-                System.err.println("NbVi REG evt = " + evt.getPropertyName() + ": "
+                dbgAct.println("NbVi REG evt = " + evt.getPropertyName() + ": "
                         + evt.getOldValue()
                         + " --> " + evt.getNewValue());
             }

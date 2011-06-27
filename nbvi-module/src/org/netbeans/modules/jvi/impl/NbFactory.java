@@ -180,7 +180,7 @@ final public class NbFactory extends SwingFactory {
         // install cursor if neeeded
         if(isEnabled() && ! (ep.getCaret() instanceof ViCaret)) {
             if(G.dbgEditorActivation.getBoolean()) {
-                System.err.println("setupCaret: INSTALLING ViCaret");
+                G.dbgEditorActivation.println("setupCaret: INSTALLING ViCaret");
             }
             installCaret(ep, new NbCaret());
             Scheduler.register(editor); //NEEDSWORK: register should not public

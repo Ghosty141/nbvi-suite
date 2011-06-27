@@ -155,7 +155,7 @@ public class CommandNameTask implements CompletionTask
         }
         if (dbgCompl.getBoolean()) {
             dbsString += ", result: " + resultSet;
-            System.err.println(dbsString);
+            dbgCompl.println(dbsString);
         }
         resultSet.finish();
     }
@@ -181,7 +181,7 @@ public class CommandNameTask implements CompletionTask
         {
             this.command = command;
             if (dbgCompl.getBoolean(Level.FINE))
-                System.err.println("CommandNameItem: \'" + getName() + "\'");
+                dbgCompl.println(Level.FINE, "CommandNameItem: \'" + getName() + "\'");
             XMLUtil x = XMLUtil.get();
             if(command.isEnabled()) {
                 nameLabel =
@@ -230,7 +230,7 @@ public class CommandNameTask implements CompletionTask
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("DEFAULT ACTION CN: \'" + getName() + "\'");
+                dbgCompl.println("DEFAULT ACTION CN: \'" + getName() + "\'");
             try {
                 doSubstitute(jtc);
             } finally {
@@ -267,7 +267,7 @@ public class CommandNameTask implements CompletionTask
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("ViCompletionItem CN: \'" + getName() + "\' " +
+                dbgCompl.println("ViCompletionItem CN: \'" + getName() + "\' " +
                         evt.paramString());
             if (evt.getID() == KeyEvent.KEY_PRESSED &&
                     evt.getKeyChar() == KeyEvent.VK_TAB) {
@@ -301,7 +301,7 @@ public class CommandNameTask implements CompletionTask
                            boolean selected)
         {
             if (dbgCompl.getBoolean(Level.FINER))
-                System.err.println("RENDER CN: \'" + getName() + "\', selected " +
+                dbgCompl.println(Level.FINER, "RENDER CN: \'" + getName() + "\', selected " +
                         selected);
             Graphics2D g2 = (Graphics2D)g;
             CompletionUtilities.renderHtml(

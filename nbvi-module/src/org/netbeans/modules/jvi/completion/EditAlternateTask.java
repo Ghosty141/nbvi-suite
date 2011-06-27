@@ -192,7 +192,7 @@ public class EditAlternateTask implements CompletionTask
         }
         if (dbgCompl.getBoolean()) {
             dbsString += ", result: " + resultSet;
-            System.err.println(dbsString);
+            dbgCompl.println(dbsString);
         }
         resultSet.finish();
     }
@@ -284,7 +284,7 @@ public class EditAlternateTask implements CompletionTask
         public void defaultAction(JTextComponent jtc)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("DEFAULT ACTION EA: \'" + name + "\'");
+                dbgCompl.println("DEFAULT ACTION EA: \'" + name + "\'");
             try {
                 doSubstitute(jtc);
             } finally {
@@ -318,7 +318,7 @@ public class EditAlternateTask implements CompletionTask
         public void processKeyEvent(KeyEvent evt)
         {
             if (dbgCompl.getBoolean())
-                System.err.println("ViCompletionItem EA: \'" + name + "\' " +
+                dbgCompl.println("ViCompletionItem EA: \'" + name + "\' " +
                         evt.paramString());
             if (evt.getID() == KeyEvent.KEY_PRESSED &&
                     evt.getKeyChar() == KeyEvent.VK_TAB) {
@@ -355,7 +355,7 @@ public class EditAlternateTask implements CompletionTask
                            boolean selected)
         {
             if (dbgCompl.getBoolean(Level.FINER))
-                System.err.println("RENDER EA: \'" + name + "\', selected " +
+                dbgCompl.println(Level.FINER, "RENDER EA: \'" + name + "\', selected " +
                         selected);
             Color color = getColor(defaultColor);
             Font font = getFont(defaultFont);

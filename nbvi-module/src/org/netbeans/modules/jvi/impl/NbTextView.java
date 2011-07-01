@@ -198,6 +198,14 @@ public class NbTextView extends SwingTextView
                     return;
                 getEditor().getDocument()
                     .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
+                // Things are messy in jVi after c
+                // ViManager.nInvokeLater(3, new Runnable() {
+                //     @Override
+                //     public void run()
+                //     {
+                //         changeVp(false);
+                //     }
+                // });
             }
         });
     }

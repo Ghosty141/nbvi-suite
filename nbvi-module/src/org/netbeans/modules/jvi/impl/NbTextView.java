@@ -765,7 +765,7 @@ public class NbTextView extends SwingTextView
 
         SplitParams()
         {
-            ea = G.p_ea.getBoolean();
+            ea = G.p_ea();
             // initialize as 1 thing, gets full weight, idxToSplit is 0
             originalWeights = new double[] { 1D };
         }

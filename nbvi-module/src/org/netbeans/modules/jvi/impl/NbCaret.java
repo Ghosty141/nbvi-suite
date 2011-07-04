@@ -55,7 +55,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     viDelegate.setCursor(cursor);
     
     int offset = cursor.getMatchBraceOffset();
-    if(G.p_pbm.getBoolean()) {
+    if(G.p_pbm()) {
       if(offset == 0) { // command mode
         getTextComponent().putClientProperty(PROP_CARET_BIAS,
                 B_FORWARD);

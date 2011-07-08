@@ -6,6 +6,7 @@ package org.netbeans.modules.jvi.reflect;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,21 +37,19 @@ public class NbWindows
             @Override
             public void move(Mode m, EditorHandle eh)
             {
-                userDroppedTopComponents(m, new TopComponent[] {eh.getTC()});
+                userDroppedTopComponents(m, eh.getTC());
             }
 
             @Override
             public void addModeOnSide(Mode m, String side, EditorHandle eh)
             {
-                userDroppedTopComponents(m, new TopComponent[] {eh.getTC()},
-                                         side);
+                userDroppedTopComponents(m, eh.getTC(), side);
             }
 
             @Override
             public void addModeAround(Mode m, String side, EditorHandle eh)
             {
-                userDroppedTopComponentsAroundEditor(
-                        new TopComponent[] {eh.getTC()}, side);
+                userDroppedTopComponentsAroundEditor(eh.getTC(), side);
             }
 
             @Override
@@ -117,64 +116,48 @@ public class NbWindows
         return modePanel;
     }
 
-    public static void userDroppedTopComponents(Mode mode, TopComponent[] tcs)
+    private static void userDroppedTopComponents(Mode mode, TopComponent tc)
     {
         try {
             Object wmi = WindowManager.getDefault();
             Object central = meth_getCentral().invoke(wmi);
 
-            meth_userDroppedTopComponents().invoke(central, mode, tcs);
-
-            // From Central:
-            //     public void userDroppedTopComponents(ModeImpl mode,
-            //                                          TopComponent[] tcs) {
-            //         updateViewAfterDnD(moveTopComponentsIntoMode(mode, tcs));
-            //     }
-            // tried doing:
-            //          moveTopComponentsIntoMode(...)
-            // that doesn't work.
-            //
-            // Then tried:
-            //          moved = moveTopComponentsIntoMode(...)
-            //          if(moved)
-            //              switchMaximizedMode(null)
-            // that doesn't work
-            //
-            // Then tried:
-            //
-            //          moved = moveTopComponentsIntoMode(...)
-            //          updateViewAfterDnD(moved)
-            // so all the little pieces of userDroppedTopComponents are needed
-            //
+            meth_userDroppedTopComponents().invoke(central, mode, getDrop(tc));
         } catch(Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public static void userDroppedTopComponents(
-            Mode mode, TopComponent[] tcs, String side)
+    private static void userDroppedTopComponents(
+            Mode mode, TopComponent tc, String side)
     {
         try {
             Object wmi = WindowManager.getDefault();
             Object central = meth_getCentral().invoke(wmi);
 
             meth_userDroppedTopComponents_side()
-                    .invoke(central, mode, tcs, side);
+                    .invoke(central, mode, getDrop(tc), side);
         } catch(Exception ex) {
             ex.printStackTrace();
         }
     }
 
     /** different from NB in that modeKind is forced to editor */
-    public static void userDroppedTopComponentsAroundEditor(
-            TopComponent[] tcs, String side)
+    private static void userDroppedTopComponentsAroundEditor(
+            TopComponent tc, String side)
     {
         try {
             Object wmi = WindowManager.getDefault();
             Object central = meth_getCentral().invoke(wmi);
 
-            meth_userDroppedTopComponentsAroundEditor()
-                    .invoke(central, tcs, side, 1);// 1 ==> MODE_KIND_EDITOR
+            if(is70()) {
+                // 1 ==> MODE_KIND_EDITOR
+                meth_userDroppedTopComponentsAroundEditor()
+                        .invoke(central, getDrop(tc), side, 1);
+            } else {
+                meth_userDroppedTopComponentsAroundEditor()
+                        .invoke(central, getDrop(tc), side);
+            }
         } catch(Exception ex) {
             ex.printStackTrace();
         }
@@ -222,6 +205,265 @@ public class NbWindows
                     .log(Level.SEVERE, null, ex1);
     }
 
+    private static boolean is70()
+    {
+        return meth_userDroppedTopComponents_70 != null;
+    }
+
+    private static Object getDrop(TopComponent tc)
+    {
+        try {
+            return is70()
+                    ? new TopComponent[] {tc}
+                    : constr_topComponentDraggable().newInstance(tc);
+        } catch(InstantiationException ex) {
+        } catch(IllegalAccessException ex) {
+        } catch(IllegalArgumentException ex) {
+        } catch(InvocationTargetException ex) {
+        }
+        return null;
+    }
+
+    private static Method meth_getCentral;
+
+    private static Method meth_userDroppedTopComponents_70; //mode,TC[]
+    private static Method meth_userDroppedTopComponents_side_70;//mode,TC[],side)
+    private static Method meth_userDroppedTopComponentsAroundEditor_70; //TC[],side
+
+    private static Method meth_userDroppedTopComponents_71; //mode,Drag
+    private static Method meth_userDroppedTopComponents_side_71;//mode,Drag,side)
+    private static Method meth_userDroppedTopComponentsAroundEditor_71; //Drag,side
+    private static Constructor<?> constr_topComponentDraggable_71;//TC
+
+    private static Method meth_getCellCount_MSP;
+    private static Method meth_cellAt_MSP;
+    private static Field field_userMovedSplit_MSP;
+
+    private static Method meth_getComponent_MSC;
+    private static Field field_initialSplitWeight_MSC;
+    private static Field field_requiredSize_MSC;
+
+    private static Method meth_getCentral() {
+        populateCoreWindowMethods();
+        return meth_getCentral;
+    }
+    private static Constructor<?> constr_topComponentDraggable() {
+        populateCoreWindowMethods();
+        return constr_topComponentDraggable_71;
+    }
+    private static Method meth_userDroppedTopComponents() {
+        populateCoreWindowMethods();
+        return is70()
+                ? meth_userDroppedTopComponents_70
+                : meth_userDroppedTopComponents_71;
+    }
+    static Method meth_userDroppedTopComponents_side() {
+        populateCoreWindowMethods();
+        return is70()
+                ? meth_userDroppedTopComponents_side_70
+                : meth_userDroppedTopComponents_side_71;
+    }
+    static Method meth_userDroppedTopComponentsAroundEditor() {
+        populateCoreWindowMethods();
+        return is70()
+               ? meth_userDroppedTopComponentsAroundEditor_70
+               : meth_userDroppedTopComponentsAroundEditor_71;
+    }
+
+    private static void populateCoreWindowMethods() {
+        if(meth_userDroppedTopComponents_70 != null
+                || meth_userDroppedTopComponents_71 != null)
+            return;
+        populateCoreWindowMethods_70();
+        populateCoreWindowMethods_71();
+        populateCoreWindowMethodsResize();
+    }
+
+    private static void populateCoreWindowMethodsResize() {
+        Object wmi = WindowManager.getDefault();
+        Exception ex1 = null;
+        try {
+            Method[] meths = wmi.getClass().getDeclaredMethods();
+            for(Method m : meths) {
+                if(m.getName().equals("getCentral")) {
+                    m.setAccessible(true);
+                    meth_getCentral = m;
+                    break;
+                }
+            }
+
+            ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+            Class<?> c_multiSplitPane = cl.loadClass(
+                    "org.netbeans.core.windows.view.ui.MultiSplitPane");
+            Class<?> c_multiSplitCell = cl.loadClass(
+                    "org.netbeans.core.windows.view.ui.MultiSplitCell");
+
+            meths = c_multiSplitPane.getDeclaredMethods();
+            for(Method m : meths) {
+                if(m.getName().equals("getCellCount")) {
+                    m.setAccessible(true);
+                    meth_getCellCount_MSP = m;
+                }
+                if(m.getName().equals("cellAt")) {
+                    m.setAccessible(true);
+                    meth_cellAt_MSP = m;
+                }
+            }
+            Field[] fields = c_multiSplitPane.getDeclaredFields();
+            for(Field f : fields) {
+                if(f.getName().equals("userMovedSplit")) {
+                    f.setAccessible(true);
+                    field_userMovedSplit_MSP = f;
+                }
+            }
+
+            meths = c_multiSplitCell.getDeclaredMethods();
+            for(Method m : meths) {
+                if(m.getName().equals("getComponent")) {
+                    m.setAccessible(true);
+                    meth_getComponent_MSC = m;
+                }
+            }
+            fields = c_multiSplitCell.getDeclaredFields();
+            for(Field f : fields) {
+                if(f.getName().equals("initialSplitWeight")) {
+                    f.setAccessible(true);
+                    field_initialSplitWeight_MSC = f;
+                }
+                if(f.getName().equals("requiredSize")) {
+                    f.setAccessible(true);
+                    field_requiredSize_MSC = f;
+                }
+            }
+        } catch(SecurityException ex) {
+            ex1 = ex;
+        } catch(ClassNotFoundException ex) {
+            ex1 = ex;
+        }
+        // if(ex1 != null)
+        //     ex1.printStackTrace();
+    }
+    private static void populateCoreWindowMethods_70() {
+        if(meth_userDroppedTopComponents_70 == null) {
+            Object wmi = WindowManager.getDefault();
+            Exception ex1 = null;
+            try {
+                Method[] meths = wmi.getClass().getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getCentral")) {
+                        m.setAccessible(true);
+                        meth_getCentral = m;
+                        break;
+                    }
+                }
+
+                ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+                Class<?> c_central = cl.loadClass(
+                        "org.netbeans.core.windows.Central");
+                Class<?> c_modeImpl = cl.loadClass(
+                        "org.netbeans.core.windows.ModeImpl");
+                TopComponent[] tcs = new TopComponent[0];
+                meth_userDroppedTopComponents_70
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, tcs.getClass());
+                meth_userDroppedTopComponents_70.setAccessible(true);
+                meth_userDroppedTopComponents_side_70
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, tcs.getClass(),
+                                              String.class);
+                meth_userDroppedTopComponents_side_70.setAccessible(true);
+                meth_userDroppedTopComponentsAroundEditor_70
+                        = c_central.getMethod(
+                                "userDroppedTopComponentsAroundEditor",
+                                tcs.getClass(), String.class, int.class);
+                meth_userDroppedTopComponentsAroundEditor_70.setAccessible(true);
+            } catch(NoSuchMethodException ex) {
+                ex1 = ex;
+            } catch(SecurityException ex) {
+                ex1 = ex;
+            } catch(ClassNotFoundException ex) {
+                ex1 = ex;
+            }
+        }
+    }
+
+    private static void populateCoreWindowMethods_71() {
+        if(meth_userDroppedTopComponents_71 == null) {
+            Object wmi = WindowManager.getDefault();
+            Exception ex1 = null;
+            try {
+                Method[] meths = wmi.getClass().getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getCentral")) {
+                        m.setAccessible(true);
+                        meth_getCentral = m;
+                        break;
+                    }
+                }
+
+                ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+                Class<?> c_tcDraggable = cl.loadClass(
+                        "org.netbeans.core.windows.view.dnd.TopComponentDraggable");
+                Class<?> c_central = cl.loadClass(
+                        "org.netbeans.core.windows.Central");
+                Class<?> c_modeImpl = cl.loadClass(
+                        "org.netbeans.core.windows.ModeImpl");
+                constr_topComponentDraggable_71 = c_tcDraggable
+                        .getDeclaredConstructor(TopComponent.class);
+                constr_topComponentDraggable_71.setAccessible(true);
+                meth_userDroppedTopComponents_71
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, c_tcDraggable);
+                meth_userDroppedTopComponents_71.setAccessible(true);
+                meth_userDroppedTopComponents_side_71
+                        = c_central.getMethod("userDroppedTopComponents",
+                                              c_modeImpl, c_tcDraggable,
+                                              String.class);
+                meth_userDroppedTopComponents_side_71.setAccessible(true);
+                meth_userDroppedTopComponentsAroundEditor_71
+                        = c_central.getMethod(
+                                "userDroppedTopComponentsAroundEditor",
+                                c_tcDraggable, String.class);
+                meth_userDroppedTopComponentsAroundEditor_71.setAccessible(true);
+            } catch(NoSuchMethodException ex) {
+                ex1 = ex;
+            } catch(SecurityException ex) {
+                ex1 = ex;
+            } catch(ClassNotFoundException ex) {
+                ex1 = ex;
+            }
+        }
+    }
+
+    // From Central:
+    //     public void userDroppedTopComponents(ModeImpl mode,
+    //                                          TopComponent[] tcs) {
+    //         updateViewAfterDnD(moveTopComponentsIntoMode(mode, tcs));
+    //     }
+    // tried doing:
+    //          moveTopComponentsIntoMode(...)
+    // that doesn't work.
+    //
+    // Then tried:
+    //          moved = moveTopComponentsIntoMode(...)
+    //          if(moved)
+    //              switchMaximizedMode(null)
+    // that doesn't work
+    //
+    // Then tried:
+    //
+    //          moved = moveTopComponentsIntoMode(...)
+    //          updateViewAfterDnD(moved)
+    // so all the little pieces of userDroppedTopComponents are needed
+    //
+
+    // static Method meth_setWeights_multiSplitPane() {
+    //     populateCoreWindowMethods();
+    //     return meth_setWeights_multiSplitPane;
+    // }
+
+    // private static Method meth_setWeights_multiSplitPane; //TC[],side
+
 /*
     public static void oldSetWeights(Component splitter, double[] weights)
     {
@@ -253,130 +495,5 @@ public class NbWindows
         getComponent().setSize(0,0);
     }
 */
-
-    private static Method meth_getCentral;
-    private static Method meth_userDroppedTopComponents; //mode,TC[]
-    private static Method meth_userDroppedTopComponents_side;//mode,TC[],side)
-    private static Method meth_userDroppedTopComponentsAroundEditor; //TC[],side
-    // private static Method meth_setWeights_multiSplitPane; //TC[],side
-
-    private static Method meth_getCellCount_MSP;
-    private static Method meth_cellAt_MSP;
-    private static Field field_userMovedSplit_MSP;
-
-    private static Method meth_getComponent_MSC;
-    private static Field field_initialSplitWeight_MSC;
-    private static Field field_requiredSize_MSC;
-
-    private static Method meth_getCentral() {
-        populateCoreWindowMethods();
-        return meth_getCentral;
-    }
-    private static Method meth_userDroppedTopComponents() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponents;
-    }
-    static Method meth_userDroppedTopComponents_side() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponents_side;
-    }
-    static Method meth_userDroppedTopComponentsAroundEditor() {
-        populateCoreWindowMethods();
-        return meth_userDroppedTopComponentsAroundEditor;
-    }
-    // static Method meth_setWeights_multiSplitPane() {
-    //     populateCoreWindowMethods();
-    //     return meth_setWeights_multiSplitPane;
-    // }
-
-    private static void populateCoreWindowMethods() {
-        if(meth_userDroppedTopComponents== null) {
-            Object wmi = WindowManager.getDefault();
-            Exception ex1;
-            try {
-                // could use WeakRef's for method's
-                Method[] meths = wmi.getClass().getDeclaredMethods();
-                for(Method m : meths) {
-                    if(m.getName().equals("getCentral")) {
-                        m.setAccessible(true);
-                        meth_getCentral = m;
-                        break;
-                    }
-                }
-
-                ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
-                Class<?> c_central = cl.loadClass(
-                        "org.netbeans.core.windows.Central");
-                Class<?> c_modeImpl = cl.loadClass(
-                        "org.netbeans.core.windows.ModeImpl");
-                Class<?> c_multiSplitPane = cl.loadClass(
-                        "org.netbeans.core.windows.view.ui.MultiSplitPane");
-                Class<?> c_multiSplitCell = cl.loadClass(
-                        "org.netbeans.core.windows.view.ui.MultiSplitCell");
-                TopComponent[] tcs = new TopComponent[0];
-                double[] ds = new double[0];
-                meth_userDroppedTopComponents
-                        = c_central.getMethod("userDroppedTopComponents",
-                                              c_modeImpl, tcs.getClass());
-                meth_userDroppedTopComponents.setAccessible(true);
-                meth_userDroppedTopComponents_side
-                        = c_central.getMethod("userDroppedTopComponents",
-                                              c_modeImpl, tcs.getClass(),
-                                              String.class);
-                meth_userDroppedTopComponents_side.setAccessible(true);
-                meth_userDroppedTopComponentsAroundEditor
-                        = c_central.getMethod(
-                                "userDroppedTopComponentsAroundEditor",
-                                tcs.getClass(), String.class, int.class);
-                meth_userDroppedTopComponentsAroundEditor.setAccessible(true);
-                // meth_setWeights_multiSplitPane = c_multiSplitPane.getMethod(
-                //         "setWeights", ds.getClass());
-
-                meths = c_multiSplitPane.getDeclaredMethods();
-                for(Method m : meths) {
-                    if(m.getName().equals("getCellCount")) {
-                        m.setAccessible(true);
-                        meth_getCellCount_MSP = m;
-                    }
-                    if(m.getName().equals("cellAt")) {
-                        m.setAccessible(true);
-                        meth_cellAt_MSP = m;
-                    }
-                }
-                Field[] fields = c_multiSplitPane.getDeclaredFields();
-                for(Field f : fields) {
-                    if(f.getName().equals("userMovedSplit")) {
-                        f.setAccessible(true);
-                        field_userMovedSplit_MSP = f;
-                    }
-                }
-
-                meths = c_multiSplitCell.getDeclaredMethods();
-                for(Method m : meths) {
-                    if(m.getName().equals("getComponent")) {
-                        m.setAccessible(true);
-                        meth_getComponent_MSC = m;
-                    }
-                }
-                fields = c_multiSplitCell.getDeclaredFields();
-                for(Field f : fields) {
-                    if(f.getName().equals("initialSplitWeight")) {
-                        f.setAccessible(true);
-                        field_initialSplitWeight_MSC = f;
-                    }
-                    if(f.getName().equals("requiredSize")) {
-                        f.setAccessible(true);
-                        field_requiredSize_MSC = f;
-                    }
-                }
-            } catch(NoSuchMethodException ex) {
-                ex1 = ex;
-            } catch(SecurityException ex) {
-                ex1 = ex;
-            } catch(ClassNotFoundException ex) {
-                ex1 = ex;
-            }
-        }
-    }
 
 }

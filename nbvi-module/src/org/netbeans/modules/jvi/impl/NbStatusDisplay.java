@@ -91,7 +91,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
     }
 
     private String modeString() {
-        return mode + (G.Recording  ? "recording " : "");
+        return mode + (G.Recording()  ? "recording " : "");
     }
 
     /**
@@ -134,16 +134,16 @@ public final class NbStatusDisplay implements ViStatusDisplay
             jviOnlyMode = true;
             if(mode.isEmpty()) {
                 tip = "Command Mode";
-            } else if(G.VIsual_active){
-                if (G.VIsual_select) {
+            } else if(G.VIsual_active()){
+                if (G.VIsual_select()) {
                     nbMode = "VIS";
                     tip = "Visual Select Mode";
                 } else {
                     // It may be "VISUAL, "VISUAL BLOCK" or "VISUAl LINE"
-                    if (G.VIsual_mode == (Util.ctrl('V'))) {
+                    if (G.VIsual_mode() == (Util.ctrl('V'))) {
                         nbMode = "VIB";
                         tip = "Visual Block Mode";
-                    } else if (G.VIsual_mode == 'V') {
+                    } else if (G.VIsual_mode() == 'V') {
                         nbMode = "VIL";
                         tip = "Visual Line Mode";
                     } else {

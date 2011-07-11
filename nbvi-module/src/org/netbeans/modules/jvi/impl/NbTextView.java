@@ -1381,7 +1381,7 @@ public class NbTextView extends SwingTextView
 
         @Override
         protected boolean isEnabled() {
-            return G.VIsual_active || G.drawSavedVisualBounds;
+            return G.VIsual_active() || G.drawSavedVisualBounds();
         }
     }
 

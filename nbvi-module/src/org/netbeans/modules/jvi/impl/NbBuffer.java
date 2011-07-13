@@ -390,7 +390,7 @@ public class NbBuffer extends SwingBuffer {
                                          ViTextView _tv)
     {
         final NbTextView tv = (NbTextView)_tv;
-        G.dbgUndo.printf("endAnyUndo: exception rollback\n");
+        G.dbgUndo().printf("endAnyUndo: exception rollback\n");
         doAutoUndo(tv);
         // Defer the message so it won't be lost
         ViManager.nInvokeLater(1, new Runnable() {

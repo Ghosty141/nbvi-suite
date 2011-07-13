@@ -794,7 +794,7 @@ public class NbTextView extends SwingTextView
     private void win_split(Direction dir, int n) {
         NbAppView av = (NbAppView)getAppView();
         if(av == null) {
-            G.dbgEditorActivation.println("win_split: NULL av");
+            G.dbgEditorActivation().println("win_split: NULL av");
             return;
         }
 
@@ -828,7 +828,7 @@ public class NbTextView extends SwingTextView
         NbAppView avToMove = (NbAppView)_avToMove;
         NbAppView av = (NbAppView)getAppView();
         if(av == null) {
-            G.dbgEditorActivation.println("win_split: NULL av");
+            G.dbgEditorActivation().println("win_split: NULL av");
             return;
         }
 
@@ -903,7 +903,7 @@ public class NbTextView extends SwingTextView
     {
         NbAppView av = (NbAppView)getAppView();
         if(av == null) {
-            G.dbgEditorActivation.println("win_move: NULL av");
+            G.dbgEditorActivation().println("win_move: NULL av");
             return;
         }
         TopComponent tc = av.getTopComponent();

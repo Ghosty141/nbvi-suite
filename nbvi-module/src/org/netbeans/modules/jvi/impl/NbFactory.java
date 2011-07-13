@@ -179,8 +179,8 @@ final public class NbFactory extends SwingFactory {
         // Cursor is currently installed by ed kit
         // install cursor if neeeded
         if(isEnabled() && ! (ep.getCaret() instanceof ViCaret)) {
-            if(G.dbgEditorActivation.getBoolean()) {
-                G.dbgEditorActivation.println("setupCaret: INSTALLING ViCaret");
+            if(G.dbgEditorActivation().getBoolean()) {
+                G.dbgEditorActivation().println("setupCaret: INSTALLING ViCaret");
             }
             installCaret(ep, new NbCaret());
             Scheduler.register(editor); //NEEDSWORK: register should not public
@@ -195,8 +195,8 @@ final public class NbFactory extends SwingFactory {
         if(oldCaret != null) {
             offset = oldCaret.getDot();
             visible = oldCaret.isVisible();
-            if(G.dbgEditorActivation.getBoolean()) {
-                G.dbgEditorActivation.printf("installCaret: was off %d, vis %b\n",
+            if(G.dbgEditorActivation().getBoolean()) {
+                G.dbgEditorActivation().printf("installCaret: was off %d, vis %b\n",
                         offset, visible);
             }
         }

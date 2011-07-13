@@ -96,21 +96,37 @@ public class Module extends ModuleInstall
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
     public static final String DBG_HL = "DebugNbHilight";
-    private static DebugOption dbgNb;
-    private static DebugOption dbgAct;
-    private static DebugOption dbgHL;
+    private static DebugOption dbgNbDontUseDirectly;
+    private static DebugOption dbgActDontUseDirectly;
+    private static DebugOption dbgHLDontUseDirectly;
     private static WeakReference<TopComponent> refOutput;
 
-    public static boolean dbgNb() {
-        return dbgNb != null && dbgNb.getBoolean();
+    public static DebugOption dbgNb() {
+        if(dbgNbDontUseDirectly == null) {
+            dbgNbDontUseDirectly = OptUtil.createDebugOption(DBG_MODULE);
+            OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
+                                    "Module and editor kit install/install");
+        }
+        return dbgNbDontUseDirectly;
     }
-    public static boolean dbgAct()
+    public static DebugOption dbgAct()
     {
-        return dbgAct != null && dbgAct.getBoolean();
+        if(dbgActDontUseDirectly == null) {
+            dbgActDontUseDirectly = OptUtil.createDebugOption(DBG_TC);
+            OptUtil.setupOptionDesc(DBG_TC, "Top Component",
+                                    "TopComponent activation/open");
+        }
+        return dbgActDontUseDirectly;
     }
-    public static boolean dbgHL()
+    public static DebugOption dbgHL()
     {
-        return dbgHL != null && dbgHL.getBoolean();
+        if(dbgHLDontUseDirectly == null) {
+            dbgHLDontUseDirectly = OptUtil.createDebugOption(DBG_HL);
+            OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
+                                    "Visual/Search highlighting");
+        }
+        return dbgHLDontUseDirectly;
+        //return dbgHL != null && dbgHL.getBoolean();
     }
 
     public static final String HACK_CC = "NB6.7 Code Completion";
@@ -229,15 +245,14 @@ public class Module extends ModuleInstall
     /** called when the module is loaded (at netbeans startup time) */
     @Override
     public void restored() {
-        if (dbgNb()) {
-            System.err.println(MOD + "***** restored *****");
+        if (dbgNb().getBoolean()) {
+            dbgNb().println(MOD + "***** restored *****");
         }
         // Look for an UndoRedo-patch.jar
         File patchDir = InstalledFileLocator.getDefault().locate(
                 "modules/patches/org-openide-awt", null, false);
         if(patchDir != null) {
-            System.err.println(
-                    "Found patch dir \"" + patchDir.getAbsolutePath() + "\"");
+            LOG.log(Level.INFO, "Found patch dir \"{0}\"", patchDir.getAbsolutePath());
             File[] f = patchDir.listFiles(new FilenameFilter() {
                    @Override
                    public boolean accept(File dir, String name)
@@ -306,7 +321,7 @@ public class Module extends ModuleInstall
             @Override
             public void preferenceChange(PreferenceChangeEvent evt) {
                 if(evt.getKey().equals(PREF_ENABLED)) {
-                    System.err.println("jVi PREF CHANGE TO: " + evt.getNewValue());
+                    LOG.log(Level.INFO, "jVi PREF CHANGE TO: {0}", evt.getNewValue());
                     boolean enabled = getModulePreferences()
                             .getBoolean(PREF_ENABLED, true);
                     EventQueue.invokeLater(enabled
@@ -418,8 +433,9 @@ public class Module extends ModuleInstall
             ViManager.exitInputMode();
             jViEnabled = false;
 
-            if(dbgNb())
-                AppViews.dump(System.err);
+            if(dbgNb().getBoolean())
+                dbgNb().println(AppViews.dump(null).toString());
+                //AppViews.dump(dbgNb());
 
             JViOptionWarning.clear();
 
@@ -429,17 +445,10 @@ public class Module extends ModuleInstall
     
     private static void addDebugOptions()
     {
-        dbgNb = OptUtil.createDebugOption(DBG_MODULE);
-        OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
-                                "Module and editor kit install/install");
-
-        dbgAct = OptUtil.createDebugOption(DBG_TC);
-        OptUtil.setupOptionDesc(DBG_TC, "Top Component",
-                                "TopComponent activation/open");
-
-        dbgHL = OptUtil.createDebugOption(DBG_HL);
-        OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
-                                "Visual/Search highlighting");
+        // insure the debug options are created
+        dbgNb();
+        dbgAct();
+        dbgHL();
     }
     
     private static void addDebugColonCommands() {
@@ -453,12 +462,12 @@ public class Module extends ModuleInstall
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     Set<TopComponent> s = TopComponent.getRegistry().getOpened();
-                    System.err.println("TopComponents:");
+                    ViManager.println("TopComponents:");
                     for (TopComponent tc : s) {
                         if(tc == null) continue;
-                        System.err.print("    tc = " + tc.getDisplayName() );
-                        System.err.print(", " + tc.isVisible());
-                        System.err.println(", " + tc.getClass().getName());
+                        ViManager.println("    tc = " + tc.getDisplayName()
+                                            + ", " + tc.isVisible()
+                                            + ", " + tc.getClass().getName());
                     }
                 }
             }, EnumSet.of(CcFlag.DBG)
@@ -478,11 +487,11 @@ public class Module extends ModuleInstall
                 public void actionPerformed(ActionEvent e) {
                     for(FsAct fsAct : FsAct.values()) {
                         String path = fsAct.path();
-                        System.err.println("checkFsAct: "+fsAct.name()+" "+ path);
+                        ViManager.println("checkFsAct: "+fsAct.name()+" "+ path);
                         if(path == null)
                             continue;
                         if(fetchFileSystemAction(fsAct) == null) {
-                            System.err.println("\tNot found by getTheObject");
+                            ViManager.println("\tNot found by getTheObject");
                         }
                     }
 
@@ -551,8 +560,8 @@ public class Module extends ModuleInstall
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
             assert(EventQueue.isDispatchThread());
-            if(false && dbgAct.getBoolean()) {
-                dbgAct.println("NbVi REG evt = " + evt.getPropertyName() + ": "
+            if(false && dbgAct().getBoolean()) {
+                dbgAct().println("NbVi REG evt = " + evt.getPropertyName() + ": "
                         + evt.getOldValue()
                         + " --> " + evt.getNewValue());
             }
@@ -666,7 +675,7 @@ public class Module extends ModuleInstall
     
     private static void tcDumpInfo(Object o, String tag)
     {
-        if(!dbgAct())
+        if(!dbgAct().getBoolean())
             return;
         if(!(o instanceof TopComponent))
             return;
@@ -674,15 +683,15 @@ public class Module extends ModuleInstall
         List<JEditorPane> panes = new ArrayList<JEditorPane>(2);
         getDescendentJep(tc, panes, false); // getListDeprecated non jvi editors
         Mode mode = WindowManager.getDefault().findMode(tc);
-        if(dbgAct.getBoolean()) {
-            System.err.format("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
+        if(dbgAct().getBoolean()) {
+            dbgAct().printf("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
                     tag,
                     tc.getDisplayName(), cid(tc),
                     (mode == null ? "null" : mode.getName()),
                     panes.size());
             for (JEditorPane ep : panes) {
                 NbAppView av = NbAppView.fetchAvFromTC(tc, ep);
-                System.err.printf("\tep:%d %s tc: %s isEditable %b %s\n",
+                dbgAct().printf("\tep:%d %s tc: %s isEditable %b %s\n",
                         av != null ? av.getWNum() : 0,
                         cid(ep), ancestorStringTC(ep), ep.isEditable(),
                         !(ep.getCaret() instanceof ViCaret) ? "NOT-JVI" : "");

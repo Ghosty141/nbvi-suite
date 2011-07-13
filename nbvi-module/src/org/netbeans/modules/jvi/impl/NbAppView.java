@@ -292,8 +292,8 @@ public class NbAppView implements ViAppView
         if(tc != null && av != null)
             s.add(av);
 
-        if(Module.dbgAct())
-            System.err.printf(
+        if(Module.dbgAct().getBoolean())
+            Module.dbgAct().printf(
                     "updateAppView: (%s) %s tc '%s' ep '%s' doc '%s' nad %b\n",
                     tag,
                     ViManager.getFS().getDisplayFileName(av),

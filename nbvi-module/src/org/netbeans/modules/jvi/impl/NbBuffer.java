@@ -504,7 +504,7 @@ public class NbBuffer extends SwingBuffer {
             @Override
             public void undoableEditHappened(UndoableEditEvent e) {
                 UndoableEdit ue = e.getEdit();
-                System.err.println(ue.getClass().getSimpleName()
+                ViManager.println(ue.getClass().getSimpleName()
                                    + " sig: " + ue.isSignificant());
                 //System.err.println("UndoableEditEvent = " + e );
             }
@@ -514,12 +514,12 @@ public class NbBuffer extends SwingBuffer {
     
     private void dumpDocEvent(String tag, DocumentEvent e_) {
         if("change".equals(tag)) {
-            System.err.println(tag + ": " + e_);
+            ViManager.println(tag + ": " + e_);
             return;
         }
         if(e_ instanceof BaseDocumentEvent) {
             BaseDocumentEvent e = (BaseDocumentEvent) e_;
-            System.err.println(tag + ": " + e.getType().toString() + ": "
+            ViManager.println(tag + ": " + e.getType().toString() + ": "
                                + e.getOffset() + ":" + e.getLength() + " "
                                + "'" + TextUtil.debugString(e.getText()) + "'");
         }

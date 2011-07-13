@@ -411,8 +411,8 @@ public class NbColonCommands {
                         + " " + mkThingDesc()[mkThing] + "\"");
                 fError = true;
             }
-            if(dbgNb()) {
-                System.err.println( "\"make " + mkOpDesc()[mkOp]
+            if(dbgNb().getBoolean()) {
+                dbgNb().println( "\"make " + mkOpDesc()[mkOp]
                         + " " + mkThingDesc()[mkThing] + "\"");
             }
             

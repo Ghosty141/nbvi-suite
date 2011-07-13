@@ -196,7 +196,7 @@ final public class NbFactory extends SwingFactory {
             offset = oldCaret.getDot();
             visible = oldCaret.isVisible();
             if(G.dbgEditorActivation.getBoolean()) {
-                System.err.format("installCaret: was off %d, vis %b\n",
+                G.dbgEditorActivation.printf("installCaret: was off %d, vis %b\n",
                         offset, visible);
             }
         }

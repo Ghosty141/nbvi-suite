@@ -75,6 +75,7 @@ import java.util.Arrays;
 import org.netbeans.modules.jvi.reflect.NbWindows;
 
 import static com.raelity.jvi.core.lib.Constants.*;
+import com.raelity.jvi.options.DebugOption;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
@@ -1176,6 +1177,9 @@ public class NbTextView extends SwingTextView
             searchResultsHighlighter.reset();
     }
 
+    private static DebugOption dbgHL() {
+        return Module.dbgHL();
+    }
     private static boolean dbgHL(BlocksHighlighter h) {
         // filter out stuff if wanted
         //if(h.name == VISUAL_MODE_LAYER)
@@ -1183,7 +1187,7 @@ public class NbTextView extends SwingTextView
         //if(h.name == SEARCH_RESULTS_LAYER)
         //    return false;
 
-        return Module.dbgHL();
+        return true;
     }
 
     private void hookupHighlighter(String name, BlocksHighlighter h) {
@@ -1209,15 +1213,15 @@ public class NbTextView extends SwingTextView
             }
         }
         if(discarded != null) {
-            if(dbgHL(discarded))
-                System.err.println(discarded.displayName()
+            if(dbgHL(discarded) && dbgHL().getBoolean())
+                dbgHL().println(discarded.displayName()
                         + ": hookup discard");
             discarded.discard();
         }
         if(installed != null) {
             installed.tvTag = String.valueOf(w_num);
-            if(dbgHL(installed))
-                System.err.println(installed.displayName()
+            if(dbgHL(installed) && dbgHL().getBoolean())
+                dbgHL().println(installed.displayName()
                         + ": hookup");
             ////////////////////////////////////////////////////////////////////
             if(installed == visualSelectHighlighter)
@@ -1289,8 +1293,8 @@ public class NbTextView extends SwingTextView
 
             FileObject fo = NbEditorUtilities.getFileObject(
                     context.getDocument());
-            if(Module.dbgHL())
-                System.err.println("Highlight Factory: "
+            if(dbgHL().getBoolean())
+                dbgHL().println("Highlight Factory: "
                         + (fo != null ? fo.getNameExt() : ""));
 
             // NEEDSWORK: check that EP has a top component?
@@ -1339,8 +1343,8 @@ public class NbTextView extends SwingTextView
                     = (ColorOption)Options.getOption(Options.selectFgColor);
 
             MyHl.putVisual(ep, this);
-            if(dbgHL(this))
-                System.err.println(displayName() + " putVisual");
+            if(dbgHL(this) && dbgHL().getBoolean())
+                dbgHL().println(displayName() + " putVisual");
 
             NbTextView tv = getTv();
             if(tv != null) {
@@ -1410,8 +1414,8 @@ public class NbTextView extends SwingTextView
                     = (ColorOption)Options.getOption(Options.searchFgColor);
 
             MyHl.putSearch(ep, this);
-            if(dbgHL(this))
-                System.err.println(displayName() + " putSearch");
+            if(dbgHL(this) && dbgHL().getBoolean())
+                dbgHL().println(displayName() + " putSearch");
 
             NbTextView tv = getTv();
             if(tv != null) {
@@ -1514,23 +1518,23 @@ public class NbTextView extends SwingTextView
         protected abstract boolean isEnabled();
 
         void reset() {
-            if(dbgHL(this))
-                System.err.println(displayName() + " BlocksHighlighter reset:");
+            if(dbgHL(this) && dbgHL().getBoolean())
+                dbgHL().println(displayName() + " BlocksHighlighter reset:");
             fillInTheBag();
         }
 
         @Override
         public void highlightChanged(HighlightsChangeEvent event) {
-            if(dbgHL(this))
-                System.err.println(displayName() + " highlightChanged: "
+            if(dbgHL(this) && dbgHL().getBoolean())
+                dbgHL().println(displayName() + " highlightChanged: "
                     + event.getStartOffset() + "," + event.getEndOffset());
             fireHighlightsChange(event.getStartOffset(), event.getEndOffset());
         }
 
         @Override
         public HighlightsSequence getHighlights(int startOffset, int endOffset) {
-            if(dbgHL(this)) {
-                System.err.println(displayName() + " getHighlights: "
+            if(dbgHL(this) && dbgHL().getBoolean()) {
+                dbgHL().println(displayName() + " getHighlights: "
                                    + startOffset + "," + endOffset);
                 dumpHLSeq(displayName(),
                           bag.getHighlights(startOffset, endOffset));
@@ -1605,7 +1609,7 @@ public class NbTextView extends SwingTextView
                     if (isEnabled() && tv != null) {
 
                         int [] blocks = getBlocks(tv, startOffset, endOffset);
-                        if(dbgHL(BlocksHighlighter.this))
+                        if(dbgHL(BlocksHighlighter.this) && dbgHL().getBoolean())
                             Buffer.dumpBlocks(displayName(), blocks);
                         
                         AttributeSet as = getAttribs();
@@ -1634,15 +1638,16 @@ public class NbTextView extends SwingTextView
     }
 
     static void dumpHLSeq(String tag, HighlightsSequence seq) {
-        System.err.print(tag + " seq:");
+        StringBuilder sb = new StringBuilder();
+        sb.append(tag).append(" seq:");
         if(HighlightsSequence.EMPTY.equals(seq)) {
-            System.err.print(" EMPTY");
+            sb.append(" EMPTY");
         }
         while(seq.moveNext()) {
-            System.err.print(String.format(" {%d,%d}",
-                    seq.getStartOffset(), seq.getEndOffset()));
+            sb.append(" {").append(seq.getStartOffset())
+                    .append(',').append(seq.getEndOffset()).append('}');
         }
-        System.err.println("");
+        dbgHL().println(sb.toString());
     }
 
 }

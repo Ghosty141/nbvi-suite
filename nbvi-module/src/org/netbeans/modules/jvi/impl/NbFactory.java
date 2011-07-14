@@ -314,7 +314,7 @@ final public class NbFactory extends SwingFactory {
            Tag tag = tagStack.get(i);
            String fromData = tag.fromFile;
            // If the from tag is the current file, show the document's line
-            ViTextView tv = G.curwin;
+            ViTextView tv = G.curwin();
             if(((JEditorPane)tv.getEditor())
                     .getDocument().equals(tag.fromDoc)) {
                 String s = tv.getBuffer().getLineSegment(
@@ -378,7 +378,7 @@ final public class NbFactory extends SwingFactory {
             // Modify the target tags from field
             Tag tag = tagStack.get(iActiveTag -1);
             // modify the tag entry to reflect where we're coming from
-            fillTagFrom(tag, G.curwin);
+            fillTagFrom(tag, G.curwin());
             tag.toLine.show(Line.ShowOpenType.OPEN,
                             Line.ShowVisibilityType.FOCUS,
                             calcColumnOffset(tag.toDoc,

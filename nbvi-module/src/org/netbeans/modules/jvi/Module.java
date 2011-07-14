@@ -96,37 +96,22 @@ public class Module extends ModuleInstall
     public static final String DBG_MODULE = "DebugNbModule";
     public static final String DBG_TC = "DebugNbTopComponent";
     public static final String DBG_HL = "DebugNbHilight";
-    private static DebugOption dbgNbDontUseDirectly;
-    private static DebugOption dbgActDontUseDirectly;
-    private static DebugOption dbgHLDontUseDirectly;
     private static WeakReference<TopComponent> refOutput;
+    // Could set init value from a system property, but they init very early
+    private static DebugOption dbgNb = OptUtil.createBootDebugOption(false);
+    private static DebugOption dbgAct = OptUtil.createBootDebugOption(false);
+    private static DebugOption dbgHL = OptUtil.createBootDebugOption(false);
 
     public static DebugOption dbgNb() {
-        if(dbgNbDontUseDirectly == null) {
-            dbgNbDontUseDirectly = OptUtil.createDebugOption(DBG_MODULE);
-            OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
-                                    "Module and editor kit install/install");
-        }
-        return dbgNbDontUseDirectly;
+        return dbgNb;
     }
     public static DebugOption dbgAct()
     {
-        if(dbgActDontUseDirectly == null) {
-            dbgActDontUseDirectly = OptUtil.createDebugOption(DBG_TC);
-            OptUtil.setupOptionDesc(DBG_TC, "Top Component",
-                                    "TopComponent activation/open");
-        }
-        return dbgActDontUseDirectly;
+        return dbgAct;
     }
     public static DebugOption dbgHL()
     {
-        if(dbgHLDontUseDirectly == null) {
-            dbgHLDontUseDirectly = OptUtil.createDebugOption(DBG_HL);
-            OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
-                                    "Visual/Search highlighting");
-        }
-        return dbgHLDontUseDirectly;
-        //return dbgHL != null && dbgHL.getBoolean();
+        return dbgHL;
     }
 
     public static final String HACK_CC = "NB6.7 Code Completion";
@@ -445,10 +430,15 @@ public class Module extends ModuleInstall
     
     private static void addDebugOptions()
     {
-        // insure the debug options are created
-        dbgNb();
-        dbgAct();
-        dbgHL();
+        dbgNb = OptUtil.createDebugOption(DBG_MODULE);
+        OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
+                                "Module and editor kit install/install");
+        dbgAct = OptUtil.createDebugOption(DBG_TC);
+        OptUtil.setupOptionDesc(DBG_TC, "Top Component",
+                                "TopComponent activation/open");
+        dbgHL = OptUtil.createDebugOption(DBG_HL);
+        OptUtil.setupOptionDesc(DBG_HL, "Hilighting",
+                                "Visual/Search highlighting");
     }
     
     private static void addDebugColonCommands() {

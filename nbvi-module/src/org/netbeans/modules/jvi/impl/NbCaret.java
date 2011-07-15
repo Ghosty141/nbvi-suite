@@ -109,7 +109,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     super.paint(g);
     if(!paintCustomCaretCalled) {
       // guess the caret was not visible
-      viDelegate.paint(g, false, getTextComponent());
+      viDelegate.paint(g, false, dotChar, getTextComponent());
     }
   }
 
@@ -121,7 +121,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
    */
     @Override
   protected void paintCustomCaret(Graphics g) {
-    viDelegate.paint(g, isVisible(), getTextComponent());
+    viDelegate.paint(g, isVisible(), dotChar, getTextComponent());
     paintCustomCaretCalled = true;
   }
 

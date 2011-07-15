@@ -44,6 +44,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     ViManager.setPlatformFindMatch(true);
     addChangeListener(new ChangeListener() {
 
+        @Override
         public void stateChanged(ChangeEvent e)
         {
             Scheduler.cursorChange(NbCaret.this);
@@ -51,6 +52,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
     });
   }
 
+  @Override
   public void setCursor(ViCaretStyle cursor) {
     viDelegate.setCursor(cursor);
     
@@ -87,8 +89,28 @@ public class NbCaret extends ExtCaret implements ViCaret {
     }
   }
 
+  @Override
   public ViCaretStyle getCursor() {
     return viDelegate.getCursor();
+  }
+
+  private boolean paintCustomCaretCalled;
+  // NetBeans only calls paintCustomCaret
+  // if isVisible() is true and if its magic variable
+  // blinkVisible is true. Whereas the swing caret sets isVisible
+  // to false and calls paint. The default swing caret does nothing
+  // if isVisible is false.
+  // But jVi want's to paint different carets for not focus'd
+  // and readonly. So if NB doesn't call custom paint, call it anyway.
+  @Override
+  public void paint(Graphics g)
+  {
+    paintCustomCaretCalled = false;
+    super.paint(g);
+    if(!paintCustomCaretCalled) {
+      // guess the caret was not visible
+      viDelegate.paint(g, false, getTextComponent());
+    }
   }
 
   /**
@@ -99,9 +121,11 @@ public class NbCaret extends ExtCaret implements ViCaret {
    */
     @Override
   protected void paintCustomCaret(Graphics g) {
-    viDelegate.paint(g, getTextComponent());
+    viDelegate.paint(g, isVisible(), getTextComponent());
+    paintCustomCaretCalled = true;
   }
 
+    @Override
   public JTextComponent getTextComponent() {
     return component; // from super
   }

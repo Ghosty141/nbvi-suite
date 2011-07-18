@@ -2,7 +2,6 @@ package org.netbeans.modules.jvi.impl;
 
 import java.awt.Component;
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.prefs.Preferences;
 
 import javax.swing.Action;
 import javax.swing.JEditorPane;
@@ -29,9 +27,7 @@ import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
-import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import org.netbeans.modules.jvi.FsAct;
-import org.netbeans.modules.jvi.JViOptionWarning;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeListener;
@@ -67,7 +63,6 @@ import com.raelity.jvi.core.Util;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.ColorOption;
-import com.raelity.jvi.options.SetColonCommand;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
 import java.awt.Dimension;
@@ -76,6 +71,7 @@ import org.netbeans.modules.jvi.reflect.NbWindows;
 
 import static com.raelity.jvi.core.lib.Constants.*;
 import com.raelity.jvi.options.DebugOption;
+import java.util.HashMap;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
@@ -127,19 +123,12 @@ public class NbTextView extends SwingTextView
     public void activateOptions(ViTextView tv)
     {
         super.activateOptions(tv);
-        Preferences codePrefs
-                = CodeStylePreferences.get((Document)null).getPreferences();
 
-        JViOptionWarning.setInternalAction(true);
-        try {
-            codePrefs.putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
-            codePrefs.putBoolean(
-                    SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
-                    w_p_list);
-            setWrapPref();
-        } finally {
-            JViOptionWarning.setInternalAction(false);
-        }
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
+        map.put(SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
+        setWrapPref(map);
+        NbJviPrefs.putPrefs(map, this, null);
     }
     
     //
@@ -152,63 +141,23 @@ public class NbTextView extends SwingTextView
 
         assert this == tv;
 
-        JViOptionWarning.setInternalAction(true);
-        try {
-            if("w_p_nu".equals(name)) {
-                // global affect, just do it
-                CodeStylePreferences.get((Document)null).getPreferences()
-                        .putBoolean(SimpleValueNames.LINE_NUMBER_VISIBLE,
-                                    w_p_nu);
-            } else if("w_p_list".equals(name)) {
-                // global affect, just do it
-                CodeStylePreferences.get((Document)null).getPreferences()
-                        .putBoolean(
-                            SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE,
-                            w_p_list);
-            } else if("w_p_wrap".equals(name)) {
-                // vim wants per textView, NB supports per buf
-                SetColonCommand.syncTextViewInstances(name, this);
-                setWrapPref();
-            } else if("w_p_lbr".equals(name)) {
-                // vim wants per textView, NB supports per buf
-                SetColonCommand.syncTextViewInstances(name, this);
-                setWrapPref();
-            }
-        } finally {
-            JViOptionWarning.setInternalAction(false);
+        Map<String, Object> map = new HashMap<String, Object>();
+        if("w_p_nu".equals(name)) {
+            map.put(SimpleValueNames.LINE_NUMBER_VISIBLE, w_p_nu);
+        } else if("w_p_list".equals(name)) {
+            map.put(SimpleValueNames.NON_PRINTABLE_CHARACTERS_VISIBLE, w_p_list);
+        } else if("w_p_wrap".equals(name)) {
+            setWrapPref(map);
+        } else if("w_p_lbr".equals(name)) {
+            setWrapPref(map);
         }
+        NbJviPrefs.putPrefs(map, this, null);
     }
 
-    private void setWrapPref()
+    private void setWrapPref(Map<String, Object> map)
     {
-        Preferences prefs = CodeStylePreferences.get(
-                getEditor().getDocument()).getPreferences();
         String s = !w_p_wrap ? "none" : w_p_lbr ? "words" : "chars";
-        prefs.put(SimpleValueNames.TEXT_LINE_WRAP, s);
-        EventQueue.invokeLater(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                // NOTE: not spinning through the editor registry.
-                //       This gives per document control (unlike stock NB editor)
-                // Needs to check for null since it might be closed
-                // by the time we get here.
-                if(getEditor() == null
-                        || getEditor().getDocument() == null)
-                    return;
-                getEditor().getDocument()
-                    .putProperty(SimpleValueNames.TEXT_LINE_WRAP, "");
-                // Things are messy in jVi after c
-                // ViManager.nInvokeLater(3, new Runnable() {
-                //     @Override
-                //     public void run()
-                //     {
-                //         changeVp(false);
-                //     }
-                // });
-            }
-        });
+        map.put(SimpleValueNames.TEXT_LINE_WRAP, s);
     }
 
     //

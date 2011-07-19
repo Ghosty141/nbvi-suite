@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is Ernie Rael.
  * Portions created by Ernie Rael are
- * Copyright (C) 2000-2010 Ernie Rael.  All Rights Reserved.
+ * Copyright (C) 2011 Ernie Rael.  All Rights Reserved.
  *
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
@@ -72,6 +72,7 @@ public class CcCompletion
         if (!ViManager.getHackFlag(Module.HACK_CC))
             return;
         NbUtil.EditorRegistryRegister(jtc);
+        jtc.putClientProperty("ForceHeavyweightCompletionPopup", Boolean.TRUE);
         // Add Ctrl-space binding
         Keymap km = JTextComponent.getKeymap(CommandLine.COMMAND_LINE_KEYMAP);
         if (km != null) {

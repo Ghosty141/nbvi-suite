@@ -984,7 +984,7 @@ public class NbTextView extends SwingTextView
     public void win_close(boolean freeBuf) {
         NbAppView avClose = (NbAppView)getAppView();
 
-        if(avClose == null)
+        if(avClose == null || avClose.getTopComponent() == null)
             return;
         
         // activate the previously active TC
@@ -995,7 +995,7 @@ public class NbTextView extends SwingTextView
         if(prevTC != null)
             tcActivate(prevTC);
         
-        // and close the one requested
+        // and close the requested TC
         if(!avClose.getTopComponent().close())
             Msg.emsg(getBuffer().getDisplayFileName() + " not closed");
     }

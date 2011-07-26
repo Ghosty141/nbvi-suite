@@ -223,7 +223,7 @@ public class EditAlternateTask implements CompletionTask
             this.fFilterDigit = fFilterDigit;
             this.flags = flags;
             this.icon = icon;
-            if(icon.getIconWidth() > ciMaxIconWidth)
+            if(icon != null && icon.getIconWidth() > ciMaxIconWidth)
                 ciMaxIconWidth = icon.getIconWidth();
 
             // Font color spec'd in html overrides defaultColor.

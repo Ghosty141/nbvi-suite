@@ -63,7 +63,6 @@ import org.netbeans.modules.jvi.util.NbLineMapFolding;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
-import org.openide.windows.TopComponent;
 
 final public class NbFactory extends SwingFactory {
 
@@ -142,19 +141,7 @@ final public class NbFactory extends SwingFactory {
     @Override
     protected ViTextView newTextView(JTextComponent editor) {
         JEditorPane ed = (JEditorPane)editor;
-        // NEEDSWORK: move this to base class or ViManager.activateFile
-        NbAppView av = (NbAppView)getAppView(ed);
-        if(av == null) {
-            // Wow, this must be a real nomad
-            TopComponent tc = Module.getKnownTopComponent(ed);
-
-            //note that doing a swap on the diff window
-            // can create this situation where tc is non null.
-            //assert tc == null; // otherwise should have an app view by now
-
-            // Hmm, create a nomad.
-            av = NbAppView.updateAppViewForTC("NEW_TEXT_VIEW", tc, ed, true);
-        }
+        NbAppView.avLastChance(ed);
 
         NbTextView tv = new NbTextView(ed);
 

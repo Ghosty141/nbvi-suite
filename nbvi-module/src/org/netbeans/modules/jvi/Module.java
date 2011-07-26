@@ -569,12 +569,15 @@ public class Module extends ModuleInstall
                 tc = (TopComponent) evt.getNewValue();
                 if(tc != null) {
                     if(!tcChecked.containsKey(tc)) {
-                        pokeTC(tc, true); // force instantiation of editor panes
+                        // After first activation, look through the
+                        // GUI hierarchy again for jVi editors. Sigh.
+                        getOpenedPanes(tc); // force instantiation of editor panes
+                        boolean isEditor = isEditor(tc);
 
-                        List<JEditorPane> l = getDescendentJep(tc);
+                        List<JEditorPane> l = getDescendentJviJep(tc);
                         for (JEditorPane ep : l) {
                             NbAppView av = NbAppView.updateAppViewForTC(
-                                    "P_ACTV", tc, ep);
+                                    "P_ACTV", tc, ep, !isEditor);
                         }
                         tcChecked.put(tc, null);
                     }
@@ -585,7 +588,7 @@ public class Module extends ModuleInstall
                     .equals(TopComponent.Registry.PROP_TC_OPENED)) {
                 TopComponent tc = (TopComponent) evt.getNewValue();
 
-                boolean isEditor = pokeTC(tc, false);
+                boolean isEditor = isEditor(tc);
                 tcDumpInfo(tc, "open");
 
                 if(tc != null && "Output".equals(tc.getName())) {
@@ -593,17 +596,17 @@ public class Module extends ModuleInstall
                 }
 
                 boolean createdAppView = false;
-                List<JEditorPane> l = getDescendentJep(tc);
+
+                // When opened, traverse the GUI hierarchy looking for
+                // JEP that have jVi installed.
+                List<JEditorPane> l = getDescendentJviJep(tc);
                 for (JEditorPane ep : l) {
-                    if(!(ep.getCaret() instanceof ViCaret)) {
-                        // skip editors that don't have the right caret
-                        continue;
-                    }
-                    // if it is not an editor then treat it like a nomad
+                    // if TC is not an editor then start out like a nomad
                     NbAppView av = NbAppView.updateAppViewForTC(
                             "P_OPEN", tc, ep, !isEditor);
                     createdAppView = true;
                 }
+
                 if(isEditor && !createdAppView) {
                     NbAppView av = NbAppView.updateAppViewForTC(
                             "P_OPEN_LAZY", tc, null);
@@ -616,15 +619,23 @@ public class Module extends ModuleInstall
                     KeyBindings.removeKnownEditor(av.getEditor());
                     AppViews.close(av);
                 }
+                NbAppView.closeTC(tc);
             }
         }
     }
 
-    static List<JEditorPane> getDescendentJep(Component parent) {
+    public static List<JEditorPane> getDescendentJviJep(Component parent) {
         List<JEditorPane> l = new ArrayList<JEditorPane>(2);
         getDescendentJep(parent, l, true);
         return l;
     }
+
+    static List<JEditorPane> getDescendentJep(Component parent) {
+        List<JEditorPane> l = new ArrayList<JEditorPane>(2);
+        getDescendentJep(parent, l, false);
+        return l;
+    }
+
     static void getDescendentJep(
             Component parent, List<JEditorPane> l, boolean skipNonJvi)
     {
@@ -670,8 +681,7 @@ public class Module extends ModuleInstall
         if(!(o instanceof TopComponent))
             return;
         TopComponent tc = (TopComponent) o;
-        List<JEditorPane> panes = new ArrayList<JEditorPane>(2);
-        getDescendentJep(tc, panes, false); // getListDeprecated non jvi editors
+        List<JEditorPane> panes = getDescendentJep(tc); // with non jvi editors
         Mode mode = WindowManager.getDefault().findMode(tc);
         if(dbgAct().getBoolean()) {
             dbgAct().printf("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
@@ -689,27 +699,43 @@ public class Module extends ModuleInstall
         }
     }
 
+    /** note that this isn't GUI containment */
+    public static boolean hasEditor(TopComponent tc, JEditorPane jep)
+    {
+        for(JEditorPane jep01 : getOpenedPanes(tc)) {
+            if(jep == jep01)
+                return true;
+        }
+        return false;
+    }
+
     /**
      *
      * @param tc top component to examine
-     * @param force when true, instantiate the editor panes
      * @return true if the tc is an editor
      */
-    private static boolean pokeTC(TopComponent tc, boolean force)
+    public static boolean isEditor(TopComponent tc)
+    {
+        return getEC(tc) != null; // this top component has an editor cookie
+    }
+
+    private static EditorCookie getEC(TopComponent tc)
     {
         if(tc == null)
-            return false;
+            return null;
         Lookup lookup = tc.getLookup();
         if(lookup == null)
-            return false;
-        EditorCookie ec = lookup.lookup(EditorCookie.class);
-        if(ec == null)
-            return false; // no editor cookie
+            return null;
+        return lookup.lookup(EditorCookie.class);
+    }
 
-        JEditorPane[] panes;
-        if(force)
-            panes = ec.getOpenedPanes(); // force the panes to be instantiated
-        return true; // this top component has an editor cookie
+    private static JEditorPane[] getOpenedPanes(TopComponent tc)
+    {
+        EditorCookie ec = getEC(tc);
+        if(ec == null)
+            return new JEditorPane[0]; // no editor cookie
+
+        return ec.getOpenedPanes();
     }
 
     /**

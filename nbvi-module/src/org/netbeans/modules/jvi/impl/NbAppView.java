@@ -28,6 +28,8 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import java.util.Collections;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JEditorPane;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
@@ -47,16 +49,23 @@ import org.openide.windows.TopComponent;
  *
  * It is assumed that an editor is not moved from one topcomponent to another.
  *
+ * NEEDSWORK: isNomad() currently will return true if the editor's Doc isn't
+ *            a file object. But that restricts certain navigations. So
+ *            could make it not nomad if TC is an editor.
+ * NEEDSWORK: when "INSTALLING ViCaret" could check to add av's
+ *
  * In NB editors can be lazily added to top components.
  *
  * @author Ernie Rael <err at raelity.com>
  */
 public class NbAppView implements ViAppView
 {
+    private static final Logger LOG = Logger.getLogger(NbAppView.class.getName());
     private TopComponent tc;
     private JEditorPane ep;
     private boolean isNomad;
     private int wnum;
+    private boolean frozen;
 
     private static int genWNum; // for the generation of the unique nums
     private static int genNomadNum; // give nomads a unique num
@@ -76,9 +85,30 @@ public class NbAppView implements ViAppView
     }
 
     private void setEditor(JEditorPane ep) {
-        assert this.ep == null;
+        if(this.ep != ep && frozen)
+            LOG.log(Level.SEVERE, "frozen and changing ep",
+                    new IllegalStateException());
         if(ep != null)
             this.ep = ep;
+    }
+
+    private void setIsNomad(boolean isNomad)
+    {
+        if(this.isNomad != isNomad) {
+            if(frozen)
+                LOG.log(Level.SEVERE, "frozen and changing isNomad",
+                        new IllegalStateException());
+            wnum = isNomad ? --genNomadNum : ++genWNum;
+        }
+        this.isNomad = isNomad;
+    }
+
+    private void freeze()
+    {
+        if(frozen)
+            LOG.log(Level.SEVERE, "already frozen",
+                    new IllegalStateException());
+        frozen = true;
     }
 
     @Override
@@ -104,7 +134,7 @@ public class NbAppView implements ViAppView
             return ep.isShowing();
         if(tc != null)
             return tc.isShowing();
-        assert false;
+        LOG.severe("av with no tc or ep");
         return false;
     }
 
@@ -123,60 +153,10 @@ public class NbAppView implements ViAppView
                 ep != null ? ep.hasFocus() : "null");
     }
 
-    // public void sort(List<ViAppView> avs)
-    // {
-    //     if(true) {
-    //         List<ViAppView> avs01 = ViManager.getFactory()
-    //                 .getWindowTreeBuilder(avs).processAppViews();
-    //         avs.clear();
-    //         avs.addAll(avs01);
-    //     } else {
-    //         if(offsetTcToEp == 0) {
-    //             // There is a margin between a top component and the editor.
-    //             // Determine that offset so that when an AppView without and
-    //             // editor is encountered, the offset can be added to the tc.
-    //             for (ViAppView _av : avs) {
-    //                 NbAppView av = (NbAppView)_av;
-    //                 if(av.getEditor() != null && av.getTopComponent() != null)
-    //                     offsetTcToEp = av.getEditor().getLocationOnScreen().x
-    //                             - av.getTopComponent().getLocationOnScreen().x;
-    //             }
-    //         }
-    //         Collections.sort(avs);
-    //     }
-    // }
-
-    // public int compareTo(ViAppView o)
-    // {
-    //     Point w1 = getLocation(this);
-    //     Point w2 = getLocation(o);
-
-    //     // if the x coords are with 25 then consider them
-    //     // to be aligned vertically. This is because the margin
-    //     // can be different for each editor
-    //     int rv;
-    //     if(Math.abs(w1.x - w2.x) > 25)
-    //         rv = w1.x - w2.x;
-    //     else
-    //         rv = w1.y - w2.y;
-    //     System.err.format("Comp rv %d\n    %s%s\n    %s%s\n",
-    //             rv, this, w1, o, w2);
-    //     return rv;
-    // }
-
-    // private static int offsetTcToEp;
-
-    // private static Point getLocation(ViAppView av)
-    // {
-    //     Point p;
-    //     if(av.getEditor() != null)
-    //         p = av.getEditor().getLocationOnScreen();
-    //     else {
-    //         p = ((NbAppView)av).getTopComponent().getLocationOnScreen();
-    //         p.x += offsetTcToEp;
-    //     }
-    //     return p;
-    // }
+    public static void closeTC(TopComponent tc)
+    {
+        tc.putClientProperty(SwingFactory.PROP_AV, null);
+    }
 
     /**
      * This may be called when the app view already exists for the tc,ep pair.
@@ -201,6 +181,12 @@ public class NbAppView implements ViAppView
             tag += "--" + t;
     }
 
+    public static NbAppView updateAppViewForTC(
+            String info, TopComponent tc, JEditorPane ep, boolean isNomad)
+    {
+        return updateAppViewForTC(info, tc, ep, isNomad, false);
+    }
+
     /**
      * This version allows the appview to be forced as a nomad.
      * @param tc
@@ -208,8 +194,9 @@ public class NbAppView implements ViAppView
      * @param isNomad only used if appview is created
      * @return
      */
-    public static NbAppView updateAppViewForTC(
-            String info, TopComponent tc, JEditorPane ep, boolean isNomad)
+    private static NbAppView updateAppViewForTC(
+            String info, TopComponent tc, JEditorPane ep,
+            boolean isNomad, boolean logState)
     {
         assert EventQueue.isDispatchThread();
 
@@ -235,15 +222,18 @@ public class NbAppView implements ViAppView
             if(ep == null) {
                 // if there's not an editor, then this tc has just been opened
                 // and nothing has been assigned to it.
-                assert s.isEmpty();
+                if(!s.isEmpty())
+                    LOG.severe("no editor and !s.isEmpty()");
                 for (NbAppView _av : s) {
                     if(_av.getEditor() == null) {
                         av = _av;
                         addTag("WARN already waiting");
+                        LOG.warning("WARN already waiting");
                         break;
                     } else {
                         // nightmare
                         addTag("ERROR found ep with tc");
+                        LOG.severe("ERROR found ep with tc");
                     }
                 }
 
@@ -256,24 +246,24 @@ public class NbAppView implements ViAppView
                 for (NbAppView _av : s) {
                     if(_av.getEditor() == ep) {
                         av = _av;
-                        addTag("WARN: already exist");
+                        addTag("NOTE: already exist");
                         break;
                     }
                     if(_av.getEditor() == null) {
                         // There's an appview waiting to accept this editor
                         // The editor should not have an appview already.
-                        // This assert would file if the editor got an app view
-                        // as an orphan, but somehow later was assoc'd with tc
 
-                        av = (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
-                        assert av == null;
+                        av = getAppView(ep);
 
                         if(av == null) {
                             av = _av;
                             av.setEditor(ep); // NORMAL
                             addTag("add ep to tc");
                         } else {
+                            // if the editor got an app view as an orphan,
+                            // but somehow later was assoc'd with tc
                             addTag("ERROR: orphan added to appview");
+                            LOG.severe("orphan added to TC/appview");
                         }
                         break;
                     }
@@ -285,37 +275,120 @@ public class NbAppView implements ViAppView
                 }
             }
         }
-        assert av != null;
+        if(av == null)
+            LOG.severe("no AppView created");
         // set up the references to av from the JComponents
         if(ep != null)
             ep.putClientProperty(SwingFactory.PROP_AV, av);
         if(tc != null && av != null)
             s.add(av);
 
-        if(Module.dbgAct().getBoolean())
-            Module.dbgAct().printf(
-                    "updateAppView: (%s) %s tc '%s' ep '%s' doc '%s' nad %b\n",
-                    tag,
+        if(logState || Module.dbgAct().getBoolean()) {
+            String msg = String.format(
+                    "updateAppView: (%s:%s) %s tc='%s' ep='%s' doc='%s' isNomad=%b",
+                    tag, info,
                     ViManager.getFS().getDisplayFileName(av),
                     tc != null ? Module.cid(tc) : "",
                     ep != null ? Module.cid(ep) : "",
                     ep != null ? Module.cid(ep.getDocument()) : "",
-                    isNomad);
+                    av.isNomad);
+            Module.dbgAct().println(msg);
+            if(logState) {
+                LOG.log(Level.SEVERE, msg);
+            }
+        }
 
+        if(isNomad != av.isNomad) {
+            av.setIsNomad(isNomad);
+            if(Module.dbgAct().getBoolean())
+                Module.dbgAct().println("updateAppView: CONVERT: isNomad "
+                                        + av.isNomad);
+        }
         AppViews.open(av, info);
 
         return av;
     }
 
+    /**
+     * Invoked when a new text view is created.
+     * Will hookup the editor to a lazy appview
+     * or create an av if needed. The appview may
+     * be changed a little.
+     *
+     * By this time the editor cookie should be present,
+     * if not then it is a nomad.
+     *
+     * @param jep
+     * @return
+     */
+    // NEEDSWORK: this whole thing is messy...
+    static NbAppView avLastChance(JEditorPane jep)
+    {
+        NbAppView av = (NbAppView)ViManager.getFactory().getAppView(jep);
+        NbAppView av01 = av;
+        TopComponent tc = null;
+        if(av != null) {
+            if((tc = av.getTopComponent()) != null) {
+                // The editor has an appView with a top component
+                // verify that the editor is in the top component
+                boolean isEditor = Module.isEditor(tc);
+                if(isEditor == av.isNomad()) {
+                    // only nomad --> editor is "natural"
+                    // log changing editor to nomad
+                    if(!isEditor)
+                        LOG.log(Level.SEVERE,
+                                String.format("isEditor=%b isNomad=%b",
+                                              isEditor, av.isNomad()),
+                                new IllegalStateException("isEditor == isNomad"));
+                    av = updateAppViewForTC("LC_FIXUP", tc, jep, !isEditor);
+                }
+            } else {
+                // TC is null, can we find one?
+                tc = Module.getKnownTopComponent(jep);
+                boolean isEditor = Module.isEditor(tc);
+                av = updateAppViewForTC("LC_UNEXPECTED", tc, jep, !isEditor);
+            }
+        } else {
+            tc = Module.getKnownTopComponent(jep);
+            boolean isEditor = Module.isEditor(tc);
+            if(tc != null) {
+                // turns out this might happen before activation (code eval)
+                // so not much error checking.
+                // make it a nomad if it is not an editor
+                av = updateAppViewForTC("LC_TC", tc, jep, !isEditor);
+
+                // NEEDSWORK: could do this at the end of method for any TC
+                // This catches the other side of the diff windows
+                // Could restrict to isEditor...
+                for(JEditorPane jep01 : Module.getDescendentJviJep(tc)) {
+                    if(jep01 != jep && jep01.isShowing())
+                        updateAppViewForTC("LC_TC_LAZY", tc, jep01, !isEditor);
+                }
+            }
+            else {
+                // no editor top component, create a nomad
+                av = updateAppViewForTC("LC_NOMAD", null, jep, true);
+            }
+        }
+
+        if(av01 != null && av != av01)
+            LOG.log(Level.SEVERE, "av changed",
+                    new IllegalStateException("av changed"));
+        av.freeze(); // freeze after first editor focus
+        return av;
+    }
+
     private static NbAppView createAppViewOrphan(JEditorPane ep)
     {
-        NbAppView av = (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
+        NbAppView av = getAppView(ep);
         assert av == null;
         if(av == null) {
             av = new NbAppView(null, ep, true); // nomad by definition
             addTag("orphan");
-        } else
+        } else {
             addTag("ERROR: orphan already");
+            LOG.severe("ERROR: orphan already");
+        }
 
         return av;
     }
@@ -331,7 +404,7 @@ public class NbAppView implements ViAppView
 
     public static NbAppView fetchAvFromTC(TopComponent tc, JEditorPane ep) {
         if(tc == null)
-            return (NbAppView)ep.getClientProperty(SwingFactory.PROP_AV);
+            return getAppView(ep);
         for (NbAppView av : fetchAvFromTC(tc)) {
             if(av.getEditor() == ep)
                 return av;

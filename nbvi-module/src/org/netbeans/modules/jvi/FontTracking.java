@@ -36,11 +36,17 @@ import javax.swing.JEditorPane;
 import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.EditorStyleConstants;
+import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.settings.storage.api.EditorSettings;
 import org.netbeans.modules.editor.settings.storage.api.FontColorSettingsFactory;
+import org.openide.util.Lookup;
+import org.openide.util.Lookup.Result;
+import org.openide.util.LookupEvent;
+import org.openide.util.LookupListener;
 
 /**
  * Check all fonts for the editor.
@@ -66,6 +72,11 @@ final class FontTracking {
             this.key = key;
         }
     }
+    // need to keep strong references
+    private static Map<MimePath, Result<FontColorSettings>> results
+            = new HashMap<MimePath, Result<FontColorSettings>>();
+    private static boolean didAllLang;
+
     private final JEditorPane jep;
     private final Map<WH, Set<FontTrack>> sizeMap
             = new HashMap<WH, Set<FontTrack>>();
@@ -83,9 +94,46 @@ final class FontTracking {
 
     //private Collection<AttributeSet> categoriesDefaults;
 
-    private FontTracking(JEditorPane jep)
+    /** only called once per mimeType,
+     * special relationship with JViOptionWarning
+     */
+    static void monitorMimeType(JEditorPane ep)
     {
-        this.jep = jep;
+        MimePath mimePath = MimePath.parse("text/x-java");
+        monitorMimeType(mimePath);
+        if(!didAllLang) {
+            monitorMimeType(MimePath.EMPTY);
+            didAllLang = true;
+        }
+    }
+
+    static void monitorMimeType(final MimePath mimePath)
+    {
+        Lookup lookup = MimeLookup.getLookup(mimePath);
+        Result<FontColorSettings> result
+                = lookup.lookupResult(FontColorSettings.class);
+        results.put(mimePath, result);
+        checkItOut(result);
+
+        result.addLookupListener(new LookupListener() {
+            @Override
+            public void resultChanged(LookupEvent ev) {
+                System.err.println("MIME FONT/COLOR CHANGE='"+mimePath+"'");
+                Object source = ev.getSource();
+                Result<FontColorSettings> result = results.get(mimePath);
+                checkItOut(result);
+            }
+        });
+    }
+
+    static void checkItOut(Result<FontColorSettings> result)
+    {
+        Collection<? extends FontColorSettings> c = result.allInstances();
+        FontColorSettings fcs = c.iterator().next();
+        AttributeSet fontColors = fcs.getFontColors("foo");
+        //System.err.println("" + fontColors);
+        fontColors = fcs.getTokenFontColors("bar");
+        //System.err.println("" + fontColors);
     }
 
     static boolean check(JEditorPane jep)
@@ -96,6 +144,11 @@ final class FontTracking {
         ft.init();
         ft.fontCheck();
         return true;
+    }
+
+    private FontTracking(JEditorPane jep)
+    {
+        this.jep = jep;
     }
 
     private void init()
@@ -110,8 +163,8 @@ final class FontTracking {
         for(int i = 0; i < mimeTypes.length; i++) {
             mimeTypes[i] = mimePath.getMimeType(i);
         }
-        FontColorSettingsFactory fcs = es.getFontColorSettings(mimeTypes);
-        categoriesMime = new ArrayList<AttributeSet>(fcs.getAllFontColors(currentProfile));
+        FontColorSettingsFactory fcsf = es.getFontColorSettings(mimeTypes);
+        categoriesMime = new ArrayList<AttributeSet>(fcsf.getAllFontColors(currentProfile));
 
         // All Languages
         categoriesAllLanguages = new ArrayList<AttributeSet>(
@@ -155,6 +208,10 @@ final class FontTracking {
         FontParams fp;
         Font f;
         sb.setLength(0);
+        if(!vari.isEmpty() || sizeMap.size() > 1) {
+            sb.append("Font size problem for file type: '")
+                    .append(mimePath.toString()).append("'\n");
+        }
         if(!vari.isEmpty()) {
             Set<ParamSource> roots = new HashSet<ParamSource>();
             for(AttributeSet c : vari) {
@@ -214,11 +271,6 @@ final class FontTracking {
                 dump(sb, fsp.size.ps).append(" ");
                 dumpSize(sb, fsp.size.ps, wh01).append('\n');
             }
-            // for(ParamSource ps : roots) {
-            //     sb.append("    ");
-            //     dump(sb, ps).append(" ");
-            //     dumpSize(sb, ps).append('\n');
-            // }
         }
         if(sb.length() != 0) {
             System.err.println(sb.toString());
@@ -303,6 +355,8 @@ final class FontTracking {
 
     private StringBuilder dumpSize(StringBuilder sb, Font f, WH wh, WH expect)
     {
+        if(expect != null && !wh.equals(expect))
+            sb.append("*** ");
         sb.append(f.getSize()).append(" (fm=")
                 .append(wh.w).append('/').append(wh.h).append(')');
         if(expect != null && !wh.equals(expect))
@@ -452,6 +506,7 @@ final class FontTracking {
             this.categoryName = categoryName;
         }
 
+        //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
         @Override
         public boolean equals(Object obj)
         {
@@ -483,6 +538,14 @@ final class FontTracking {
                     (this.categoryName != null ? this.categoryName.hashCode() : 0);
             return hash;
         }
+        //</editor-fold>
+
+        @Override
+        public String toString()
+        {
+            return "ParamSource{" + "cats=" + cats + ", categoryName=" +
+                    categoryName + '}';
+        }
 
     }
 
@@ -502,6 +565,51 @@ final class FontTracking {
             this.val = val;
             this.name = null;
         }
+
+        //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
+        @Override
+        public boolean equals(Object obj)
+        {
+            if(obj == null) {
+                return false;
+            }
+            if(getClass() != obj.getClass()) {
+                return false;
+            }
+            final ParamData other = (ParamData)obj;
+            if(this.ps != other.ps &&
+                    (this.ps == null || !this.ps.equals(other.ps))) {
+                return false;
+            }
+            if(this.val != other.val &&
+                    (this.val == null || !this.val.equals(other.val))) {
+                return false;
+            }
+            if((this.name == null) ? (other.name != null)
+                    : !this.name.equals(other.name)) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int hash = 5;
+            hash = 59 * hash + (this.ps != null ? this.ps.hashCode() : 0);
+            hash = 59 * hash + (this.val != null ? this.val.hashCode() : 0);
+            hash = 59 * hash + (this.name != null ? this.name.hashCode() : 0);
+            return hash;
+        }
+        //</editor-fold>
+
+        @Override
+        public String toString()
+        {
+            return "ParamData{" + "ps=" + ps + ", val=" + val + ", name=" + name +
+                    '}';
+        }
+
     }
 
     private static class FontSizeParams {
@@ -514,6 +622,7 @@ final class FontTracking {
             this.size = size;
         }
 
+        //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
         @Override
         public boolean equals(Object obj)
         {
@@ -545,12 +654,9 @@ final class FontTracking {
             hash = 53 * hash + (this.size != null ? this.size.hashCode() : 0);
             return hash;
         }
+        //</editor-fold>
 
     }
-//            {
-//        // key is StyleConstant for familty, size, bold, italic
-//        Map<Style, ParamData> map = new EnumMap<Style, ParamData>(Style.class);
-//    }
 
     private static class WH {
         private final int w;
@@ -562,6 +668,7 @@ final class FontTracking {
             this.h = h;
         }
 
+        //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
         @Override
         public boolean equals(Object obj)
         {
@@ -589,6 +696,7 @@ final class FontTracking {
             hash = 29 * hash + this.h;
             return hash;
         }
+        //</editor-fold>
 
     }
 
@@ -622,6 +730,7 @@ final class FontTracking {
                               : new WH(0,0);
         }
 
+        //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
         @Override
         public boolean equals(Object obj)
         {
@@ -654,9 +763,11 @@ final class FontTracking {
                     (this.nameAttr != null ? this.nameAttr.hashCode() : 0);
             return hash;
         }
+        //</editor-fold>
 
     }
 
+    //<editor-fold defaultstate="collapsed" desc="class FontParams implements Map<Style, ParamData>">
     private static final class FontParams implements Map<Style, ParamData> {
         private final Map<Style, ParamData> map = new EnumMap<Style, ParamData>(Style.class);
 
@@ -752,5 +863,6 @@ final class FontTracking {
         }
 
     }
+    //</editor-fold>
 
 }

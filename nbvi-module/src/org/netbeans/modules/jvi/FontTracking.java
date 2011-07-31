@@ -197,21 +197,22 @@ final class FontTracking {
                 for(FontTrack ft01 : ftSet) {
                     fp = new FontParams();
                     f = getFont(getCategory(CATS.MIME, ft01.nameAttr), fp);
-                    roots.add(new FontSizeParams(fp.get(Style.Family).ps,
-                                                 fp.get(Style.Size).ps));
-                    //roots.add(fp.get(Style.Size).ps);
+                    roots.add(new FontSizeParams(fp.get(Style.Family),
+                                                 fp.get(Style.Size)));
                 }
             }
             sb.append("The following generate a different size font:\n");
             for(FontSizeParams fsp : roots) {
-                sb.append("=== ");
+                sb.append("\n  = ");
                 sb.append("Family ");
-                dump(sb, fsp.family).append(" ");
-                dumpSize(sb, fsp.family, wh01).append('\n');
+                sb.append(String.format("%-20s", fsp.family.val));
+                dump(sb, fsp.family.ps).append(" ");
+                dumpSize(sb, fsp.family.ps, wh01).append('\n');
                 sb.append("    ");
                 sb.append("  Size ");
-                dump(sb, fsp.size).append(" ");
-                dumpSize(sb, fsp.size, wh01).append('\n');
+                sb.append(String.format("%-20s", fsp.size.val));
+                dump(sb, fsp.size.ps).append(" ");
+                dumpSize(sb, fsp.size.ps, wh01).append('\n');
             }
             // for(ParamSource ps : roots) {
             //     sb.append("    ");
@@ -504,10 +505,10 @@ final class FontTracking {
     }
 
     private static class FontSizeParams {
-        private ParamSource family;
-        private ParamSource size;
+        private ParamData family;
+        private ParamData size;
 
-        FontSizeParams(ParamSource family, ParamSource size)
+        FontSizeParams(ParamData family, ParamData size)
         {
             this.family = family;
             this.size = size;
@@ -542,6 +543,115 @@ final class FontTracking {
                     53 * hash +
                     (this.family != null ? this.family.hashCode() : 0);
             hash = 53 * hash + (this.size != null ? this.size.hashCode() : 0);
+            return hash;
+        }
+
+    }
+//            {
+//        // key is StyleConstant for familty, size, bold, italic
+//        Map<Style, ParamData> map = new EnumMap<Style, ParamData>(Style.class);
+//    }
+
+    private static class WH {
+        private final int w;
+        private final int h;
+
+        public WH(int w, int h)
+        {
+            this.w = w;
+            this.h = h;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if(obj == null) {
+                return false;
+            }
+            if(getClass() != obj.getClass()) {
+                return false;
+            }
+            final WH other = (WH)obj;
+            if(this.w != other.w) {
+                return false;
+            }
+            if(this.h != other.h) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int hash = 7;
+            hash = 29 * hash + this.w;
+            hash = 29 * hash + this.h;
+            return hash;
+        }
+
+    }
+
+    private class FontTrack {
+        private final WH wh;
+        private final String nameAttr;
+        private final boolean isFixed;
+
+        public FontTrack(AttributeSet c, Font f)
+        {
+            this.nameAttr = (String)c.getAttribute(StyleConstants.NameAttribute);
+            FontMetrics fm = jep.getGraphics().getFontMetrics(f);
+            // can't use font family to determine fixed width
+            // so if first 'n' characters are the same size (except 0)
+            // then assume fixed width
+            boolean flag = true;
+            int w01 = 0;
+            int[] widths = fm.getWidths();
+            for(int w : widths) {
+                if(w == 0)
+                    continue;
+                if(w01 == 0)
+                    w01 = w;
+                if(w01 != w) {
+                    flag = false;
+                    break;
+                }
+            }
+            this.isFixed = flag;
+            this.wh = isFixed ? new WH(w01, fm.getHeight())
+                              : new WH(0,0);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if(obj == null) {
+                return false;
+            }
+            if(getClass() != obj.getClass()) {
+                return false;
+            }
+            final FontTrack other = (FontTrack)obj;
+            if(this.wh != other.wh &&
+                    (this.wh == null || !this.wh.equals(other.wh))) {
+                return false;
+            }
+            if(this.nameAttr != other.nameAttr &&
+                    (this.nameAttr == null ||
+                    !this.nameAttr.equals(other.nameAttr))) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int hash = 7;
+            hash = 97 * hash + (this.wh != null ? this.wh.hashCode() : 0);
+            hash =
+                    97 * hash +
+                    (this.nameAttr != null ? this.nameAttr.hashCode() : 0);
             return hash;
         }
 
@@ -639,114 +749,6 @@ final class FontTracking {
         public void clear()
         {
             map.clear();
-        }
-
-    }
-//            {
-//        // key is StyleConstant for familty, size, bold, italic
-//        Map<Style, ParamData> map = new EnumMap<Style, ParamData>(Style.class);
-//    }
-
-    private static class WH {
-        private final int w;
-        private final int h;
-
-        public WH(int w, int h)
-        {
-            this.w = w;
-            this.h = h;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if(obj == null) {
-                return false;
-            }
-            if(getClass() != obj.getClass()) {
-                return false;
-            }
-            final WH other = (WH)obj;
-            if(this.w != other.w) {
-                return false;
-            }
-            if(this.h != other.h) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int hash = 7;
-            hash = 29 * hash + this.w;
-            hash = 29 * hash + this.h;
-            return hash;
-        }
-
-    }
-
-    private class FontTrack {
-        private final WH wh;
-        private final String nameAttr;
-        private final boolean isFixed;
-
-        public FontTrack(AttributeSet c, Font f)
-        {
-            this.nameAttr = (String)c.getAttribute(StyleConstants.NameAttribute);
-            FontMetrics fm = jep.getGraphics().getFontMetrics(f);
-            // can't use font family to determine fixed width
-            // so if first 'n' characters are the same size (except 0)
-            // then assume fixed width
-            boolean flag = true;
-            int w01 = 0;
-            int[] widths = fm.getWidths();
-            for(int w : widths) {
-                if(w == 0)
-                    continue;
-                if(w01 == 0)
-                    w01 = w;
-                if(w01 != w) {
-                    flag = false;
-                    break;
-                }
-            }
-            this.isFixed = flag;
-            this.wh = isFixed ? new WH(w01, fm.getHeight()) : null;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if(obj == null) {
-                return false;
-            }
-            if(getClass() != obj.getClass()) {
-                return false;
-            }
-            final FontTrack other = (FontTrack)obj;
-            if(this.wh != other.wh &&
-                    (this.wh == null || !this.wh.equals(other.wh))) {
-                return false;
-            }
-            if(this.nameAttr != other.nameAttr &&
-                    (this.nameAttr == null ||
-                    !this.nameAttr.equals(other.nameAttr))) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int hash = 7;
-            hash = 97 * hash + (this.wh != null ? this.wh.hashCode() : 0);
-            hash =
-                    97 * hash +
-                    (this.nameAttr != null ? this.nameAttr.hashCode() : 0);
-            return hash;
         }
 
     }

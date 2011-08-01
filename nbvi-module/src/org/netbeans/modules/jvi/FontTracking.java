@@ -19,8 +19,10 @@
  */
 package org.netbeans.modules.jvi;
 
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -42,7 +44,7 @@ import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.EditorStyleConstants;
 import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.editor.FontMetricsCache;
-import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.lib.editor.util.swing.DocumentUtilities;
 import org.netbeans.modules.editor.settings.storage.api.EditorSettings;
 import org.netbeans.modules.editor.settings.storage.api.FontColorSettingsFactory;
 import org.openide.util.Lookup;
@@ -62,6 +64,10 @@ import org.openide.util.LookupListener;
  */
 final class FontTracking {
     private static final Logger LOG = Logger.getLogger(FontTracking.class.getName());
+    private final static Set<String> fontChecked = new HashSet<String>();
+    // need to keep strong references to results for listeners
+    private static Map<String, Result<FontColorSettings>> results
+            = new HashMap<String, Result<FontColorSettings>>();
 
     private static enum CATS { MIME, ALL }
     private static enum Style {
@@ -74,22 +80,91 @@ final class FontTracking {
             this.key = key;
         }
     }
-    private final static Set<MimePath> fontChecked = new HashSet<MimePath>();
-    // need to keep strong references
-    private static Map<MimePath, Result<FontColorSettings>> results
-            = new HashMap<MimePath, Result<FontColorSettings>>();
 
-    private final JEditorPane jep;
+    /** only called once per mimeType,
+     * special relationship with JViOptionWarning
+     */
+    static void monitorMimeType(JEditorPane ep)
+    {
+        monitorMimeType(DocumentUtilities.getMimeType(ep));
+    }
+
+    private static void monitorMimeType(final String mimeType)
+    {
+        if(results.containsKey(mimeType))
+            return;
+        Lookup lookup = MimeLookup.getLookup(MimePath.get(mimeType));
+        Result<FontColorSettings> result
+                = lookup.lookupResult(FontColorSettings.class);
+        results.put(mimeType, result);
+
+        result.addLookupListener(new LookupListener() {
+            @Override
+            public void resultChanged(LookupEvent ev) {
+                System.err.println("MIME FONT/COLOR CHANGE='"
+                        +getLang(mimeType)+"'");
+                boolean remove = fontChecked.remove(mimeType);
+                if(!remove)
+                    System.err.println("MimeType NOT FOUND");
+            }
+        });
+    }
+
+    private static String getLang(String mimeType)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(EditorSettings.getDefault().getLanguageName(mimeType));
+        if(sb.length() == 0) {
+            sb.append(mimeType.isEmpty() ? "AllLanguages" : "UnknownLanguage");
+        }
+        if(!mimeType.isEmpty())
+            sb.append(" (").append(mimeType).append(')');
+        return sb.toString();
+    }
+
+    private static FontColorSettings getFCS(String mimeType)
+    {
+        return results.get(mimeType).allInstances().iterator().next();
+    }
+
+    public static void focusMimeType(JEditorPane ep)
+    {
+        if(ep.getGraphics() == null)
+            return;
+        String mimeType = DocumentUtilities.getMimeType(ep);
+        focusMimeType(MimePath.get(mimeType), ep);
+    }
+
+    public static void focusMimeType(MimePath mimePath, Component component)
+    {
+        List<FontTracking> ftl = new ArrayList<FontTracking>();
+        for(int i = 0; i < mimePath.size(); i++) {
+            String mimeType = mimePath.getMimeType(i);
+            if(fontChecked.contains(mimeType))
+                return;
+            fontChecked.add(mimeType);
+            System.err.println("CHECKING FONTS FOR " + getLang(mimeType));
+            FontTracking ft = new FontTracking(component, mimeType);
+            ft.init();
+            ft.fontCheck();
+            ftl.add(ft);
+        }
+        // NEEDSWORK:
+        // Check the ftl's make sure they are based on the same size.
+    }
+
+    private final Graphics graphics;
+    private final String mimeType;
+    private WH defaultWH;
+
     private final Map<WH, Set<FontTrack>> sizeMap
             = new HashMap<WH, Set<FontTrack>>();
     private final Set<AttributeSet> vari = new HashSet<AttributeSet>();
     // following could be made final if move the init code into constructor
-    private MimePath mimePath;
     FontColorSettings fcs;
     // Following are only needed to get the list of what to check.
     // Then they are used in detail to track down the problem settings
 
-    private String currentProfile;
     private Map<String, AttributeSet> categoriesMime;
     // Following only needed if font sizes don't match, except to get Default
     private Map<String, AttributeSet> categoriesAllLanguages;
@@ -99,75 +174,21 @@ final class FontTracking {
     private FontParams curFontParams;
     private ParamData curParamSource;
 
-    //private Collection<AttributeSet> categoriesDefaults;
-
-    /** only called once per mimeType,
-     * special relationship with JViOptionWarning
-     */
-    static void monitorMimeType(JEditorPane ep)
+    private FontTracking(Component component, String mimeType)
     {
-        MimePath mimePath = MimePath.parse(NbEditorUtilities.getMimeType(ep));
-        monitorMimeType(mimePath);
-    }
-
-    private static void monitorMimeType(final MimePath mimePath)
-    {
-        Lookup lookup = MimeLookup.getLookup(mimePath);
-        Result<FontColorSettings> result
-                = lookup.lookupResult(FontColorSettings.class);
-        results.put(mimePath, result);
-
-        result.addLookupListener(new LookupListener() {
-            @Override
-            public void resultChanged(LookupEvent ev) {
-                System.err.println("MIME FONT/COLOR CHANGE='"+mimePath+"'");
-                boolean remove = fontChecked.remove(mimePath);
-                if(!remove)
-                    System.err.println("MimePath NOT FOUND");
-            }
-        });
-    }
-
-    private static FontColorSettings getFCS(MimePath mimePath)
-    {
-        return results.get(mimePath).allInstances().iterator().next();
-    }
-
-    public static void focusMimeType(JEditorPane ep)
-    {
-        MimePath mimePath = MimePath.parse(NbEditorUtilities.getMimeType(ep));
-        if(fontChecked.contains(mimePath))
-            return;
-        if(FontTracking.check(ep))
-            fontChecked.add(mimePath);
-    }
-
-    private static boolean check(JEditorPane jep)
-    {
-        if(jep.getGraphics() == null)
-            return false;
-        FontTracking ft = new FontTracking(jep);
-        ft.init();
-        System.err.println("CHECKING FONT '" + ft.mimePath + "'");
-        ft.fontCheck();
-        return true;
-    }
-
-    private FontTracking(JEditorPane jep)
-    {
-        this.jep = jep;
+        this.graphics = component.getGraphics();
+        this.mimeType = mimeType;
     }
 
     private void init()
     {
         EditorSettings es = EditorSettings.getDefault();
-        currentProfile = es.getCurrentKeyMapProfile();
+        String currentProfile = es.getCurrentKeyMapProfile();
 
-        mimePath = MimePath.parse(NbEditorUtilities.getMimeType(jep));
-        fcs = getFCS(mimePath);
+        fcs = getFCS(mimeType);
         // Get the categories for the mimetype(s) of the JEP
-        categoriesMime = createAttributeMap(mimePath);
-        categoriesAllLanguages = createAttributeMap(MimePath.EMPTY);
+        categoriesMime = createAttributeMap(mimeType, currentProfile);
+        categoriesAllLanguages = createAttributeMap("", currentProfile);
 
         AttributeSet defaultDefaults = AttributesUtilities.createImmutable(
                 Style.Family.key, "Monospaced",
@@ -178,16 +199,14 @@ final class FontTracking {
                 getCategory(CATS.ALL, "default"), defaultDefaults);
     }
 
-    private Map<String, AttributeSet> createAttributeMap(MimePath mimePath)
+    private Map<String, AttributeSet> createAttributeMap(String mimeType,
+                                                         String profile)
     {
         Map<String, AttributeSet> map = new HashMap<String, AttributeSet>();
         EditorSettings es = EditorSettings.getDefault();
-        String [] mimeTypes = new String[mimePath.size()];
-        for(int i = 0; i < mimeTypes.length; i++) {
-            mimeTypes[i] = mimePath.getMimeType(i);
-        }
-        FontColorSettingsFactory fcsf = es.getFontColorSettings(mimeTypes);
-        for(AttributeSet c : fcsf.getAllFontColors(currentProfile)) {
+        FontColorSettingsFactory fcsf = es.getFontColorSettings(
+                new String[] { mimeType });
+        for(AttributeSet c : fcsf.getAllFontColors(profile)) {
             map.put((String)c.getAttribute(StyleConstants.NameAttribute), c);
         }
         return map;
@@ -196,18 +215,16 @@ final class FontTracking {
     private void fontCheck()
     {
         if(false) {
-            dump(mimePath.toString(), categoriesMime.values());
+            dump(getLang(mimeType), categoriesMime.values());
             dump("All languages", categoriesAllLanguages.values());
-            dumpSource(mimePath.toString() + "resolve source", categoriesMime.values());
-            dumpSource("All Languages resolve source", categoriesMime.values());
-            System.err.println("");
-            System.err.println("");
+            dumpSource(getLang(mimeType) + "resolve", categoriesMime.values());
+            dumpSource("All Languages resolve", categoriesMime.values());
             List<AttributeSet> l01 = new ArrayList<AttributeSet>();
             for(String name : categoriesMime.keySet()) {
                 AttributeSet c01 = fcs.getTokenFontColors(name);
                 l01.add(c01);
             }
-            dump("FCS:" + mimePath.toString(), l01);
+            dump("FCS:" + getLang(mimeType), l01);
         }
 
 
@@ -241,8 +258,8 @@ final class FontTracking {
         Font f;
         sb.setLength(0);
         if(!vari.isEmpty() || sizeMap.size() > 1) {
-            sb.append("Font size problem for file type: '")
-                    .append(mimePath.toString()).append("'\n");
+            sb.append("Font size problem for Language: ")
+                    .append(getLang(mimeType)).append('\n');
         }
         if(!vari.isEmpty()) {
             Set<ParamSource> roots = new HashSet<ParamSource>();
@@ -307,6 +324,7 @@ final class FontTracking {
         if(sb.length() != 0) {
             System.err.println(sb.toString());
         }
+        graphics.dispose();
     }
 
     /**
@@ -398,7 +416,7 @@ final class FontTracking {
         } else {
             name = (String)getCategory(ps.cats, ps.categoryName)
                     .getAttribute(EditorStyleConstants.DisplayName);
-            lang = ps.cats == CATS.MIME ? mimePath.toString() : "AllLanguages";
+            lang = getLang(ps.cats == CATS.MIME ? mimeType : "");
         }
         sb.append(String.format("%30s/%s", name, lang));
         return sb;
@@ -784,7 +802,7 @@ final class FontTracking {
         public FontTrack(AttributeSet c, Font f)
         {
             nameAttr = (String)c.getAttribute(StyleConstants.NameAttribute);
-            FontMetrics fm = FontMetricsCache.getFontMetrics(f, jep);
+            FontMetrics fm = FontMetricsCache.getFontMetrics(f, graphics);
             FontMetricsData fmd = fontMetricsDataCache.get(fm);
             if(fmd != null) {
                 wh = fmd.wh;

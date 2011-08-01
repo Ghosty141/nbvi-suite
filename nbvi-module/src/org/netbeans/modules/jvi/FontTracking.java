@@ -19,10 +19,14 @@
  */
 package org.netbeans.modules.jvi;
 
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.event.FocusAdapter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -47,6 +51,8 @@ import org.netbeans.editor.FontMetricsCache;
 import org.netbeans.lib.editor.util.swing.DocumentUtilities;
 import org.netbeans.modules.editor.settings.storage.api.EditorSettings;
 import org.netbeans.modules.editor.settings.storage.api.FontColorSettingsFactory;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.util.Lookup;
 import org.openide.util.Lookup.Result;
 import org.openide.util.LookupEvent;
@@ -89,7 +95,27 @@ final class FontTracking {
     static void monitorMimeType(JEditorPane ep)
     {
         monitorMimeType(DocumentUtilities.getMimeType(ep));
+        ep.removeFocusListener(focusListener);
+        ep.addFocusListener(focusListener);
     }
+
+    private static FocusListener focusListener = new FocusAdapter() {
+        @Override
+        public void focusGained(final FocusEvent e)
+        {
+            if(e.getComponent() instanceof JEditorPane) {
+                final JEditorPane jep = (JEditorPane)e.getComponent();
+                EventQueue.invokeLater(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        focusMimeType(jep);
+                    }
+                });
+            }
+        }
+
+    };
 
     private static void monitorMimeType(final String mimeType)
     {
@@ -103,11 +129,13 @@ final class FontTracking {
         result.addLookupListener(new LookupListener() {
             @Override
             public void resultChanged(LookupEvent ev) {
-                System.err.println("MIME FONT/COLOR CHANGE='"
-                        +getLang(mimeType)+"'");
                 boolean remove = fontChecked.remove(mimeType);
-                if(!remove)
-                    System.err.println("MimeType NOT FOUND");
+                if(false) {
+                    System.err.println("MIME FONT/COLOR CHANGE='"
+                            + getLang(mimeType) + "'");
+                    if(!remove)
+                        System.err.println("MimeType NOT FOUND");
+                }
             }
         });
     }
@@ -134,25 +162,36 @@ final class FontTracking {
         if(ep.getGraphics() == null)
             return;
         String mimeType = DocumentUtilities.getMimeType(ep);
-        focusMimeType(MimePath.get(mimeType), ep);
+        focusMimeType(mimeType, ep);
     }
 
-    public static void focusMimeType(MimePath mimePath, Component component)
+    private static FontTracking focusMimeType(String mimeType, Component component)
+    {
+        if(fontChecked.contains(mimeType))
+            return null;
+        fontChecked.add(mimeType);
+        // System.err.println("CHECKING FONTS FOR " + getLang(mimeType));
+        FontTracking ft = new FontTracking(component, mimeType);
+        ft.init();
+        ft.fontCheck();
+        return ft;
+    }
+
+    /** MAKE public if needed, otherwise this is NOT USED */
+    private static void focusMimeType(MimePath mimePath, Component component)
     {
         List<FontTracking> ftl = new ArrayList<FontTracking>();
         for(int i = 0; i < mimePath.size(); i++) {
             String mimeType = mimePath.getMimeType(i);
-            if(fontChecked.contains(mimeType))
-                return;
-            fontChecked.add(mimeType);
-            System.err.println("CHECKING FONTS FOR " + getLang(mimeType));
-            FontTracking ft = new FontTracking(component, mimeType);
-            ft.init();
-            ft.fontCheck();
+            FontTracking ft = focusMimeType(mimeType, component);
+            if(ft == null)
+                continue;
             ftl.add(ft);
         }
+        //////////////////////////////////////////////////////////////////////
         // NEEDSWORK:
-        // Check the ftl's make sure they are based on the same size.
+        //////////////////////////////////////////////////////////////////////
+        // Check the ftl's and make sure they are based on the same size.
     }
 
     private final Graphics graphics;
@@ -220,10 +259,14 @@ final class FontTracking {
         try {
             fontCheckInternal(sb);
         } finally {
-            if(sb.length() != 0) {
-                System.err.println(sb.toString());
-            }
             graphics.dispose();
+            if(sb.length() != 0) {
+                // System.err.println(sb.toString());
+                NotifyDescriptor d = new NotifyDescriptor.Message(
+                        sb.toString(), NotifyDescriptor.WARNING_MESSAGE);
+                d.setTitle("jVi Warning");
+                DialogDisplayer.getDefault().notifyLater(d);
+            }
         }
     }
 
@@ -258,7 +301,6 @@ final class FontTracking {
             Font f = getFontFCS(entry.getKey());
             FontTrack ft = new FontTrack(entry.getValue(), f);
             if(!ft.isFixed) {
-                System.err.println("");
                 vari.add(entry.getValue());
                 continue;
             }
@@ -280,10 +322,10 @@ final class FontTracking {
         //
         FontParams fp;
         Font f;
-        sb.setLength(0);
         if(!vari.isEmpty() || sizeMap.size() > 1) {
-            sb.append("Font size problem for Language: ")
-                    .append(getLang(mimeType)).append('\n');
+            sb.append("jVi works best with fixed size fonts.\n")
+              .append("\nFont size problem for Language: ")
+                    .append(getLang(mimeType)).append("\n");
         }
         if(!vari.isEmpty()) {
             Set<ParamSource> roots = new HashSet<ParamSource>();
@@ -292,7 +334,7 @@ final class FontTracking {
                 f = getFont(c, fp);
                 roots.add(fp.get(Style.Family).ps);
             }
-            sb.append("The following have a variable size font:\n");
+            sb.append("\nThe following specify a variable size font:\n");
             for(ParamSource ps : roots) {
                 sb.append("    ");
                 dump(sb, ps).append('\n');
@@ -305,7 +347,7 @@ final class FontTracking {
             Set<FontTrack> ftSet;
             ftSet = sizeMap.get(wh01);
             if(ftSet == null) {
-                sb.append("No font has default font dimensions: ")
+                sb.append("\nNo font has default font dimensions: ")
                   .append(wh01.w).append('x').append(wh01.h)
                   .append(". Impossible?");
                 return;
@@ -313,7 +355,7 @@ final class FontTracking {
             ft = ftSet.iterator().next();
             fp = new FontParams();
             f = getFont(getCategory(CATS.MIME, ft.nameAttr), fp);
-            sb.append("Assuming base size of ");
+            sb.append("\nThe default font is size ");
             dumpSize(sb, f, wh01).append('\n');
             roots.clear();
             for(WH wh : sizeMap.keySet()) {
@@ -327,7 +369,7 @@ final class FontTracking {
                                                  fp.get(Style.Size)));
                 }
             }
-            sb.append("The following generate a different size font:\n");
+            sb.append("\nThe following generate a different size font:\n");
             for(FontSizeParams fsp : roots) {
                 sb.append("\n  = ");
                 sb.append("Family ");

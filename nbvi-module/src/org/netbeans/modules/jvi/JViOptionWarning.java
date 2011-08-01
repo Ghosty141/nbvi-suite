@@ -58,6 +58,8 @@ import org.openide.windows.WindowManager;
  */
 public class JViOptionWarning {
 
+    private JViOptionWarning() { }
+
     // NEEDSWORK: put text into a non-edit text area, or html area
     // to allow copy of web site.
 
@@ -87,6 +89,7 @@ public class JViOptionWarning {
 
     static void monitorMimeType(JEditorPane ep)
     {
+        FontTracking.monitorMimeType(ep);
         synchronized(mimePaths) {
             MimePath mimePath
                     = MimePath.parse(NbEditorUtilities.getMimeType(ep));
@@ -262,9 +265,5 @@ public class JViOptionWarning {
         boolean isCancelled() {
             return cancelled;
         }
-    }
-
-    private JViOptionWarning()
-    {
     }
 }

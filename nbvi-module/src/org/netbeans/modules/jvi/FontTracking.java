@@ -52,6 +52,8 @@ import org.openide.util.Lookup.Result;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 
+import static java.lang.Boolean.*;
+
 /**
  * Check all fonts for the editor.
  *
@@ -214,6 +216,19 @@ final class FontTracking {
 
     private void fontCheck()
     {
+        StringBuilder sb = new StringBuilder();
+        try {
+            fontCheckInternal(sb);
+        } finally {
+            if(sb.length() != 0) {
+                System.err.println(sb.toString());
+            }
+            graphics.dispose();
+        }
+    }
+
+    private void fontCheckInternal(StringBuilder sb)
+    {
         if(false) {
             dump(getLang(mimeType), categoriesMime.values());
             dump("All languages", categoriesAllLanguages.values());
@@ -227,8 +242,18 @@ final class FontTracking {
             dump("FCS:" + getLang(mimeType), l01);
         }
 
+        {
+            int style = TRUE.equals(defaultCategory.getAttribute(Style.Bold.key))
+                        ? Font.BOLD : Font.PLAIN;
+            if(TRUE.equals(defaultCategory.getAttribute(Style.Italic.key)))
+                        style += Font.ITALIC;
+            FontTrack ftDefault = new FontTrack(defaultCategory, new Font(
+                    (String)defaultCategory.getAttribute(Style.Family.key),
+                    style,
+                    (Integer)defaultCategory.getAttribute(Style.Size.key)));
+            defaultWH = ftDefault.wh;
+        }
 
-        curFontParams = null;
         for(Entry<String, AttributeSet> entry : categoriesMime.entrySet()) {
             Font f = getFontFCS(entry.getKey());
             FontTrack ft = new FontTrack(entry.getValue(), f);
@@ -253,7 +278,6 @@ final class FontTracking {
         // Where there are problems, determine the base of the resolve tree
         // and weed out duplicates
         //
-        StringBuilder sb = new StringBuilder();
         FontParams fp;
         Font f;
         sb.setLength(0);
@@ -275,21 +299,17 @@ final class FontTracking {
             }
         }
         if(sizeMap.size() > 1) {
+            WH wh01 = defaultWH;
             Set<FontSizeParams> roots = new HashSet<FontSizeParams>();
-            // determine which entry has the most, use it as the base
-            WH wh01 = null;
             FontTrack ft;
             Set<FontTrack> ftSet;
-            int count = 0;
-            for(WH wh : sizeMap.keySet()) {
-                ftSet = sizeMap.get(wh);
-                if(ftSet.size() > count) {
-                    count = ftSet.size();
-                    wh01 = wh;
-                }
-            }
-            //
             ftSet = sizeMap.get(wh01);
+            if(ftSet == null) {
+                sb.append("No font has default font dimensions: ")
+                  .append(wh01.w).append('x').append(wh01.h)
+                  .append(". Impossible?");
+                return;
+            }
             ft = ftSet.iterator().next();
             fp = new FontParams();
             f = getFont(getCategory(CATS.MIME, ft.nameAttr), fp);
@@ -321,10 +341,6 @@ final class FontTracking {
                 dumpSize(sb, fsp.size.ps, wh01).append('\n');
             }
         }
-        if(sb.length() != 0) {
-            System.err.println(sb.toString());
-        }
-        graphics.dispose();
     }
 
     /**
@@ -443,7 +459,7 @@ final class FontTracking {
     private StringBuilder dumpSize(StringBuilder sb, Font f, WH wh, WH expect)
     {
         sb.append(f.getSize()).append(" (fm=")
-                .append(wh.w).append('/').append(wh.h).append(')');
+                .append(wh.w).append('x').append(wh.h).append(')');
         if(expect != null && !wh.equals(expect))
             sb.append(" ***");
         return sb;

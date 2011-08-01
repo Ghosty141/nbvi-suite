@@ -38,8 +38,10 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
+import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.EditorStyleConstants;
 import org.netbeans.api.editor.settings.FontColorSettings;
+import org.netbeans.editor.FontMetricsCache;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.settings.storage.api.EditorSettings;
 import org.netbeans.modules.editor.settings.storage.api.FontColorSettingsFactory;
@@ -88,9 +90,10 @@ final class FontTracking {
     // Then they are used in detail to track down the problem settings
 
     private String currentProfile;
-    private List<AttributeSet> categoriesMime;
-    // Following only needed if font sizes don't match
-    private List<AttributeSet> categoriesAllLanguages;
+    private Map<String, AttributeSet> categoriesMime;
+    // Following only needed if font sizes don't match, except to get Default
+    private Map<String, AttributeSet> categoriesAllLanguages;
+    private AttributeSet defaultCategory;
 
     // following used while create a font
     private FontParams curFontParams;
@@ -118,7 +121,9 @@ final class FontTracking {
             @Override
             public void resultChanged(LookupEvent ev) {
                 System.err.println("MIME FONT/COLOR CHANGE='"+mimePath+"'");
-                fontChecked.remove(mimePath);
+                boolean remove = fontChecked.remove(mimePath);
+                if(!remove)
+                    System.err.println("MimePath NOT FOUND");
             }
         });
     }
@@ -143,6 +148,7 @@ final class FontTracking {
             return false;
         FontTracking ft = new FontTracking(jep);
         ft.init();
+        System.err.println("CHECKING FONT '" + ft.mimePath + "'");
         ft.fontCheck();
         return true;
     }
@@ -160,48 +166,58 @@ final class FontTracking {
         mimePath = MimePath.parse(NbEditorUtilities.getMimeType(jep));
         fcs = getFCS(mimePath);
         // Get the categories for the mimetype(s) of the JEP
-        categoriesMime = getAttributeList(mimePath);
+        categoriesMime = createAttributeMap(mimePath);
+        categoriesAllLanguages = createAttributeMap(MimePath.EMPTY);
+
+        AttributeSet defaultDefaults = AttributesUtilities.createImmutable(
+                Style.Family.key, "Monospaced",
+                Style.Size.key, getDefaultFontSize(),
+                Style.Bold.key, Boolean.FALSE,
+                Style.Italic.key, Boolean.FALSE); // NOI18N
+        defaultCategory = AttributesUtilities.createImmutable(
+                getCategory(CATS.ALL, "default"), defaultDefaults);
     }
 
-    private void initCategoriesAllLanguages()
+    private Map<String, AttributeSet> createAttributeMap(MimePath mimePath)
     {
-        if(categoriesAllLanguages == null)
-            categoriesAllLanguages = getAttributeList(MimePath.EMPTY);
-    }
-
-    private List<AttributeSet> getAttributeList(MimePath mimePath)
-    {
+        Map<String, AttributeSet> map = new HashMap<String, AttributeSet>();
         EditorSettings es = EditorSettings.getDefault();
         String [] mimeTypes = new String[mimePath.size()];
         for(int i = 0; i < mimeTypes.length; i++) {
             mimeTypes[i] = mimePath.getMimeType(i);
         }
         FontColorSettingsFactory fcsf = es.getFontColorSettings(mimeTypes);
-        return new ArrayList<AttributeSet>(fcsf.getAllFontColors(currentProfile));
+        for(AttributeSet c : fcsf.getAllFontColors(currentProfile)) {
+            map.put((String)c.getAttribute(StyleConstants.NameAttribute), c);
+        }
+        return map;
     }
 
     private void fontCheck()
     {
-        // dump("All languages", categoriesAllLanguages);
-        dump(mimePath.toString(), categoriesMime);
-        // dumpSource("all categories resolve source", categoriesMime);
-        // System.err.println("");
-        // System.err.println("");
-        List<AttributeSet> l01 = new ArrayList<AttributeSet>();
-        for(AttributeSet c : categoriesMime) {
-            AttributeSet c01 = fcs.getTokenFontColors((String)c.getAttribute(StyleConstants.NameAttribute));
-            l01.add(c01);
+        if(false) {
+            dump(mimePath.toString(), categoriesMime.values());
+            dump("All languages", categoriesAllLanguages.values());
+            dumpSource(mimePath.toString() + "resolve source", categoriesMime.values());
+            dumpSource("All Languages resolve source", categoriesMime.values());
+            System.err.println("");
+            System.err.println("");
+            List<AttributeSet> l01 = new ArrayList<AttributeSet>();
+            for(String name : categoriesMime.keySet()) {
+                AttributeSet c01 = fcs.getTokenFontColors(name);
+                l01.add(c01);
+            }
+            dump("FCS:" + mimePath.toString(), l01);
         }
-        dump("FCS:" + mimePath.toString(), l01);
 
-        boolean error = false;
+
         curFontParams = null;
-        for(AttributeSet c : categoriesMime) {
-            Font f = getFont((String)c.getAttribute(StyleConstants.NameAttribute));
-            FontTrack ft = new FontTrack(c, f);
+        for(Entry<String, AttributeSet> entry : categoriesMime.entrySet()) {
+            Font f = getFontFCS(entry.getKey());
+            FontTrack ft = new FontTrack(entry.getValue(), f);
             if(!ft.isFixed) {
                 System.err.println("");
-                vari.add(c);
+                vari.add(entry.getValue());
                 continue;
             }
             if(!sizeMap.containsKey(ft.wh)) {
@@ -220,7 +236,6 @@ final class FontTracking {
         // Where there are problems, determine the base of the resolve tree
         // and weed out duplicates
         //
-        initCategoriesAllLanguages();
         StringBuilder sb = new StringBuilder();
         FontParams fp;
         Font f;
@@ -299,23 +314,23 @@ final class FontTracking {
      * it lets the API do the parent resolution.
      * It is used to check if there are font size problems.
      */
-    private Font getFont (String token) {
+    private Font getFontFCS (String token) {
         AttributeSet category = fcs.getTokenFontColors(token);
         String name = (String)category.getAttribute (Style.Family.key);
         if (name == null) {
-            name = "Monospaced"; // NOI18N
+            name = (String)defaultCategory.getAttribute(Style.Family.key);
         }
         Integer size = (Integer)category.getAttribute (Style.Size.key);
         if (size == null) {
-            size = getDefaultFontSize ();
+            size = (Integer)defaultCategory.getAttribute(Style.Size.key);
         }
         Boolean bold = (Boolean)category.getAttribute (Style.Bold.key);
         if (bold == null) {
-            bold = Boolean.FALSE;
+            bold = (Boolean)defaultCategory.getAttribute(Style.Bold.key);
         }
         Boolean italic = (Boolean)category.getAttribute (Style.Italic.key);
         if (italic == null) {
-            italic = Boolean.FALSE;
+            italic = (Boolean)defaultCategory.getAttribute(Style.Italic.key);
         }
         int style = bold.booleanValue () ? Font.BOLD : Font.PLAIN;
         if (italic.booleanValue ()) style += Font.ITALIC;
@@ -324,7 +339,6 @@ final class FontTracking {
 
     private void dump(String tag, Collection<AttributeSet> attrs)
     {
-        initCategoriesAllLanguages();
         System.err.println("========== " + tag + " ==========");
         for(AttributeSet c : attrs) {
             dump(null, c);
@@ -346,7 +360,6 @@ final class FontTracking {
 
     private void dumpSource(String tag, Collection<AttributeSet> attrs)
     {
-        initCategoriesAllLanguages();
         StringBuilder sb = new StringBuilder();
         System.err.println("========== " + tag + " ==========");
         for(AttributeSet c : attrs) {
@@ -411,8 +424,6 @@ final class FontTracking {
 
     private StringBuilder dumpSize(StringBuilder sb, Font f, WH wh, WH expect)
     {
-        if(expect != null && !wh.equals(expect))
-            sb.append("*** ");
         sb.append(f.getSize()).append(" (fm=")
                 .append(wh.w).append('/').append(wh.h).append(')');
         if(expect != null && !wh.equals(expect))
@@ -447,22 +458,22 @@ final class FontTracking {
     private Font getFont (AttributeSet category) {
         String name = (String) getValue (CATS.MIME, category, Style.Family);
         if (name == null) {
-            name = "Monospaced";
+            name = (String)defaultCategory.getAttribute(Style.Family.key);
             addFontParam(Style.Family, null, null, name);
         }                        // NOI18N
         Integer size = (Integer) getValue (CATS.MIME, category, Style.Size);
         if (size == null) {
-            size = getDefaultFontSize ();
+            size = (Integer)defaultCategory.getAttribute(Style.Size.key);
             addFontParam(Style.Size, null, null, size);
         }
         Boolean bold = (Boolean) getValue (CATS.MIME, category, Style.Bold);
         if (bold == null) {
-            bold = Boolean.FALSE;
+            bold = (Boolean)defaultCategory.getAttribute(Style.Bold.key);
             addFontParam(Style.Bold, null, null, bold);
         }
         Boolean italic = (Boolean) getValue (CATS.MIME, category, Style.Italic);
         if (italic == null) {
-            italic = Boolean.FALSE;
+            italic = (Boolean)defaultCategory.getAttribute(Style.Italic.key);
             addFontParam(Style.Italic, null, null, italic);
         }
         int style = bold.booleanValue () ? Font.BOLD : Font.PLAIN;
@@ -484,8 +495,7 @@ final class FontTracking {
 	if (name == null) name = "default";
 
 	// 1) search current language
-        if (!name.equals (category.getAttribute (StyleConstants.NameAttribute))
-                ) {
+        if (!name.equals (category.getAttribute (StyleConstants.NameAttribute))) {
             AttributeSet defaultAS = getCategory(cats, name);
             if (defaultAS != null)
                 return getValue (cats, defaultAS, s);
@@ -500,9 +510,9 @@ final class FontTracking {
 
         Object value = null;
         if (s == Style.Family) {
-            value = "Monospaced"; // NOI18N
+            value = (String)defaultCategory.getAttribute(Style.Family.key);
         } else if (s == Style.Size) {
-            value = getDefaultFontSize ();
+            value = (Integer)defaultCategory.getAttribute(Style.Size.key);
         }
         if(value != null)
             addFontParam(s, cats, category, value, name);
@@ -522,18 +532,14 @@ final class FontTracking {
         return defaultFontSize;
     }
 
-    private List<AttributeSet> getCategories(CATS cats)
+    private Map<String, AttributeSet> getCategories(CATS cats)
     {
         return cats == CATS.MIME ? categoriesMime : categoriesAllLanguages;
     }
 
     // NEEDSWORK: make map
     private AttributeSet getCategory (CATS cats, String name) {
-        for(AttributeSet c : getCategories(cats)) {
-            if (c.getAttribute (StyleConstants.NameAttribute).equals (name))
-                return c;
-        }
-        return null;
+        return getCategories(cats).get(name);
     }
 
     private void addFontParam(Style s, CATS cats,
@@ -756,6 +762,20 @@ final class FontTracking {
 
     }
 
+    private static Map<FontMetrics, FontMetricsData> fontMetricsDataCache
+            = new HashMap<FontMetrics, FontMetricsData>();
+
+    private static class FontMetricsData {
+        private final WH wh;
+        private final boolean isFixed;
+
+        public FontMetricsData(WH wh, boolean isFixed)
+        {
+            this.wh = wh;
+            this.isFixed = isFixed;
+        }
+    }
+
     private class FontTrack {
         private final WH wh;
         private final String nameAttr;
@@ -763,27 +783,34 @@ final class FontTracking {
 
         public FontTrack(AttributeSet c, Font f)
         {
-            this.nameAttr = (String)c.getAttribute(StyleConstants.NameAttribute);
-            FontMetrics fm = jep.getGraphics().getFontMetrics(f);
-            // can't use font family to determine fixed width
-            // so if first 'n' characters are the same size (except 0)
-            // then assume fixed width
-            boolean flag = true;
-            int w01 = 0;
-            int[] widths = fm.getWidths();
-            for(int w : widths) {
-                if(w == 0)
-                    continue;
-                if(w01 == 0)
-                    w01 = w;
-                if(w01 != w) {
-                    flag = false;
-                    break;
+            nameAttr = (String)c.getAttribute(StyleConstants.NameAttribute);
+            FontMetrics fm = FontMetricsCache.getFontMetrics(f, jep);
+            FontMetricsData fmd = fontMetricsDataCache.get(fm);
+            if(fmd != null) {
+                wh = fmd.wh;
+                isFixed = fmd.isFixed;
+            } else {
+                // can't use font family to determine fixed width
+                // so if first 'n' characters are the same size (except 0)
+                // then assume fixed width
+                boolean flag = true;
+                int w01 = 0;
+                int[] widths = fm.getWidths();
+                for(int w : widths) {
+                    if(w == 0)
+                        continue;
+                    if(w01 == 0)
+                        w01 = w;
+                    if(w01 != w) {
+                        flag = false;
+                        break;
+                    }
                 }
+                isFixed = flag;
+                wh = isFixed ? new WH(w01, fm.getHeight())
+                             : new WH(0,0);
+                fontMetricsDataCache.put(fm, new FontMetricsData(wh, isFixed));
             }
-            this.isFixed = flag;
-            this.wh = isFixed ? new WH(w01, fm.getHeight())
-                              : new WH(0,0);
         }
 
         //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">

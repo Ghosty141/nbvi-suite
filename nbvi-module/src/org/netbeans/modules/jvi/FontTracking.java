@@ -247,12 +247,13 @@ final class FontTracking {
         categoriesAllLanguages = createAttributeMap("", currentProfile);
 
         AttributeSet defaultDefaults = AttributesUtilities.createImmutable(
-                Style.Family.key, "Monospaced",
-                Style.Size.key, getDefaultFontSize(),
+                Style.Family.key, "Monospaced", // DEFAULT_COLORING overrides
+                Style.Size.key, getDefaultSize(), // DEFAULT_COLORING overrides
                 Style.Bold.key, Boolean.FALSE,
                 Style.Italic.key, Boolean.FALSE); // NOI18N
         defaultCategory = AttributesUtilities.createImmutable(
-                getCategory(CATS.ALL, "default"), defaultDefaults);
+                fcs.getFontColors(FontColorNames.DEFAULT_COLORING),
+                defaultDefaults);
 
         if(G.dbgFonts().getBoolean(Level.CONFIG)) {
             StringBuilder sb = new StringBuilder();
@@ -630,15 +631,17 @@ final class FontTracking {
         return value;
     }
 
-    private static Integer defaultFontSize;
-    private static Integer getDefaultFontSize () {
+    // only called once, and not really used
+    private static Integer getDefaultSize () {
+        Integer defaultFontSize;
+        defaultFontSize = (Integer) UIManager.get("customFontSize"); // NOI18N
         if (defaultFontSize == null) {
-            defaultFontSize = (Integer) UIManager.get("customFontSize"); // NOI18N
-            if (defaultFontSize == null) {
-                int s = UIManager.getFont ("TextField.font").getSize (); // NOI18N
-                if (s < 12) s = 12;
-                defaultFontSize = new Integer (s);
-            }
+            int s = UIManager.getFont ("TextField.font").getSize (); // NOI18N
+            // Options Dialog, Font&Coloring uses 12,
+            // but CompositeFCS.getHardcodedDefaultColoring uses 13
+            // Bug 200450 - how to determine what fonts are in use for editor
+            if (s < 13) s = 13;
+            defaultFontSize = new Integer (s);
         }
         return defaultFontSize;
     }

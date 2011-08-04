@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+OpenIDE-Module: com.raelity.jvi.nb.patches.org.netbeans.modules.editor.completion
+OpenIDE-Module-Localizing-Bundle: com/raelity/jvi/nb/patches/org/netbeans/modules/editor/completion/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+

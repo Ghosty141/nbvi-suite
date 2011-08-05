@@ -26,3 +26,4 @@ is optional. It provides support for resizing an editor window. It is used
 by jVi to set the size of a window as part of a window split/move and to
 implement the window resize commands.
 
+

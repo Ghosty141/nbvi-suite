@@ -1,0 +1,66 @@
+
+Setting up my structure for a NB patch handled as a module. A lot of the work
+is done by the common/shared patches/share/patches.xml file.
+
+    module suite: nbvi/patches/patch-<release>
+                  patch-701
+
+    project dir: patch-<release>-<nbDirectory>
+                 patch-701-openide.text
+
+    codenamebase: com.raelity.jvi.nb.patches.<netbeansCodeBase>
+                  com.raelity.jvi.nb.patches.org.openide.text
+
+    copy stuff into build.xml from another patch build.xml, starting with
+
+        <import file="../../share/patches.xml"/>
+        ...
+
+    add to nbproject/project.properties, for example
+
+            license.file=../../share/CDDL-GPL-2-CP
+            nbm.homepage=http://jvi.sourceforge.net
+            nbm.is.global=true
+            nbm.module.author=Ernie Rael
+            nbm.needs.restart=true
+            
+            spec.version.base.fatal.warning=false
+            
+            nbm.target.cluster=platform
+            patch.module=org-openide-text
+            patch.filename=jvi-patch-openide-text.jar
+            
+            extra.module.files=modules/patches/${patch.module}/${patch.filename}
+            
+            # one of following only needed when src compiling against patch
+            #cp.extra=${suite.dir}/patch-openide.text/build/patchclasses
+
+        customize
+            patch.module=<netbeans module codeNameBase>
+            patch.filename=jvi-patch-<netbeans-directory>
+        and maybe others as needed
+
+Now add the patchsrc directory. There seems to be an issue about changing
+project.xml while NB is open. CLOSE NETBEANS.
+
+    add to nbproject/project.xml, after <public-packages>
+
+            <extra-compilation-unit>
+                <package-root>patchsrc</package-root>
+                <classpath>${module.classpath}</classpath>
+                <built-to>${patch.build.classes.dir}</built-to>
+                <built-to>${patch.jar.file}</built-to>
+            </extra-compilation-unit>
+
+    create patchsrc directory, next to src, copy in original files
+    to patch.
+
+Can open NetBeans now, should have the patchsrc directory.
+
+    copy to nbproject/private/private.properties for jar signing
+
+Now do the regular stuff...
+    - add dependencies for the stuff in patchsrc
+    - need to create a Dummy.java in src (i forget exactly why)
+      might have to do with the module install process
+

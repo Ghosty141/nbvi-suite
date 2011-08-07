@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See harness/README in the NetBeans platform -->
+<!-- for some information on what you could do (e.g. targets to override). -->
+<!-- If you delete this file and reopen the project it will be recreated. -->
+<project name="com.raelity.nb.patches.org.netbeans.modules.projectui" default="netbeans" basedir=".">
+    <description>Builds, tests, and runs the project com.raelity.nb.patches.org.netbeans.modules.projectui.</description>
+    <import file="nbproject/build-impl.xml"/>
+
+    <import file="../../share/patches.xml"/>
+
+    <target name="basic-init"
+            depends="harness.basic-init, patch.patch-init"/>
+
+
+<!--
+    <target name="compile"
+            depends="projectized-common.compile,patch.patch-compile"/>
+-->
+    <target name="compile"
+            depends="harness.init,patch.patch-compile,projectized-common.up-to-date,projectized-common.compile"/>
+
+    <!-- following target only needed when src compiling against patch -->
+    <!-- following makes cp.extra first by flipping order of pathelement -->
+<!--
+    <target name="-javac-init" depends="harness.build-init,projectized-common.-javac-init-bootclasspath-prepend,projectized-common.-javac-init-no-bootclasspath-prepend">
+        <path id="cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.classpath}"/>
+        </path>
+        <path id="processor.cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.run.classpath}"/>
+        </path>
+    </target>
+-->
+        <!-- Unlike ${module.classpath}, this does not use publicPackageJarDir, since processors need not be in public packages. -->
+        <!-- Also needs to include transitive dependencies. -->
+
+
+    <target name="jar"
+            depends="projectized-common.jar, patch.patch-jar"/>
+    <target name="clean"
+            depends="patch.patch-clean, projectized-common.clean"/>
+
+    <!-- include following for standalone NBM -->
+    <target name="nbm" depends="projectized-common.nbm">
+        <makeupdatedesc desc="${build.dir}/updates.xml"
+                        distbase="."
+                        automaticgrouping="false"
+                        uselicenseurl="true">
+            <fileset dir="${build.dir}">
+                <include name="*.nbm"/>
+            </fileset>
+        </makeupdatedesc>
+    </target>
+</project>

@@ -1,0 +1,10 @@
+This is FavoritesSlowPerformance.diff
+
+    Without this patch, a context menu on a Favorites may hang
+    waiting for some stuff to happen, e.g. after expanding b/main
+
+It does not include Bundle.properties which were editted to remove stuff
+that now uses @Messages. The @Messages usage changes the bundle names
+to avoid conflict since they appear in the original bundle.
+This may not work well.
+

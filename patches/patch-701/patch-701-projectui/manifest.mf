@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+OpenIDE-Module: com.raelity.nb.patches.org.netbeans.modules.projectui
+OpenIDE-Module-Localizing-Bundle: com/raelity/nb/patches/org/netbeans/modules/projectui/Bundle.properties
+OpenIDE-Module-Specification-Version: 1.0
+

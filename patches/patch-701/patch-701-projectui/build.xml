@@ -21,7 +21,7 @@
 
     <!-- following target only needed when src compiling against patch -->
     <!-- following makes cp.extra first by flipping order of pathelement -->
-<!--
+<!-- UNCOMMENT THIS TARGET SO Bundle.java's CLASS IS FOUND -->
     <target name="-javac-init" depends="harness.build-init,projectized-common.-javac-init-bootclasspath-prepend,projectized-common.-javac-init-no-bootclasspath-prepend">
         <path id="cp">
             <pathelement path="${cp.extra}"/>
@@ -32,7 +32,7 @@
             <pathelement path="${module.run.classpath}"/>
         </path>
     </target>
--->
+<!-- -->
         <!-- Unlike ${module.classpath}, this does not use publicPackageJarDir, since processors need not be in public packages. -->
         <!-- Also needs to include transitive dependencies. -->
 

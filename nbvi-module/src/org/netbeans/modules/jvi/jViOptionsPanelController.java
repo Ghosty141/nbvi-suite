@@ -36,6 +36,13 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
+@OptionsPanelController.TopLevelRegistration(
+    position=1000,
+    categoryName="#OptionsCategory_Name_jViConfig",
+    iconBase="org/netbeans/modules/jvi/resources/jViLogoSimple32.png",
+    keywords="#OptionsCategory_Keywords_jViConfig",
+    keywordsCategory="jViConfig"
+)
 public final class jViOptionsPanelController extends OptionsPanelController
 {
 

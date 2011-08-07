@@ -11,6 +11,9 @@ is done by the common/shared patches/share/patches.xml file.
     codenamebase: com.raelity.jvi.nb.patches.<netbeansCodeBase>
                   com.raelity.jvi.nb.patches.org.openide.text
 
+                  if not related to jVi, could be
+                      com.raelity.nb.patches.<netbeansCodeBase>
+
     copy stuff into build.xml from another patch build.xml, starting with
 
         <import file="../../share/patches.xml"/>
@@ -38,10 +41,14 @@ is done by the common/shared patches/share/patches.xml file.
         customize
             patch.module=<netbeans module codeNameBase>
             patch.filename=jvi-patch-<netbeans-directory>
+
+            if not jvi
+                patch.filename=raelity-patch-<netbeans-directory>
         and maybe others as needed
 
+CLOSE NETBEANS.
 Now add the patchsrc directory. There seems to be an issue about changing
-project.xml while NB is open. CLOSE NETBEANS.
+project.xml while NB is open.
 
     add to nbproject/project.xml, after <public-packages>
 

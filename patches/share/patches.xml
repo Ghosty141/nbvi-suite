@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="patch">
+
+    <target name="netbeans-extra"
+            depends="patch-init, patch-compile, patch-jar"/>
+
+    <target name="clean"
+            depends="patch-clean, projectized-common.clean"/>
+
     <!-- default patch src and class directories -->
     <target name="patch-init">
         <property name="patch.src.dir"
@@ -50,6 +57,40 @@
         <delete dir="${patch.jar.dir}"/>
         <delete dir="${patch.build.classes.dir}"/>
         <delete dir="${build.dir/patchdepcache}"/>
+    </target>
+
+    <!-- Use the following to create an update center
+       - for a single NBM (may be part of a module suite)
+       - Do something like:
+         <target name="nbm"
+            depends="projectized-common.nbm, patch-standalone-update-center"/>
+      -->
+    <target name="patch-standalone-update-center" depends="projectized-common.nbm">
+        <makeupdatedesc desc="${build.dir}/updates.xml"
+                        distbase="."
+                        automaticgrouping="false"
+                        uselicenseurl="true">
+            <fileset dir="${build.dir}">
+                <include name="*.nbm"/>
+            </fileset>
+        </makeupdatedesc>
+    </target>
+
+<!-- Replace the commands of target "-javac-init"
+   - Use it like:
+     <target name="-javac-init" depends="patch-put-cp-extra-first"/>
+  -->
+    <target name="patch-put-cp-extra-first" depends="harness.build-init,projectized-common.-javac-init-bootclasspath-prepend,projectized-common.-javac-init-no-bootclasspath-prepend">
+        <path id="cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.classpath}"/>
+        </path>
+        <path id="processor.cp">
+            <pathelement path="${cp.extra}"/>
+            <pathelement path="${module.run.classpath}"/>
+        </path>
+        <!-- Unlike ${module.classpath}, this does not use publicPackageJarDir, since processors need not be in public packages. -->
+        <!-- Also needs to include transitive dependencies. -->
     </target>
 
 </project>

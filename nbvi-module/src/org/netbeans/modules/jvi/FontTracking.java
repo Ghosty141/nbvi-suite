@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import javax.swing.JEditorPane;
 import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.StyleConstants;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
@@ -102,12 +103,15 @@ final class FontTracking {
      */
     static void monitorMimeType(JEditorPane ep)
     {
+        if(G.dbgFonts().getBoolean(Level.FINE))
+            G.dbgFonts().println("FONTS: MONITOR FOR ep "
+                    + Module.cid(ep) + " doc " + Module.cid(ep.getDocument()));
         monitorMimeType(DocumentUtilities.getMimeType(ep));
-        ep.removeFocusListener(focusListener);
-        ep.addFocusListener(focusListener);
+        ep.removeFocusListener(fontFocusListener);
+        ep.addFocusListener(fontFocusListener);
     }
 
-    private static FocusListener focusListener = new FocusAdapter() {
+    private static FocusListener fontFocusListener = new FocusAdapter() {
         @Override
         public void focusGained(final FocusEvent e)
         {
@@ -129,6 +133,7 @@ final class FontTracking {
     {
         if(results.containsKey(mimeType))
             return;
+        G.dbgFonts().println(Level.INFO, "FONTS: MONITORING FOR " + getLang(mimeType));
         Lookup lookup = MimeLookup.getLookup(MimePath.get(mimeType));
         Result<FontColorSettings> result
                 = lookup.lookupResult(FontColorSettings.class);
@@ -139,8 +144,8 @@ final class FontTracking {
             public void resultChanged(LookupEvent ev) {
                 boolean remove = fontChecked.remove(mimeType);
                 if(G.dbgFonts().getBoolean(Level.INFO)) {
-                    G.dbgFonts().println("MIME FONT/COLOR CHANGE='"
-                            + getLang(mimeType) + "'");
+                    G.dbgFonts().println("FONTS: MIME RESULTS CHANGE="
+                            + getLang(mimeType));
                     if(!remove)
                         G.dbgFonts().println("MimeType NOT FOUND");
                 }
@@ -150,13 +155,13 @@ final class FontTracking {
 
     private static String getLang(String mimeType)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("'");
         sb.append(EditorSettings.getDefault().getLanguageName(mimeType));
         if(sb.length() == 0) {
             sb.append(mimeType.isEmpty() ? "AllLanguages" : "UnknownLanguage");
         }
         if(!mimeType.isEmpty())
-            sb.append(" (").append(mimeType).append(')');
+            sb.append(" (").append(mimeType).append(")'");
         return sb.toString();
     }
 
@@ -165,7 +170,7 @@ final class FontTracking {
         return results.get(mimeType).allInstances().iterator().next();
     }
 
-    public static void focusMimeType(JEditorPane ep)
+    private static void focusMimeType(JEditorPane ep)
     {
         if(ep.getGraphics() == null)
             return;
@@ -173,25 +178,42 @@ final class FontTracking {
         focusMimeType(mimeType, ep);
     }
 
-    private static FontTracking focusMimeType(String mimeType, Component component)
+    // NOTE: the assoc'd jtc should be monitored already
+    private static FontTracking focusMimeType(String mimeType,
+                                              JTextComponent jtc)
     {
         if(fontChecked.contains(mimeType))
             return null;
         fontChecked.add(mimeType);
-        G.dbgFonts().println(Level.INFO, "CHECKING FONTS FOR " + getLang(mimeType));
-        FontTracking ft = new FontTracking(component, mimeType);
+        // In some cases DocumentUtilities.getMimeType(ep) may return a
+        // a different value than the one when the ep was first seen.
+        // For example text/xml --> text/x-ant+xml
+        if(!results.containsKey(mimeType)) {
+            G.dbgFonts().println(Level.FINE, "FONTS: MIME_TYPE CHANGE TO "
+                    + getLang(mimeType));
+            monitorMimeType(mimeType);
+        }
+
+        if(G.dbgFonts().getBoolean(Level.INFO)) {
+            String docid = Module.cid(jtc.getDocument());
+            G.dbgFonts().println(Level.INFO, "FONTS: CHECKING FOR "
+                    + getLang(mimeType) + " ep " + Module.cid(jtc)
+                    + " doc " + docid);
+        }
+        FontTracking ft = new FontTracking(jtc, mimeType);
         ft.init();
         ft.fontCheck();
         return ft;
     }
 
     /** MAKE public if needed, otherwise this is NOT USED */
-    private static void focusMimeType(MimePath mimePath, Component component)
+    private static void focusMimeType(MimePath mimePath,
+                                      JTextComponent jtc)
     {
         List<FontTracking> ftl = new ArrayList<FontTracking>();
         for(int i = 0; i < mimePath.size(); i++) {
             String mimeType = mimePath.getMimeType(i);
-            FontTracking ft = focusMimeType(mimeType, component);
+            FontTracking ft = focusMimeType(mimeType, jtc);
             if(ft == null)
                 continue;
             ftl.add(ft);
@@ -277,12 +299,15 @@ final class FontTracking {
                                                          String profile)
     {
         Map<String, AttributeSet> map = new HashMap<String, AttributeSet>();
-        EditorSettings es = EditorSettings.getDefault();
-        FontColorSettingsFactory fcsf = es.getFontColorSettings(
-                new String[] { mimeType });
+        FontColorSettingsFactory fcsf = EditorSettings.getDefault()
+                .getFontColorSettings(new String[] { mimeType });
         for(AttributeSet c : fcsf.getAllFontColors(profile)) {
             map.put(name(c), c);
         }
+        if(map.isEmpty())
+            LOG.log(Level.WARNING,
+                    "fcsf.getAllFontColors(profile) empty for {0}",
+                    getLang(mimeType));
         return map;
     }
 

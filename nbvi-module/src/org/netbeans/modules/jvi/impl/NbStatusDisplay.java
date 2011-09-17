@@ -101,19 +101,26 @@ public final class NbStatusDisplay implements ViStatusDisplay
     @Override
     public void displayMode(String mode) {
         // Keep track of the mode we're in
-        if( ! mode.equals(lastMode))
+        boolean newMode = false;
+        boolean isPlatformSelection = mode.equals(ViManager.getFactory()
+                                        .getPlatformSelectionDisplayName());
+        if( ! mode.equals(lastMode)) {
             lastMode = mode;
+            newMode = true;
+        }
         if( ! mode.isEmpty())
             this.mode = "-- " + mode + " -- ";
         else
             this.mode = "";
-        if(false) {
+
+        if(newMode && !isPlatformSelection) {
             // This ends up clearing a message when mode changes to/from
             // "PLATFORM_SELECT" which looses info particularly when
             // incremental search has a mathcing pattern and type one char
             // it no longer matches; this ="" looses the not-match message.
             lastMsg = "";       // clear lastMsg when mode is set
         }
+
 	setText(StatusBar.CELL_MAIN, modeString());
         
         //
@@ -127,8 +134,7 @@ public final class NbStatusDisplay implements ViStatusDisplay
 	    nbMode = "INS";
 	} else if(mode.equals(Edit.VI_MODE_REPLACE)) {
 	    nbMode = "OVR";
-	} else if(mode.equals(ViManager.getFactory()
-                .getPlatformSelectionDisplayName())) {
+	} else if(isPlatformSelection) {
             nbMode = "";
 	} else {
             jviOnlyMode = true;

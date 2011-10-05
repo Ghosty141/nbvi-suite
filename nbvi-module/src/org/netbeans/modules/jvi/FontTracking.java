@@ -19,7 +19,10 @@
  */
 package org.netbeans.modules.jvi;
 
+import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.core.G;
+import com.raelity.text.TextUtil;
 import org.netbeans.api.editor.settings.FontColorNames;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -319,11 +322,20 @@ final class FontTracking {
         } finally {
             graphics.dispose();
             if(sb.length() != 0) {
-                G.dbgFonts().println(Level.CONFIG, sb.toString());
-                NotifyDescriptor d = new NotifyDescriptor.Message(
-                        sb.toString(), NotifyDescriptor.WARNING_MESSAGE);
-                d.setTitle("jVi Warning");
-                DialogDisplayer.getDefault().notifyLater(d);
+                String emsg = sb.toString();
+                G.dbgFonts().println(Level.CONFIG, emsg);
+                ViOutputStream os = ViManager.createOutputStream(
+                        null, ViOutputStream.OUTPUT,
+                        "Font Size Problem",
+                        ViOutputStream.PRI_LOW);
+                os.println(emsg);
+                os.close();
+                if(!G.disableFontError()) {
+                    NotifyDescriptor d = new NotifyDescriptor.Message(
+                            emsg, NotifyDescriptor.WARNING_MESSAGE);
+                    d.setTitle("jVi Warning");
+                    DialogDisplayer.getDefault().notifyLater(d);
+                }
             }
         }
     }
@@ -562,7 +574,19 @@ final class FontTracking {
     private StringBuilder dumpSize(StringBuilder sb, Font f, WH wh, WH expect)
     {
         sb.append(f.getSize()).append(" (fm=")
-                .append(wh.w).append('x').append(wh.h).append(')');
+          .append(wh.w).append('x').append(wh.h);
+        if(G.dbgFonts().getBoolean()) {
+            sb.append(", nWidth ").append(wh.nWidth);
+            if(wh.c01 != 0 || wh.w01 != 0 && wh.c02 != 0 || wh.w02 != 0) {
+                sb.append(", ").append("'")
+                  .append(TextUtil.debugString(String.valueOf(wh.c01)))
+                  .append("' ").append(wh.w01)
+                  .append(", ").append("'")
+                  .append(TextUtil.debugString(String.valueOf(wh.c02)))
+                  .append("' ").append(wh.w02);
+            }
+        }
+        sb.append(')');
         if(expect != null && !wh.equals(expect))
             sb.append(" ***");
         return sb;
@@ -861,11 +885,27 @@ final class FontTracking {
     private static class WH {
         private final int w;
         private final int h;
+        // NOTE, following not part of equals/hashcode
+        private final int nWidth;
+        private final char c01;
+        private final int w01;
+        private final char c02;
+        private final int w02;
 
-        public WH(int w, int h)
+        public WH(int w, int h, int nWidth)
+        {
+            this(w, h, nWidth, '\0', 0, '\0', 0);
+        }
+
+        public WH(int w, int h, int nWidth, char c01, int w01, char c02, int w02)
         {
             this.w = w;
             this.h = h;
+            this.nWidth = nWidth;
+            this.c01 = c01;
+            this.w01 = w01;
+            this.c02 = c02;
+            this.w02 = w02;
         }
 
         //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
@@ -938,21 +978,29 @@ final class FontTracking {
                 // so if first 'n' characters are the same size (except 0)
                 // then assume fixed width
                 boolean flag = true;
+                char c01 = 0;
                 int w01 = 0;
+                char c02 = 0;
+                int w02 = 0;
                 int[] widths = fm.getWidths();
-                for(int w : widths) {
+                for(int i = 0; i < widths.length; i++) {
+                    int w = widths[i];
                     if(w == 0)
                         continue;
-                    if(w01 == 0)
+                    if(w01 == 0) {
+                        c01 = (char)i;
                         w01 = w;
+                    }
                     if(w01 != w) {
+                        c02 = (char)i;
+                        w02 = w;
                         flag = false;
                         break;
                     }
                 }
                 isFixed = flag;
-                wh = isFixed ? new WH(w01, fm.getHeight())
-                             : new WH(0,0);
+                wh = isFixed ? new WH(w01, fm.getHeight(), widths.length)
+                             : new WH(0,0, widths.length, c01, w01, c02, w02);
                 fontMetricsDataCache.put(fm, new FontMetricsData(wh, isFixed));
             }
         }

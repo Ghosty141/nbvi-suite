@@ -30,7 +30,6 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.MultiFileSystem;
 import org.openide.loaders.DataFolder;
-import org.openide.loaders.InstanceDataObject;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -64,8 +63,29 @@ public class KeyActionsFS extends MultiFileSystem
 
                 for(Action action : KeyBinding.getActionsList()) {
                     String name = (String)action.getValue(Action.NAME);
-                    InstanceDataObject.create(df, name + ".instance",
-                                              action, null);
+                    // See: http://netbeans.org/bugzilla/show_bug.cgi?id=205336
+                    //      ClassCastException: org.netbeans.modules.xml
+                    //      .XMLDataObject cannot be cast to org.openide
+                    //      .loaders.InstanceDataObject
+                    // And: http://sourceforge.net/tracker/?func=detail&aid=3440698&group_id=3653&atid=103653
+                    // InstanceDataObject.create(df, name + ".instance",
+                    //                           action, null);
+
+                    FileObject fo = dir.createData(name + ".instance");
+                    fo.setAttribute("instanceCreate", action);
+                    fo.setAttribute("instanceClass", action.getClass().getName());
+                    // That last one: "instanceClass", action.getClass()
+                    // is to avoid the following warning
+                    // WARNING [org.openide.loaders.InstanceDataObject]:
+                    //Instance file MultiFileObject@1de993a[Editors/Actions
+                    ///ViCtrl-TKey.instance] uses instanceCreate attribute,
+                    //but doesn't define instanceOf attribute. Please add
+                    // instanceOf attr to avoid multiple instances creation,
+                    //see details at
+                    //http://www.netbeans.org/issues/show_bug.cgi?id=131951
+                    //fo.setAttribute("instanceOf", "javax.swing.Action");
+                    //NOTE: the WARNING is flawed, using instanceClass works.
+                    //fo.setAttribute("instanceClass", Action.class);
                 }
 
                 INSTANCE.setDelegates(fs);

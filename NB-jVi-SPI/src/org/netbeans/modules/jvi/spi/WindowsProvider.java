@@ -94,4 +94,8 @@ public interface WindowsProvider
 
     /** part of the size calculation */
     Component findModePanel(Component c);
+
+    /** These are great for toggle */
+    void minimizeMode(Mode m);
+    void restoreMode(Mode slidingMode, Mode modeToRestore);
 }

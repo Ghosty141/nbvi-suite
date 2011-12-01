@@ -50,6 +50,7 @@ import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.text.JTextComponent;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.openide.util.ContextAwareAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
@@ -425,9 +426,10 @@ public class NbColonCommands {
     //
     // :tog[gle] bo[ttom] | ou[tput] | de[bug]
     //
-    // FORMERLY: This is one hack after another...
-    // Now implemented with documented APIs,
-    // but there is some workaround code in SimpleToggleOutput
+    // In NB7.1 there are window group minimize/restore actions;
+    // use reflection to get at the functionality.
+    // special case toggle with no arg to do the window group.
+    //
     //
 
     /**
@@ -438,9 +440,14 @@ public class NbColonCommands {
     private static class ToggleAction extends AbstractColonAction {
         @Override
         public void actionPerformed(ActionEvent ev) {
+            boolean doBeep = false;
             initToggleCommand();
             ColonEvent cev = (ColonEvent)ev;
-            if( cev.getNArg() == 0 || cev.getNArg() == 1) {
+
+            if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP)
+                    && cev.getNArg() == 0) {
+                toggleOutputWindowGroup();
+            } else if( cev.getNArg() == 0 || cev.getNArg() == 1) {
                 String arg = cev.getNArg() == 0 ? "output" : cev.getArg(1);
                 ColonCommandItem ce = toggles.lookupCommand(arg);
                 if(ce != null) {
@@ -448,12 +455,50 @@ public class NbColonCommands {
                     ((ActionListener)ce.getValue()).actionPerformed(ev);
                 } else {
                     Msg.emsg("Unknown toggle argument: " + cev.getArg(1));
+                    doBeep = true;
                 }
             } else {
                 Msg.emsg("Only zero or one argument allowed");
+                doBeep = true;
             }
+            if(doBeep)
+                Util.beep_flush();
         }
     };
+
+    private static final String M_OUTPUT = "output";
+    private static final String M_BOTTOM_SLIDE = "bottomSlidingSide";
+    private static void toggleOutputWindowGroup() {
+        Set<? extends Mode> modes = WindowManager.getDefault().getModes();
+        for(Mode mode : modes) {
+            System.err.println("Mode: " + mode.getName());
+        }
+
+        WindowsProvider wp = Module.getWindowsProvider();
+
+        Mode mOutput = WindowManager.getDefault().findMode(M_OUTPUT);
+        // NEEDSWORK: just hardcode mBottom for now
+        Mode mBottom = WindowManager.getDefault().findMode(M_BOTTOM_SLIDE);
+
+        if(mOutput != null) {
+            boolean doHide = false;
+           // mOutput.getTopComponents().length > 0;
+            for(TopComponent tc : mOutput.getTopComponents()) {
+                if(tc.isOpened()) {
+                    doHide = true;
+                    break;
+                }
+            }
+            if(doHide) {
+                wp.minimizeMode(mOutput);
+            } else {
+                if(mBottom != null)
+                    wp.restoreMode(mBottom, mOutput);
+            }
+        }
+    }
+
+
 
     private static AbbrevLookup toggles;
 

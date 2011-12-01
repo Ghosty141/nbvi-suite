@@ -42,6 +42,8 @@ import javax.swing.Icon;
 import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
 import org.netbeans.modules.jvi.impl.NbFS;
+import org.netbeans.modules.jvi.reflect.NbWindows;
+import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Actions;
@@ -114,8 +116,20 @@ public class Module extends ModuleInstall
         return dbgHL;
     }
 
+    private static WindowsProvider wp;
+    public static WindowsProvider getWindowsProvider()
+    {
+        if(wp == null) {
+            // wp = Lookup.getDefault().lookup(WindowsProvider.class);
+            if(wp == null)
+                wp = NbWindows.getReflectionWindowsProvider();
+        }
+        return wp;
+    }
+
     public static final String HACK_CC = "NB6.7 Code Completion";
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
+    public static final String HACK_WINDOW_GROUP = "NB7.1 MinimizeWindowGroup";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
 
@@ -275,6 +289,12 @@ public class Module extends ModuleInstall
                     // HACK_CC fixup code-compl registratin and bindings
                     ViManager.putHackMap(HACK_CC, Boolean.TRUE);
                     ViManager.putHackMap(HACK_SCROLL, Boolean.TRUE);
+                }
+            } else if (mi.getCodeNameBase().equals(
+                    "org.netbeans.core.windows")) {
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("2.41.1")) >= 0) {
+                    ViManager.putHackMap(HACK_WINDOW_GROUP, Boolean.TRUE);
                 }
             }
         }

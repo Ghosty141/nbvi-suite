@@ -70,6 +70,18 @@ public class NbWindows
             {
                 return NbWindows.findModePanel(c);
             }
+
+            @Override
+            public void minimizeMode(Mode m)
+            {
+                userMinimizedMode(m);
+            }
+
+            @Override
+            public void restoreMode(Mode slidingMode, Mode modeToRestore)
+            {
+                userRestoredMode(slidingMode, modeToRestore);
+            }
         };
     }
 
@@ -163,6 +175,28 @@ public class NbWindows
         }
     }
 
+    private static void userMinimizedMode( Mode mode ) {
+        try {
+            Object wmi = WindowManager.getDefault();
+
+            // NOTE: exception if not 7.1 or later
+            meth_userMinimizedMode().invoke(wmi, mode);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private static void userRestoredMode( Mode slidingMode, Mode modeToRestore ) {
+        try {
+            Object wmi = WindowManager.getDefault();
+
+            // NOTE: exception if not 7.1 or later
+            meth_userRestoredMode().invoke(wmi, slidingMode, modeToRestore);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     /**
      * Invoke setWeights on splitter/MultiSplitPane.
      * See comment that follows for code that was tested in a NB patch.
@@ -233,6 +267,8 @@ public class NbWindows
     private static Method meth_userDroppedTopComponents_71; //mode,Drag
     private static Method meth_userDroppedTopComponents_side_71;//mode,Drag,side)
     private static Method meth_userDroppedTopComponentsAroundEditor_71; //Drag,side
+    private static Method meth_userMinimizedMode_71;
+    private static Method meth_userRestoredMode_71;
     private static Constructor<?> constr_topComponentDraggable_71;//TC
 
     private static Method meth_getCellCount_MSP;
@@ -268,6 +304,18 @@ public class NbWindows
         return is70()
                ? meth_userDroppedTopComponentsAroundEditor_70
                : meth_userDroppedTopComponentsAroundEditor_71;
+    }
+    static Method meth_userMinimizedMode() {
+        populateCoreWindowMethods();
+        return is70()
+               ? null
+               : meth_userMinimizedMode_71;
+    }
+    static Method meth_userRestoredMode() {
+        populateCoreWindowMethods();
+        return is70()
+               ? null
+               : meth_userRestoredMode_71;
     }
 
     private static void populateCoreWindowMethods() {
@@ -402,6 +450,8 @@ public class NbWindows
                 }
 
                 ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+                Class<?> c_wmi = cl.loadClass(
+                        "org.netbeans.core.windows.WindowManagerImpl");
                 Class<?> c_tcDraggable = cl.loadClass(
                         "org.netbeans.core.windows.view.dnd.TopComponentDraggable");
                 Class<?> c_central = cl.loadClass(
@@ -425,6 +475,15 @@ public class NbWindows
                                 "userDroppedTopComponentsAroundEditor",
                                 c_tcDraggable, String.class);
                 meth_userDroppedTopComponentsAroundEditor_71.setAccessible(true);
+
+                meth_userMinimizedMode_71
+                        = c_wmi.getMethod(
+                                "userMinimizedMode", c_modeImpl);
+                meth_userMinimizedMode_71.setAccessible(true);
+                meth_userRestoredMode_71
+                        = c_wmi.getMethod(
+                                "userRestoredMode", c_modeImpl, c_modeImpl);
+                meth_userRestoredMode_71.setAccessible(true);
             } catch(NoSuchMethodException ex) {
                 ex1 = ex;
             } catch(SecurityException ex) {

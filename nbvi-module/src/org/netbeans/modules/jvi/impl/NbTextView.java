@@ -86,11 +86,7 @@ public class NbTextView extends SwingTextView
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
-        if(wp == null) {
-            // wp = Lookup.getDefault().lookup(WindowsProvider.class);
-            if(wp == null)
-                wp = NbWindows.getReflectionWindowsProvider();
-        }
+        wp = Module.getWindowsProvider();
     }
     
     @Override

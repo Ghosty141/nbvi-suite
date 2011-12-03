@@ -83,9 +83,6 @@ public class NbColonCommands {
         ColonCommands.register("gr","grep", ACTION_fu, null);
 
         ColonCommands.register("fixi","fiximports", ACTION_fiximports, null);
-        ColonCommands.register("orga", "organizeimports",
-                               ACTION_organizeimports, null);
-        ColonCommands.register("fixio","fixiorganizeimports", new FixIO(), null);
 
         // Make
         ColonCommands.register("mak","make", new Make(), null);
@@ -164,32 +161,6 @@ public class NbColonCommands {
                                flags);
     }
 
-    static private class FixIO extends AbstractColonAction {
-
-        @Override
-        public EnumSet<CcFlag> getFlags()
-        {
-            return EnumSet.of(CcFlag.NO_ARGS);
-        }
-
-        @Override
-        public boolean isEnabled()
-        {
-            return ACTION_fiximports.isEnabled()
-                    && ACTION_organizeimports.isEnabled();
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e)
-        {
-            ACTION_fiximports.actionPerformed(e);
-            ACTION_organizeimports.actionPerformed(e);
-        }
-
-    }
-
-    public static ColonAction ACTION_organizeimports
-                = new DelegateFileSystemAction(FsAct.ORGANIZE_IMPORTS);
     public static ColonAction ACTION_fiximports = new FixImports();
 
     static private class FixImports extends AbstractColonAction {

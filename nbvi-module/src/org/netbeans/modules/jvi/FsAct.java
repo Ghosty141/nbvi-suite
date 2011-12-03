@@ -21,7 +21,7 @@ import org.openide.filesystems.FileUtil;
  */
 public enum FsAct {
         EDITOR_PIN		(s.EDITOR_PIN),
-        ORGANIZE_IMPORTS	(s.ORGANIZE_IMPORTS),
+        ORGANIZE_IMPORTS	(s.ORGANIZE_IMPORTS), // DO NOT USE THIS
         UNDO			(s.UNDO),
         REDO			(s.REDO),
         GO_TYPE			(s.GO_TYPE),

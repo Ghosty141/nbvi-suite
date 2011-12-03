@@ -240,6 +240,7 @@ final class FontTracking {
     private final Map<WH, Set<FontSize>> sizeMap
             = new HashMap<WH, Set<FontSize>>();
     private final Set<AttributeSet> vari = new HashSet<AttributeSet>();
+    private final Set<AttributeSet> variSpecialChars = new HashSet<AttributeSet>();
     // following could be made final if move the init code into constructor
     FontColorSettings fcs;
     // Following are only needed to get the list of what to check.
@@ -317,8 +318,9 @@ final class FontTracking {
     private void fontCheck()
     {
         StringBuilder sb = new StringBuilder();
+        StringBuilder sbSpecialChars = new StringBuilder();
         try {
-            fontCheckInternal(sb);
+            fontCheckInternal(sb, sbSpecialChars);
         } finally {
             graphics.dispose();
             if(sb.length() != 0) {
@@ -336,11 +338,21 @@ final class FontTracking {
                     d.setTitle("jVi Warning");
                     DialogDisplayer.getDefault().notifyLater(d);
                 }
+            } else if(sbSpecialChars.length() != 0) {
+                String emsg = sbSpecialChars.toString();
+                G.dbgFonts().println(Level.CONFIG, emsg);
+                ViOutputStream os = ViManager.createOutputStream(
+                        null, ViOutputStream.OUTPUT,
+                        "Font Size Warning",
+                        ViOutputStream.PRI_LOW);
+                os.println(emsg);
+                os.close();
             }
         }
     }
 
-    private void fontCheckInternal(StringBuilder sb)
+    private void fontCheckInternal(StringBuilder sb,
+                                   StringBuilder sbSpecialChars)
     {
         if(G.dbgFonts().getBoolean(Level.FINEST)) {
             dump(getLang(mimeType), categoriesMime.values());
@@ -370,7 +382,10 @@ final class FontTracking {
         for(Entry<String, AttributeSet> entry : categoriesMime.entrySet()) {
             Font f = getFontFCS(entry.getKey());
             FontSize fs = new FontSize(name(entry.getValue()), f);
-            if(!fs.isFixed) {
+            if(!fs.isSpecialCharsFixed()) {
+                variSpecialChars.add(entry.getValue());
+            }
+            if(!fs.isFixed()) {
                 vari.add(entry.getValue());
                 continue;
             }
@@ -381,8 +396,18 @@ final class FontTracking {
             s.add(fs);
         }
 
-        if(vari.isEmpty() && sizeMap.size() == 1)
+        if(vari.isEmpty() && sizeMap.size() == 1) {
+            if(!variSpecialChars.isEmpty()) {
+                sbSpecialChars
+                    .append("jVi works best with fixed size fonts.\n")
+                    .append("\nPotential font size problem for Language: ")
+                    .append(getLang(mimeType)).append("\n")
+                    .append("\nThe following have different width")
+                    .append(" special chars:\n");
+                dumpFonts(sbSpecialChars, variSpecialChars);
+            }
             return;
+        }
 
         // if there is anything in "vari" or there's more
         // than one size, then there's a problem.
@@ -390,25 +415,16 @@ final class FontTracking {
         // Where there are problems, determine the base of the resolve tree
         // and weed out duplicates
         //
-        FontParams fp;
-        Font f;
         if(!vari.isEmpty() || sizeMap.size() > 1) {
             sb.append("jVi works best with fixed size fonts.\n")
               .append("\nFont size problem for Language: ")
                     .append(getLang(mimeType)).append("\n");
         }
+        FontParams fp;
+        Font f;
         if(!vari.isEmpty()) {
-            Set<ParamSource> roots = new HashSet<ParamSource>();
-            for(AttributeSet c : vari) {
-                fp = new FontParams();
-                f = getFont(c, fp);
-                roots.add(fp.get(Style.Family).ps);
-            }
             sb.append("\nThe following specify a variable size font:\n");
-            for(ParamSource ps : roots) {
-                sb.append("    ");
-                dump(sb, ps).append('\n');
-            }
+            dumpFonts(sb, vari);
         }
         if(sizeMap.size() > 1) {
             WH wh01 = defaultWH;
@@ -452,6 +468,22 @@ final class FontTracking {
                 dump(sb, fsp.size.ps).append(" ");
                 dumpSize(sb, fsp.size.ps, wh01).append('\n');
             }
+        }
+    }
+
+    private void dumpFonts(StringBuilder sb, Set<AttributeSet> vari)
+    {
+        FontParams fp;
+        Font f;
+        Set<ParamSource> roots = new HashSet<ParamSource>();
+        for(AttributeSet c : vari) {
+            fp = new FontParams();
+            f = getFont(c, fp);
+            roots.add(fp.get(Style.Family).ps);
+        }
+        for(ParamSource ps : roots) {
+            sb.append("    ");
+            dump(sb, ps).append('\n');
         }
     }
 
@@ -577,14 +609,7 @@ final class FontTracking {
           .append(wh.w).append('x').append(wh.h);
         if(G.dbgFonts().getBoolean()) {
             sb.append(", nWidth ").append(wh.nWidth);
-            if(wh.c01 != 0 || wh.w01 != 0 && wh.c02 != 0 || wh.w02 != 0) {
-                sb.append(", ").append("'")
-                  .append(TextUtil.debugString(String.valueOf(wh.c01)))
-                  .append("' ").append(wh.w01)
-                  .append(", ").append("'")
-                  .append(TextUtil.debugString(String.valueOf(wh.c02)))
-                  .append("' ").append(wh.w02);
-            }
+            wh.dumpWidthTracking(sb);
         }
         sb.append(')');
         if(expect != null && !wh.equals(expect))
@@ -887,27 +912,33 @@ final class FontTracking {
         private final int h;
         // NOTE, following not part of equals/hashcode
         private final int nWidth;
-        private final char c01;
-        private final int w01;
-        private final char c02;
-        private final int w02;
+        private final CharWidthDiff cwd;
+        private final CharWidthDiff s_cwd;
 
         public WH(int w, int h, int nWidth)
         {
-            this(w, h, nWidth, '\0', 0, '\0', 0);
+            this(w, h, nWidth, null, null);
         }
 
-        public WH(int w, int h, int nWidth, char c01, int w01, char c02, int w02)
+        public WH(int w, int h, int nWidth,
+                  CharWidthDiff cwd, CharWidthDiff s_cwd)
         {
             this.w = w;
             this.h = h;
             this.nWidth = nWidth;
-            this.c01 = c01;
-            this.w01 = w01;
-            this.c02 = c02;
-            this.w02 = w02;
+            this.cwd = cwd;
+            this.s_cwd = s_cwd;
         }
 
+        void dumpWidthTracking(StringBuilder sb)
+        {
+            if(cwd != null) {
+                cwd.dump(sb, "normal");
+                s_cwd.dump(sb, "special");
+            }
+        }
+
+        // only w,h included
         //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
         @Override
         public boolean equals(Object obj)
@@ -946,17 +977,46 @@ final class FontTracking {
 
     }
 
+    private static class CharWidthDiff
+    {
+        private final char c01;
+        private final int w01;
+        private final char c02;
+        private final int w02;
+
+        private CharWidthDiff(char c01, int w01, char c02, int w02)
+        {
+            this.c01 = c01;
+            this.w01 = w01;
+            this.c02 = c02;
+            this.w02 = w02;
+        }
+
+        void dump(StringBuilder sb, String tag)
+        {
+            sb.append(", ").append(tag).append(": '")
+              .append(TextUtil.debugString(String.valueOf(c01)))
+              .append("' ").append(w01)
+              .append(", ").append("'")
+              .append(TextUtil.debugString(String.valueOf(c02)))
+              .append("' ").append(w02);
+        }
+
+    }
+
     private static Map<FontMetrics, FontMetricsData> fontMetricsDataCache
             = new HashMap<FontMetrics, FontMetricsData>();
 
     private static class FontMetricsData {
         private final WH wh;
         private final boolean isFixed;
+        private final boolean isSpecialCharsFixed;
 
-        public FontMetricsData(WH wh, boolean isFixed)
+        public FontMetricsData(WH wh, boolean isFixed, boolean isSpecialCharsFixed)
         {
             this.wh = wh;
             this.isFixed = isFixed;
+            this.isSpecialCharsFixed = isSpecialCharsFixed;
         }
     }
 
@@ -964,6 +1024,7 @@ final class FontTracking {
         private final WH wh;
         private final String name;
         private final boolean isFixed;
+        private final boolean isSpecialCharsFixed;
 
         public FontSize(String name, Font f)
         {
@@ -973,36 +1034,36 @@ final class FontTracking {
             if(fmd != null) {
                 wh = fmd.wh;
                 isFixed = fmd.isFixed;
+                isSpecialCharsFixed = fmd.isSpecialCharsFixed;
             } else {
                 // can't use font family to determine fixed width
                 // so if first 'n' characters are the same size (except 0)
                 // then assume fixed width
-                boolean flag = true;
-                char c01 = 0;
-                int w01 = 0;
-                char c02 = 0;
-                int w02 = 0;
+
                 int[] widths = fm.getWidths();
-                for(int i = 0; i < widths.length; i++) {
-                    int w = widths[i];
-                    if(w == 0)
-                        continue;
-                    if(w01 == 0) {
-                        c01 = (char)i;
-                        w01 = w;
-                    }
-                    if(w01 != w) {
-                        c02 = (char)i;
-                        w02 = w;
-                        flag = false;
-                        break;
-                    }
-                }
-                isFixed = flag;
-                wh = isFixed ? new WH(w01, fm.getHeight(), widths.length)
-                             : new WH(0,0, widths.length, c01, w01, c02, w02);
-                fontMetricsDataCache.put(fm, new FontMetricsData(wh, isFixed));
+                Object[] o = checkFontWidths(widths);
+                int fixedWidth = (Integer)o[0];
+                isFixed = (Boolean)o[1];
+                isSpecialCharsFixed = (Boolean)o[2];
+                CharWidthDiff cwd = (CharWidthDiff)o[3];
+                CharWidthDiff s_cwd = (CharWidthDiff)o[4];
+                wh = isFixed && isSpecialCharsFixed
+                        ? new WH(fixedWidth, fm.getHeight(), widths.length)
+                        : new WH(0, 0, widths.length, cwd, s_cwd);
+                fontMetricsDataCache.put(fm,
+                        new FontMetricsData(wh, isFixed, isSpecialCharsFixed));
             }
+        }
+
+        public boolean isFixed()
+        {
+            return G.disableFontCheckSpecial() ? isFixed
+                                               : isFixed && isSpecialCharsFixed;
+        }
+
+        public boolean isSpecialCharsFixed()
+        {
+            return isSpecialCharsFixed;
         }
 
         //<editor-fold defaultstate="collapsed" desc="equals() & hashCode()">
@@ -1040,6 +1101,77 @@ final class FontTracking {
         }
         //</editor-fold>
 
+    }
+
+    static Object[] checkFontWidths(int[] widths)
+    {
+        // can't use font family to determine fixed width
+        // so if first 'n' characters are the same size (except 0)
+        // then assume fixed width
+        boolean flagFixed = true;
+        // following is ignored if flagFixed is false
+        boolean flagSpecialFixed = true;
+
+        // these 4 vars are for tracking normal chars
+        char c01 = 0;
+        int w01 = 0;
+        char c02 = 0;
+        int w02 = 0;
+
+        // these 4 are for tracking the special chars
+        char s_c01 = 0;
+        int s_w01 = 0;
+        char s_c02 = 0;
+        int s_w02 = 0;
+
+        int[] xxx = new int[widths.length];
+        System.arraycopy(widths, 0, xxx, 0, widths.length);
+        xxx[15]++;
+        widths = xxx;
+
+        for(char i = 0; i < widths.length; i++) {
+            int w = widths[i];
+            if(w == 0)
+                continue;
+            // normal chars start with space
+            if(i >= ' ') {
+                if(!flagFixed)
+                    continue;
+                if(w01 == 0) {
+                    c01 = i;
+                    w01 = w;
+                }
+                if(w01 != w) {
+                    c02 = i;
+                    w02 = w;
+                    flagFixed = false;
+                }
+            } else {
+                if(!flagSpecialFixed)
+                    continue;
+                if(s_w01 == 0) {
+                    s_c01 = i;
+                    s_w01 = w;
+                }
+                if(s_w01 != w) {
+                    s_c02 = i;
+                    s_w02 = w;
+                    flagSpecialFixed = false;
+                }
+            }
+        }
+        // consider special chars fixed only if all specials are the same size
+        // and they are the same size as the normal chars
+        if(flagSpecialFixed && s_w01 != 0 && s_w01 != w01)
+            flagSpecialFixed = false;
+
+        CharWidthDiff cwd = null;
+        CharWidthDiff s_cwd = null;
+        if(!(flagFixed && flagSpecialFixed)) {
+            cwd = new CharWidthDiff(c01, w01, c02, w02);
+            s_cwd = new CharWidthDiff(s_c01, s_w01, s_c02, s_w02);
+        }
+        return new Object[] { w01, flagFixed, flagSpecialFixed, cwd, s_cwd };
     }
 
     //<editor-fold defaultstate="collapsed" desc="class FontParams implements Map<Style, ParamData>">

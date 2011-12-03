@@ -1124,10 +1124,10 @@ final class FontTracking {
         char s_c02 = 0;
         int s_w02 = 0;
 
-        int[] xxx = new int[widths.length];
-        System.arraycopy(widths, 0, xxx, 0, widths.length);
-        xxx[15]++;
-        widths = xxx;
+        // int[] xxx = new int[widths.length];
+        // System.arraycopy(widths, 0, xxx, 0, widths.length);
+        // xxx[15]++;
+        // widths = xxx;
 
         for(char i = 0; i < widths.length; i++) {
             int w = widths[i];

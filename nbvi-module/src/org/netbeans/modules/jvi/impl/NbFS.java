@@ -101,11 +101,13 @@ public class NbFS extends abstractFS
         return s != null ? s : NULL_FO;
     }
 
+    @Override
     public boolean isModified(ViBuffer buf) {
         DataObject dobj = getDataObject(buf);
         return dobj != null ? dobj.isModified() : true;
     }
 
+    @Override
     public boolean isReadOnly(ViBuffer buf) {
         FileObject fo = NbEditorUtilities.getFileObject(
                 (Document)buf.getDocument());
@@ -142,6 +144,7 @@ public class NbFS extends abstractFS
         return false;
     }
 
+    @Override
     public boolean write(
             ViTextView tv, boolean force, Object writeTarget, Integer[] range)
     {
@@ -160,6 +163,7 @@ public class NbFS extends abstractFS
         return false;
     }
 
+    @Override
     public boolean writeAll(boolean force) {
 	SaveAllAction sa = SystemAction.get(SaveAllAction.class);
         sa.performAction();
@@ -184,6 +188,7 @@ public class NbFS extends abstractFS
     }
 
     /** Edit a File */
+    @Override
     public void edit(File f, boolean force, ViFPOS fpos)
     {
         String msg = null;

@@ -19,30 +19,17 @@
  */
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.core.Msg;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.core.Buffer;
-import com.raelity.jvi.core.ColonCommands;
-import com.raelity.jvi.core.G;
-import com.raelity.jvi.*;
-import com.raelity.jvi.swing.*;
-import com.raelity.jvi.ViTextView.TAGOP;
-import com.raelity.jvi.core.Misc01;
-import com.raelity.jvi.core.Options;
-import com.raelity.jvi.manager.AppViews;
-import com.raelity.jvi.manager.Scheduler;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.util.Collections;
 import java.util.List;
-import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
+
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.text.BadLocationException;
@@ -63,6 +50,31 @@ import org.netbeans.modules.jvi.util.NbLineMapFolding;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;
+
+import com.raelity.jvi.ViAppView;
+import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.ViCmdEntry;
+import com.raelity.jvi.ViFS;
+import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.ViTextView.TAGOP;
+import com.raelity.jvi.ViWindowNavigator;
+import com.raelity.jvi.core.Buffer;
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.core.Misc01;
+import com.raelity.jvi.core.Msg;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.manager.Scheduler;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.LineMap;
+import com.raelity.jvi.swing.LineMapFoldingSwitcher;
+import com.raelity.jvi.swing.LineMapNoFolding;
+import com.raelity.jvi.swing.SwingFactory;
+import com.raelity.jvi.swing.ViewMap;
+import com.raelity.jvi.swing.ViewMapSwitcher;
 
 final public class NbFactory extends SwingFactory {
 

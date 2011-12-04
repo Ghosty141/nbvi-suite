@@ -20,14 +20,6 @@
 
 package org.netbeans.modules.jvi.completion;
 
-import com.raelity.jvi.ViCmdEntry;
-import com.raelity.jvi.core.ColonCommands;
-import com.raelity.jvi.core.ColonCommands.ColonEvent;
-import com.raelity.jvi.core.Options;
-import com.raelity.jvi.core.lib.CcFlag;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.options.DebugOption;
-import com.raelity.jvi.swing.CommandLine;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -36,6 +28,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.Action;
 import javax.swing.KeyStroke;
 import javax.swing.text.BadLocationException;
@@ -44,10 +37,20 @@ import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Keymap;
 import javax.swing.text.TextAction;
+
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.lib.editor.util.swing.DocumentUtilities;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.modules.jvi.reflect.NbUtil;
+
+import com.raelity.jvi.ViCmdEntry;
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.lib.CcFlag;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.options.DebugOption;
+import com.raelity.jvi.swing.CommandLine;
 
 /**
  * Colon Command code completion.

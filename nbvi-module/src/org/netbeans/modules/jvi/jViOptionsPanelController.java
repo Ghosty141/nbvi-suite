@@ -23,18 +23,21 @@
  */
 package org.netbeans.modules.jvi;
 
-import org.netbeans.modules.jvi.impl.NbOptionsNode;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.swing.ui.options.OptionsPanel;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import org.netbeans.modules.jvi.impl.NbOptionsNode;
 import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
+
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.ui.options.OptionsPanel;
 
 @OptionsPanelController.TopLevelRegistration(
     position=1000,

@@ -20,14 +20,6 @@
 
 package org.netbeans.modules.jvi.completion;
 
-import com.raelity.jvi.core.lib.CcFlag;
-import com.raelity.jvi.core.lib.ColonCommandItem;
-import com.raelity.jvi.core.ColonCommands;
-import com.raelity.jvi.core.ColonCommands.ColonEvent;
-import com.raelity.jvi.core.Options;
-import com.raelity.jvi.options.DebugOption;
-import com.raelity.jvi.swing.CommandLine;
-import com.raelity.text.XMLUtil;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -38,16 +30,27 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
+
 import javax.swing.Action;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.spi.editor.completion.CompletionItem;
 import org.netbeans.spi.editor.completion.CompletionResultSet;
 import org.netbeans.spi.editor.completion.CompletionTask;
 import org.netbeans.spi.editor.completion.support.CompletionUtilities;
 import org.openide.ErrorManager;
+
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.lib.CcFlag;
+import com.raelity.jvi.core.lib.ColonCommandItem;
+import com.raelity.jvi.options.DebugOption;
+import com.raelity.jvi.swing.CommandLine;
+import com.raelity.text.XMLUtil;
 
 /**
  * Command Name completion after ":"

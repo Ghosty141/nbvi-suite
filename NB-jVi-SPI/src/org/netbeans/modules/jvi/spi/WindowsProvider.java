@@ -21,6 +21,7 @@ package org.netbeans.modules.jvi.spi;
 
 import java.awt.Component;
 import java.awt.Dimension;
+
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 

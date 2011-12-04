@@ -11,6 +11,7 @@ package org.netbeans.modules.jvi;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 

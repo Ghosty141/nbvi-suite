@@ -20,16 +20,15 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.lib.OutputStreamAdaptor;
-import com.raelity.jvi.ViOutputStream;
-import com.raelity.jvi.ViTextView;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
+
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
 import org.openide.awt.HtmlBrowser;
@@ -40,6 +39,10 @@ import org.openide.windows.OutputEvent;
 import org.openide.windows.OutputListener;
 import org.openide.windows.OutputWriter;
 import org.openide.windows.TopComponent;
+
+import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.lib.OutputStreamAdaptor;
 
 /**
  * NbOutputStream is used to report the results of jVi commands such as

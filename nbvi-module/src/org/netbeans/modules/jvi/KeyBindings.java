@@ -20,18 +20,6 @@
 
 package org.netbeans.modules.jvi;
 
-import javax.swing.plaf.TextUI;
-import static org.netbeans.modules.jvi.Module.earlyInit;
-import static org.netbeans.modules.jvi.Module.MOD;
-import static org.netbeans.modules.jvi.Module.jViEnabled;
-import static org.netbeans.modules.jvi.Module.cid;
-import static org.netbeans.modules.jvi.Module.dbgNb;
-import com.raelity.jvi.ViCaret;
-import com.raelity.jvi.ViInitialization;
-import com.raelity.jvi.ViOutputStream;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.swing.KeyBinding;
-import com.raelity.jvi.swing.SwingFactory;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -49,15 +37,18 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.KeyStroke;
+import javax.swing.plaf.TextUI;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Keymap;
 import javax.swing.text.TextAction;
+
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.MultiKeyBinding;
 import org.netbeans.editor.BaseAction;
@@ -68,6 +59,19 @@ import org.netbeans.modules.jvi.impl.NbCaret;
 import org.netbeans.modules.jvi.impl.NbFactory;
 import org.openide.util.WeakSet;
 import org.openide.util.lookup.ServiceProvider;
+
+import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.ViInitialization;
+import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.KeyBinding;
+import com.raelity.jvi.swing.SwingFactory;
+
+import static org.netbeans.modules.jvi.Module.MOD;
+import static org.netbeans.modules.jvi.Module.cid;
+import static org.netbeans.modules.jvi.Module.dbgNb;
+import static org.netbeans.modules.jvi.Module.earlyInit;
+import static org.netbeans.modules.jvi.Module.jViEnabled;
 
 /**
  *

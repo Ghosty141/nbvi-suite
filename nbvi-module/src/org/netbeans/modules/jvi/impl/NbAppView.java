@@ -20,21 +20,24 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.manager.AppViews;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.swing.SwingFactory;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JEditorPane;
+
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.Module;
 import org.openide.util.WeakSet;
 import org.openide.windows.TopComponent;
+
+import com.raelity.jvi.ViAppView;
+import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.SwingFactory;
 
 /**
  * The appview for netbeans. Note that equals is based on '=='.

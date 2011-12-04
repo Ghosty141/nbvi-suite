@@ -1,12 +1,15 @@
 package org.netbeans.modules.jvi.completion;
 
-import com.raelity.jvi.core.Options;
-import com.raelity.jvi.options.DebugOption;
 import java.util.logging.Level;
+
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+
 import org.netbeans.spi.editor.completion.CompletionProvider;
 import org.netbeans.spi.editor.completion.CompletionTask;
+
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.options.DebugOption;
 
 /**
  * Filename completion for ":e#" command.

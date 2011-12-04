@@ -1,10 +1,13 @@
 package org.netbeans.modules.jvi.impl;
 
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +32,10 @@ import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.FsAct;
 import org.netbeans.modules.jvi.Module;
+import org.netbeans.modules.jvi.reflect.NbWindows;
+import org.netbeans.modules.jvi.spi.WindowsProvider;
+import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
+import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeEvent;
 import org.netbeans.spi.editor.highlighting.HighlightsChangeListener;
 import org.netbeans.spi.editor.highlighting.HighlightsLayer;
@@ -63,18 +70,11 @@ import com.raelity.jvi.core.Util;
 import com.raelity.jvi.manager.AppViews;
 import com.raelity.jvi.manager.ViManager;
 import com.raelity.jvi.options.ColorOption;
+import com.raelity.jvi.options.DebugOption;
 import com.raelity.jvi.swing.SwingTextView;
 import com.raelity.text.TextUtil.MySegment;
-import java.awt.Dimension;
-import java.util.Arrays;
-import org.netbeans.modules.jvi.reflect.NbWindows;
 
 import static com.raelity.jvi.core.lib.Constants.*;
-import com.raelity.jvi.options.DebugOption;
-import java.util.HashMap;
-import org.netbeans.modules.jvi.spi.WindowsProvider;
-import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
-import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;
 
 /**
  * Pretty much the SwingTextView used for standard swing.

@@ -1,16 +1,10 @@
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.core.Msg;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.ViBuffer;
-import com.raelity.jvi.ViFPOS;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.lib.abstractFS;
 import java.io.File;
 import java.io.IOException;
+
 import javax.swing.text.Document;
+
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.actions.SaveAllAction;
 import org.openide.cookies.EditorCookie;
@@ -21,6 +15,15 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.text.Line;
 import org.openide.util.actions.SystemAction;
+
+import com.raelity.jvi.ViAppView;
+import com.raelity.jvi.ViBuffer;
+import com.raelity.jvi.ViFPOS;
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.core.Msg;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.lib.abstractFS;
+import com.raelity.jvi.manager.ViManager;
 
 public class NbFS extends abstractFS
 {

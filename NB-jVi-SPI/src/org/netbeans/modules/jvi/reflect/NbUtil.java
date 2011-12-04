@@ -24,7 +24,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.text.JTextComponent;
+
 import org.openide.util.Lookup;
 
 /**

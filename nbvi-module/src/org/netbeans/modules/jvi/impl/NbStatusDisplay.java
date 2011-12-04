@@ -20,24 +20,27 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.core.Edit;
-import com.raelity.jvi.core.G;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.ViStatusDisplay;
-import com.raelity.jvi.ViTextView;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JEditorPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
 import org.netbeans.editor.Coloring;
 import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.StatusBar;
 import org.netbeans.editor.Utilities;
 import org.openide.awt.StatusDisplayer;
+
+import com.raelity.jvi.ViStatusDisplay;
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.core.Edit;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.manager.ViManager;
 
 /**
  * This status display displays status messages in the EditorUI's StatusBar.

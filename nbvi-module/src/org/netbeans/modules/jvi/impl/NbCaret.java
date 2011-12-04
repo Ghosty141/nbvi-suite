@@ -1,17 +1,20 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.core.G;
-import com.raelity.jvi.ViCaretStyle;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.ViCaret;
-import com.raelity.jvi.manager.Scheduler;
-import com.raelity.jvi.swing.SwingPaintCaret;
 import java.awt.Graphics;
+
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
+
 import org.netbeans.editor.ext.ExtCaret;
+
+import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.ViCaretStyle;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.manager.Scheduler;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.SwingPaintCaret;
 
 
 /**

@@ -9,16 +9,18 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.swing.OpsBase;
-import com.raelity.jvi.swing.SwingTextView;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.text.EditorKit;
+
 import org.netbeans.editor.BaseKit;
 import org.netbeans.editor.ext.ExtKit;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.jvi.KeyBindings;
+
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.swing.OpsBase;
+import com.raelity.jvi.swing.SwingTextView;
 
 /**
  *

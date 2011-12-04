@@ -20,7 +20,6 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.lib.MutableBoolean;
 import java.awt.Dialog;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -36,7 +35,9 @@ import java.util.TimerTask;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
+
 import javax.swing.JEditorPane;
+
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.SimpleValueNames;
@@ -45,6 +46,8 @@ import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.windows.WindowManager;
+
+import com.raelity.jvi.lib.MutableBoolean;
 
 /**
  * This class monitors particular preference changes, and gives a warning

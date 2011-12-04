@@ -9,29 +9,15 @@
 
 package org.netbeans.modules.jvi.impl;
 
-import java.util.Map;
-import org.openide.actions.UndoAction;
-import org.openide.awt.UndoRedo;
-import org.openide.util.actions.SystemAction;
-import org.openide.util.WeakListeners;
-import com.raelity.jvi.core.Options;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
-import com.raelity.jvi.ViBadLocationException;
-import com.raelity.jvi.core.Edit;
-import com.raelity.jvi.core.G;
-import com.raelity.jvi.core.Misc;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.ViTextView;
-import com.raelity.jvi.manager.Scheduler;
-import com.raelity.jvi.swing.SwingBuffer;
-import com.raelity.text.TextUtil;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
+
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
@@ -40,7 +26,7 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.undo.UndoableEdit;
-import org.netbeans.modules.editor.indent.api.Indent;
+
 import org.netbeans.api.editor.settings.SimpleValueNames;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseDocumentEvent;
@@ -48,10 +34,27 @@ import org.netbeans.editor.GuardedDocument;
 import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.editor.indent.api.Indent;
 import org.netbeans.modules.editor.indent.api.Reformat;
+import org.openide.actions.UndoAction;
+import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.text.CloneableEditorSupport;
+import org.openide.util.WeakListeners;
+import org.openide.util.actions.SystemAction;
+
+import com.raelity.jvi.ViBadLocationException;
+import com.raelity.jvi.ViTextView;
+import com.raelity.jvi.core.Edit;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.core.Misc;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.manager.Scheduler;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.swing.SwingBuffer;
+import com.raelity.text.TextUtil;
 
 import static com.raelity.jvi.core.lib.Constants.*;
 

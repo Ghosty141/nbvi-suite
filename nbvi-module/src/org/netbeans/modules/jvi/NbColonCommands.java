@@ -28,33 +28,37 @@
  */
 package org.netbeans.modules.jvi;
 
-import static org.netbeans.modules.jvi.Module.dbgNb;
-import org.netbeans.modules.jvi.impl.NbTextView;
-import com.raelity.jvi.core.lib.AbbrevLookup;
-import com.raelity.jvi.core.lib.CcFlag;
-import com.raelity.jvi.core.lib.ColonCommandItem;
-import com.raelity.jvi.core.ColonCommands;
-import com.raelity.jvi.core.ColonCommands.AbstractColonAction;
-import com.raelity.jvi.core.ColonCommands.ColonAction;
-import com.raelity.jvi.core.ColonCommands.ColonEvent;
-import com.raelity.jvi.core.Msg;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.manager.ViManager;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Logger;
+
 import javax.swing.Action;
 import javax.swing.JEditorPane;
 import javax.swing.text.JTextComponent;
+
 import org.netbeans.modules.editor.NbEditorUtilities;
+import org.netbeans.modules.jvi.impl.NbTextView;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.openide.util.ContextAwareAction;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.ColonCommands.AbstractColonAction;
+import com.raelity.jvi.core.ColonCommands.ColonAction;
+import com.raelity.jvi.core.ColonCommands.ColonEvent;
+import com.raelity.jvi.core.Msg;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.core.lib.AbbrevLookup;
+import com.raelity.jvi.core.lib.CcFlag;
+import com.raelity.jvi.core.lib.ColonCommandItem;
+import com.raelity.jvi.manager.ViManager;
+
+import static org.netbeans.modules.jvi.Module.dbgNb;
 
 public class NbColonCommands {
     private static final

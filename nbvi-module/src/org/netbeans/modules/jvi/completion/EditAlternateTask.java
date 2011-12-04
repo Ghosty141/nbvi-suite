@@ -20,12 +20,6 @@
 
 package org.netbeans.modules.jvi.completion;
 
-import com.raelity.jvi.ViAppView;
-import com.raelity.jvi.core.Options;
-import com.raelity.jvi.manager.AppViews;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.options.DebugOption;
-import com.raelity.jvi.swing.CommandLine;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -38,11 +32,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+
 import org.netbeans.api.editor.completion.Completion;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.jvi.impl.NbAppView;
@@ -51,6 +47,13 @@ import org.netbeans.spi.editor.completion.CompletionResultSet;
 import org.netbeans.spi.editor.completion.CompletionTask;
 import org.openide.ErrorManager;
 import org.openide.windows.TopComponent;
+
+import com.raelity.jvi.ViAppView;
+import com.raelity.jvi.core.Options;
+import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.options.DebugOption;
+import com.raelity.jvi.swing.CommandLine;
 
 /**
  * Filename completion for ":e#" command.

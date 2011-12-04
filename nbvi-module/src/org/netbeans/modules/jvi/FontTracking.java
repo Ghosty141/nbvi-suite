@@ -19,19 +19,14 @@
  */
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.ViOutputStream;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.core.G;
-import com.raelity.text.TextUtil;
-import org.netbeans.api.editor.settings.FontColorNames;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -44,15 +39,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JEditorPane;
 import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyleConstants;
+
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.api.editor.mimelookup.MimePath;
 import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.EditorStyleConstants;
+import org.netbeans.api.editor.settings.FontColorNames;
 import org.netbeans.api.editor.settings.FontColorSettings;
 import org.netbeans.editor.FontMetricsCache;
 import org.netbeans.lib.editor.util.swing.DocumentUtilities;
@@ -64,6 +62,11 @@ import org.openide.util.Lookup;
 import org.openide.util.Lookup.Result;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
+
+import com.raelity.jvi.ViOutputStream;
+import com.raelity.jvi.core.G;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.text.TextUtil;
 
 import static java.lang.Boolean.*;
 

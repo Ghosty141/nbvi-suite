@@ -20,21 +20,24 @@
 
 package org.netbeans.modules.jvi.util;
 
-import com.raelity.jvi.lib.MutableBoolean;
-import com.raelity.jvi.lib.MutableInt;
-import com.raelity.jvi.swing.LineMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
 import org.netbeans.api.editor.fold.Fold;
 import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldHierarchyEvent;
 import org.netbeans.api.editor.fold.FoldHierarchyListener;
 import org.netbeans.api.editor.fold.FoldUtilities;
 import org.netbeans.modules.jvi.impl.NbTextView;
+
+import com.raelity.jvi.lib.MutableBoolean;
+import com.raelity.jvi.lib.MutableInt;
+import com.raelity.jvi.swing.LineMap;
 
 /**
  *

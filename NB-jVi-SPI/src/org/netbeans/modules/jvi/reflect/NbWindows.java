@@ -12,8 +12,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.JPanel;
 import javax.swing.JViewport;
+
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorHandle;
 import org.netbeans.modules.jvi.spi.WindowsProvider.EditorSizerArgs;

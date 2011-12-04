@@ -1,53 +1,43 @@
 package org.netbeans.modules.jvi;
 
-import java.io.File;
-import java.io.IOException;
-import javax.swing.AbstractButton;
-import javax.swing.JMenuItem;
-import org.netbeans.modules.jvi.impl.NbAppView;
-import org.netbeans.modules.jvi.impl.NbFactory;
-import com.raelity.jvi.core.lib.CcFlag;
-import com.raelity.jvi.core.ColonCommands;
-import com.raelity.jvi.core.Util;
-import com.raelity.jvi.ViCaret;
-import com.raelity.jvi.ViInitialization;
-import com.raelity.jvi.core.lib.PreferencesChangeMonitor;
-import com.raelity.jvi.manager.ViManager;
-import com.raelity.jvi.manager.AppViews;
-import com.raelity.jvi.options.OptUtil;
-import com.raelity.jvi.options.DebugOption;
-
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.prefs.Preferences;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
+import java.util.prefs.Preferences;
+
+import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JEditorPane;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
+
+import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFS;
+import org.netbeans.modules.jvi.impl.NbFactory;
 import org.netbeans.modules.jvi.reflect.NbWindows;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Actions;
-
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.InstanceCookie;
 import org.openide.filesystems.FileObject;
@@ -64,6 +54,17 @@ import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+
+import com.raelity.jvi.ViCaret;
+import com.raelity.jvi.ViInitialization;
+import com.raelity.jvi.core.ColonCommands;
+import com.raelity.jvi.core.Util;
+import com.raelity.jvi.core.lib.CcFlag;
+import com.raelity.jvi.core.lib.PreferencesChangeMonitor;
+import com.raelity.jvi.manager.AppViews;
+import com.raelity.jvi.manager.ViManager;
+import com.raelity.jvi.options.DebugOption;
+import com.raelity.jvi.options.OptUtil;
 
 /**
  * Initialization/install/uninstall, TopComponent tracking,

@@ -20,17 +20,20 @@
 
 package org.netbeans.modules.jvi;
 
-import com.raelity.jvi.swing.KeyBinding;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.swing.Action;
+
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.MultiFileSystem;
 import org.openide.loaders.DataFolder;
 import org.openide.util.lookup.ServiceProvider;
+
+import com.raelity.jvi.swing.KeyBinding;
 
 /**
  * All the keystrokes that jVi might receive

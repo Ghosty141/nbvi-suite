@@ -450,7 +450,7 @@ final class FontTracking {
                 fsSet = sizeMap.get(wh);
                 for(FontSize fs01 : fsSet) {
                     fp = new FontParams();
-                    f = getFont(getCategory(CATS.MIME, fs01.name), fp);
+                    getFont(getCategory(CATS.MIME, fs01.name), fp);
                     roots.add(new FontSizeParams(fp.get(Style.Family),
                                                  fp.get(Style.Size)));
                 }
@@ -474,11 +474,10 @@ final class FontTracking {
     private void dumpFonts(StringBuilder sb, Set<AttributeSet> vari)
     {
         FontParams fp;
-        Font f;
         Set<ParamSource> roots = new HashSet<ParamSource>();
         for(AttributeSet c : vari) {
             fp = new FontParams();
-            f = getFont(c, fp);
+            getFont(c, fp);
             roots.add(fp.get(Style.Family).ps);
         }
         for(ParamSource ps : roots) {
@@ -1133,8 +1132,8 @@ final class FontTracking {
             int w = widths[i];
             if(w == 0)
                 continue;
-            // normal chars start with space
-            if(i >= ' ') {
+            // normal chars are NOT in the special chars range
+            if(!(i <= 0x1f || 0x7f <= i && i <= 0x9f)) {
                 if(!flagFixed)
                     continue;
                 if(w01 == 0) {

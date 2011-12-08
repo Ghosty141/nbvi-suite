@@ -131,6 +131,7 @@ public class Module extends ModuleInstall
     public static final String HACK_CC = "NB6.7 Code Completion";
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
     public static final String HACK_WINDOW_GROUP = "NB7.1 MinimizeWindowGroup";
+    public static final String HACK_CLONE_LOSE_EDITS = "NB7.1 Clone Lose Edits";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
 
@@ -297,7 +298,22 @@ public class Module extends ModuleInstall
                         new SpecificationVersion("2.41.1")) >= 0) {
                     ViManager.putHackMap(HACK_WINDOW_GROUP, Boolean.TRUE);
                 }
+            } else if (mi.getCodeNameBase().equals(
+                    "org.openide.text")) {
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("6.40")) > 0
+                    && mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("6.45")) < 0)
+                {
+                    ViManager.putHackMap(HACK_CLONE_LOSE_EDITS, Boolean.TRUE);
+                }
             }
+        }
+
+        if(ViManager.getHackFlag(HACK_CLONE_LOSE_EDITS)) {
+            WindowManager.getDefault().invokeWhenUIReady(new Runnable() {
+                @Override public void run() { permanentDisableDialog(); }
+            });
         }
 
         earlyInit(); // set up the ViFactory
@@ -307,9 +323,13 @@ public class Module extends ModuleInstall
         // in layer.xml Actions/Tools: <file name="o-n-m-jvi-enable.instance">
         // produces the checkbox linked to preferences.
         Preferences prefNode = getModulePreferences();
-        if(prefNode.get(PREF_ENABLED, "").isEmpty()) {
-            // Not set, so set it to true
-            prefNode.putBoolean(PREF_ENABLED, true);
+        String prefEnabled = prefNode.get(PREF_ENABLED, "");
+        if(prefEnabled.isEmpty()
+                || Boolean.parseBoolean(prefEnabled)
+                   && ViManager.getHackFlag(HACK_CLONE_LOSE_EDITS)) {
+            // Not set or set and shouldn't be
+            prefNode.putBoolean(PREF_ENABLED,
+                                !ViManager.getHackFlag(HACK_CLONE_LOSE_EDITS));
         }
 
         // Monitor activations/opens/closes.
@@ -327,6 +347,13 @@ public class Module extends ModuleInstall
             @Override
             public void preferenceChange(PreferenceChangeEvent evt) {
                 if(evt.getKey().equals(PREF_ENABLED)) {
+                    if(ViManager.getHackFlag(HACK_CLONE_LOSE_EDITS)) {
+                        if(Boolean.parseBoolean(evt.getNewValue())) {
+                            permanentDisableDialog();
+                            setModuleEnabled(false);
+                        }
+                        return;
+                    }
                     LOG.log(Level.INFO, "jVi PREF CHANGE TO: {0}", evt.getNewValue());
                     boolean enabled = getModulePreferences()
                             .getBoolean(PREF_ENABLED, true);
@@ -337,6 +364,16 @@ public class Module extends ModuleInstall
                 }
             }
         });
+    }
+
+    private static void permanentDisableDialog()
+    {
+        NotifyDescriptor d = new NotifyDescriptor.Message(
+                "NetBeans 7.1 loses edits.\n\njVi disabled.\n\n"
+                + "See NetBeans Bug 205835",
+                NotifyDescriptor.ERROR_MESSAGE);
+        d.setTitle("jVi Disabling");
+        DialogDisplayer.getDefault().notifyLater(d);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -420,6 +457,8 @@ public class Module extends ModuleInstall
         @Override
         public void run() {
             if(jViEnabled)
+                return;
+            if(ViManager.getHackFlag(HACK_CLONE_LOSE_EDITS))
                 return;
             jViEnabled = true;
 

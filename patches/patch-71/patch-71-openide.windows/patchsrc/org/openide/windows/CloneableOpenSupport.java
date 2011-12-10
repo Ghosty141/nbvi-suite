@@ -198,7 +198,8 @@ public abstract class CloneableOpenSupport extends Object {
                 }
 
                 CloneableTopComponent editor = createCloneableTopComponent();
-                editor.setReference(allEditors);
+                ///// hack patch for bug 205835
+                ///// editor.setReference(allEditors);
                 editor.open();
 
                 msg = messageOpened();

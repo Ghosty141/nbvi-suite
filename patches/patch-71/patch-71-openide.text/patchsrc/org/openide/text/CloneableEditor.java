@@ -158,6 +158,9 @@ public class CloneableEditor extends CloneableTopComponent implements CloneableE
         super();
         this.support = support;
 
+        // hack patch for bug 205835
+        setReference( (CloneableTopComponent.Ref)support.getLock() );
+
         updateName();
         _setCloseOperation();
         setMinimumSize(new Dimension(10, 10));

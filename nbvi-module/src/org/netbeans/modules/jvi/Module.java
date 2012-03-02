@@ -303,7 +303,7 @@ public class Module extends ModuleInstall
                 if (mi.getSpecificationVersion().compareTo(
                         new SpecificationVersion("6.40")) > 0
                     && mi.getSpecificationVersion().compareTo(
-                        new SpecificationVersion("6.45")) < 0)
+                        new SpecificationVersion("6.43.2")) < 0)
                 {
                     ViManager.putHackMap(HACK_CLONE_LOSE_EDITS, Boolean.TRUE);
                 }
@@ -720,7 +720,7 @@ public class Module extends ModuleInstall
     private static String ancestorStringTC(Object o)
     {
         StringBuilder s = new StringBuilder();
-        TopComponent tc = null;
+        TopComponent tc;
         TopComponent parent = (TopComponent)SwingUtilities
                 .getAncestorOfClass(TopComponent.class, (Component)o);
         while (parent != null) {

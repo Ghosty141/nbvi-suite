@@ -608,6 +608,7 @@ public class Module extends ModuleInstall
     private static class TopComponentRegistryListener
             implements PropertyChangeListener {
         @Override
+        @SuppressWarnings("DeadBranch")
         public void propertyChange(PropertyChangeEvent evt) {
             assert(EventQueue.isDispatchThread());
             if(false && dbgAct().getBoolean()) {

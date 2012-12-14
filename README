@@ -1,14 +1,14 @@
 Both jvi and nbvi should be checked out of the Mercurial repository, and they 
-should reside in the same directory.
+should reside in the same directory, eg jvi-srcdir.
 
 You can run nbvi (jVi in NB) from NB or use NB to build the modules needed to
 install jVi in NetBeans. Open
-        <installdir>/nbvi                (nbvi-suite)
-        <installdir>/nbvi/NBjVi-SPI
-        <installdir>/nbvi/jvi-help
+        <srcdir>/nbvi                (nbvi-suite)
+        <srcdir>/nbvi/NBjVi-SPI
+        <srcdir>/nbvi/jvi-help
 You can also open the following, but shouldn't be needed
-        <installdir>/nbvi/nbvi-module    (jVi for NetBeans)
-        <installdir>/nbvi/jvi-wrapper    (jVi Core)
+        <scrdir>/nbvi/nbvi-module    (jVi for NetBeans)
+        <scrdir>/nbvi/jvi-wrapper    (jVi Core)
         
 And note that .../jvi can be opened; it is a plain old java project.  It gets 
 wrapped. It has the core jVi sources.  It can be run and gives a

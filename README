@@ -1,9 +1,28 @@
 Both jvi and nbvi should be checked out of the Mercurial repository, and they 
 should reside in the same directory.
 
-To build almost everything with NetBeans, open nbvi (aka nbvi-suite)
-and build it with "Build All". If you want to install it, you'll need the
-NBMs; run target "Package as > NBMs" and look in nbvi/build/updates.
+You can run nbvi (jVi in NB) from NB or use NB to build the modules needed to
+install jVi in NetBeans. Open
+        <installdir>/nbvi                (nbvi-suite)
+        <installdir>/nbvi/NBjVi-SPI
+        <installdir>/nbvi/jvi-help
+You can also open the following, but shouldn't be needed
+        <installdir>/nbvi/nbvi-module    (jVi for NetBeans)
+        <installdir>/nbvi/jvi-wrapper    (jVi Core)
+        
+And note that .../jvi can be opened; it is a plain old java project.  It gets 
+wrapped. It has the core jVi sources.  It can be run and gives a
+standalone/debug jVi (with no netbeans).
+
+To build jVi with NetBeans, first build modules NB-jVi-SPI and jViHelp. Then
+you can RUN or DEBUG nbvi-suite; this starts up a copy of NB with jVi. This is 
+all done from within NetBeans. FYI, if you look at properties for nbvi-suite
+you will see that under properties>Libraries, jViHelp and NB-jVi-SPI are
+added to the platform.
+
+If you want to install jVi, you'll need the NBMs; run target
+"Package as > NBMs" and look in nbvi/build/updates. You'll also need the
+modules for NB-jVi-SPI and jvi-help
 
 nbvi-module (aka jVi for NetBeans) is the module that interfaces jVi to
 NetBeans. This is all NetBeans code (a few features that should be

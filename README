@@ -10,8 +10,8 @@ You can also open the following, but shouldn't be needed
         <scrdir>/nbvi/nbvi-module    (jVi for NetBeans)
         <scrdir>/nbvi/jvi-wrapper    (jVi Core)
         
-And note that .../jvi can be opened; it is a plain old java project.  It gets 
-wrapped. It has the core jVi sources.  It can be run and gives a
+And note that <srcdir>/jvi can be opened; it is a plain old java project.  It
+gets wrapped. It has the core jVi sources.  It can be run and gives a
 standalone/debug jVi (with no netbeans).
 
 To build jVi with NetBeans, first build modules NB-jVi-SPI and jViHelp. Then

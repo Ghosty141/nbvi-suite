@@ -186,6 +186,7 @@ public class NbJviPrefs
 
     // keep used mime prefs as a colon separated list
     private static final String USED_MIME = "used_mime_prefs";
+    private static final String SEP = ":";
     private static void addUsedMime(String mt)
     {
         Set<String> s = getUsedMime();
@@ -200,7 +201,7 @@ public class NbJviPrefs
         Set<String> s = new HashSet<String>();
 
         String[] mimes = ViManager.getFactory().getPreferences()
-                                .get(USED_MIME, "").split(":");
+                                .get(USED_MIME, "").split(SEP);
         s.addAll(Arrays.asList(mimes));
 
         return s;
@@ -211,7 +212,7 @@ public class NbJviPrefs
         StringBuilder sb = new StringBuilder();
         for(String mt : s) {
             if(sb.length() != 0)
-                sb.append(':');
+                sb.append(SEP);
             sb.append(mt);
         }
 

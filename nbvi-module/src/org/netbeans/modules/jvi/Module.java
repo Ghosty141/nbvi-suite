@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 import org.netbeans.modules.jvi.impl.NbAppView;
 import org.netbeans.modules.jvi.impl.NbFS;
 import org.netbeans.modules.jvi.impl.NbFactory;
+import org.netbeans.modules.jvi.impl.NbJviPrefs;
 import org.netbeans.modules.jvi.reflect.NbWindows;
 import org.netbeans.modules.jvi.spi.WindowsProvider;
 import org.openide.DialogDisplayer;
@@ -485,6 +486,8 @@ public class Module extends ModuleInstall
             JViOptionWarning.clear();
 
             KeyBindings.disableKeyBindings();
+
+            NbJviPrefs.jviDisabling(); // HACK
         }
     }
     

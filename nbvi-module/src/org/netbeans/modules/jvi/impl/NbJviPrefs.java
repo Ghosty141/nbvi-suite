@@ -20,9 +20,12 @@
 package org.netbeans.modules.jvi.impl;
 
 import java.awt.EventQueue;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,11 +41,14 @@ import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.spi.CodeStylePreferences;
 import org.netbeans.modules.jvi.JViOptionWarning;
 
+import com.raelity.jvi.manager.ViManager;
+
 /**
+ * public for jviDisabling HACK
  *
  * @author Ernie Rael <err at raelity.com>
  */
-class NbJviPrefs
+public class NbJviPrefs
 {
     //private static final Logger LOG = Logger.getLogger(NbJviPrefs.class.getName());
     private NbJviPrefs() { }
@@ -139,7 +145,7 @@ class NbJviPrefs
         if(tv == null && b == null)
             return getGlobalMimePrefs();
         Preferences prefs = null;
-        String mimeType = null;
+        String mimeType;
         JTextComponent jtc = null;
         Document d = null;
         if(tv != null)
@@ -150,6 +156,7 @@ class NbJviPrefs
                 ? NbEditorUtilities.getMimeType(jtc)
                 : NbEditorUtilities.getMimeType(d);
         if(mimeType != null) {
+            addUsedMime(mimeType);
             prefs = MimeLookup.getLookup(
                     MimePath.parse(mimeType)).lookup(Preferences.class);
         }
@@ -175,5 +182,57 @@ class NbJviPrefs
                 //tv.getEditor().getDocument().putProperty(key, value);
             }
         });
+    }
+
+    // keep used mime prefs as a colon separated list
+    private static final String USED_MIME = "used_mime_prefs";
+    private static void addUsedMime(String mt)
+    {
+        Set<String> s = getUsedMime();
+        if(s.add(mt)) {
+            setUsedMime(s);
+            // System.err.printf("NbJviPrefs: addUsedMime %s\n", mt);
+        }
+    }
+
+    private static Set<String> getUsedMime()
+    {
+        Set<String> s = new HashSet<String>();
+
+        String[] mimes = ViManager.getFactory().getPreferences()
+                                .get(USED_MIME, "").split(":");
+        s.addAll(Arrays.asList(mimes));
+
+        return s;
+    }
+
+    private static void setUsedMime(Set<String> s)
+    {
+        StringBuilder sb = new StringBuilder();
+        for(String mt : s) {
+            if(sb.length() != 0)
+                sb.append(':');
+            sb.append(mt);
+        }
+
+        ViManager.getFactory().getPreferences().put(USED_MIME, sb.toString());
+    }
+
+    public static void jviDisabling()
+    {
+        for(String mt : getUsedMime()) {
+            Preferences prefs;
+            prefs = MimeLookup.getLookup(
+                    MimePath.parse(mt)).lookup(Preferences.class);
+            if(prefs != null) {
+                // System.err.printf("NbJviPrefs: removeMimeTypePrefs %s\n", mt);
+                for(Entry<String, Set<I>> entry : prefType.entrySet()) {
+                    if(entry.getValue().contains(I.MIME)) {
+                        prefs.remove(entry.getKey());
+                    }
+                }
+            }
+        }
+        ViManager.getFactory().getPreferences().remove(USED_MIME);
     }
 }

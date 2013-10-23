@@ -46,7 +46,6 @@ import org.netbeans.modules.jvi.FsAct;
 import org.netbeans.modules.jvi.Module;
 import org.netbeans.modules.jvi.completion.CcCompletion;
 import org.netbeans.modules.jvi.reflect.NbUtil;
-import org.netbeans.modules.jvi.util.NbLineMapFolding;
 import org.openide.text.Line;
 import org.openide.util.Lookup;
 import org.openide.util.NbPreferences;

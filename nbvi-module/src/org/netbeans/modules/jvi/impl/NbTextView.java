@@ -27,6 +27,7 @@ import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldUtilities;
 import org.netbeans.api.editor.settings.AttributesUtilities;
 import org.netbeans.api.editor.settings.SimpleValueNames;
+import org.netbeans.editor.BaseCaret;
 import org.netbeans.editor.BaseKit;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
@@ -53,6 +54,7 @@ import org.openide.windows.WindowManager;
 
 import com.raelity.jvi.ViAppView;
 import com.raelity.jvi.ViBuffer;
+import com.raelity.jvi.ViFPOS;
 import com.raelity.jvi.ViStatusDisplay;
 import com.raelity.jvi.ViTextView;
 import com.raelity.jvi.ViTextView.TABOP;
@@ -82,11 +84,13 @@ import static com.raelity.jvi.core.lib.Constants.*;
 public class NbTextView extends SwingTextView
 {
     private static WindowsProvider wp;
+    final FoldOps foldOps;
 
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
         wp = Module.getWindowsProvider();
+        foldOps = new FoldOps(this);
     }
     
     @Override
@@ -159,6 +163,21 @@ public class NbTextView extends SwingTextView
     //
     // The viTextView interface
     //
+
+    class NbWCursor extends WCursor {
+        @Override
+        public void set(int offset)
+        {
+            // Do not open fold
+            ((BaseCaret)editorPane.getCaret()).setDot(offset, false);
+        }
+    }
+
+    @Override
+    public ViFPOS createWCursor()
+    {
+        return w_cursor == null ? new NbWCursor() : null;
+    }
     
     @Override
     public ViStatusDisplay getStatusDisplay() {
@@ -339,84 +358,19 @@ public class NbTextView extends SwingTextView
     }
     
     @Override
-    public void foldOperation(FOLDOP op) {
-        String action = null;
-        switch(op) {
-            case CLOSE:
-                action = NbEditorKit.collapseFoldAction;
-                break;
-            case OPEN:
-                action = NbEditorKit.expandFoldAction;
-                break;
-            case CLOSE_ALL:
-                action = NbEditorKit.collapseAllFoldsAction;
-                break;
-            case OPEN_ALL:
-                action = NbEditorKit.expandAllFoldsAction;
-                break;
-        }
-        if(action != null) {
-            ops.xact(action);
-        } else {
-            Util.beep_flush();
-        }
+    public void foldOperation(FOLDOP op, int start, int end, boolean isVisual) {
+        foldOps.foldOperation(op, start, end, isVisual);
     }
-    
+
     @Override
-    public void foldOperation(FOLDOP op, final int offset) {
-        boolean error = false;
-        switch(op) {
-            case OPEN:
-            case CLOSE:
-            case OPEN_ALL:
-            case CLOSE_ALL:
-                error = true;
-                break;
-            case MAKE_VISIBLE:
-                break;
-        }
-
-        if(error) {
-            Util.beep_flush();
-            return;
-        }
-
-        // NOTE: MAKE_VISIBLE is the only thing supported
-
-        final FoldHierarchy fh = FoldHierarchy.get(getEditor());
-
-        // get the fold containing the offset,
-        // expand it and all its parents
-        getEditor().getDocument().render(new Runnable() {
-            @Override
-            public void run() {
-                fh.lock();
-                try {
-                    // Fold f = FoldUtilities.findCollapsedFold(
-                    //         fh, offset, offset);
-                    Fold f = FoldUtilities.findOffsetFold(fh, offset);
-                    while(true) {
-                        if (f == null) {
-                            // System.err.println("NULL FOLD");
-                            break;
-                        } else {
-                            // int start = f.getStartOffset();
-                            // int end = f.getEndOffset();
-                            // System.err.println(String.format("%s < %s < %s",
-                            //         start, offset, end));
-                            // if(!(start < offset && offset < end)) {
-                            //     System.err.println("FOLD NOT IN RANGE");
-                            // }
-                            fh.expand(f);
-                        }
-                        f = f.getParent();
-                    }
-                } finally {
-                    fh.unlock();
-                }
-            }
-        });
+    public void foldOpenCursor(int line)
+    {
+        // just set the caret pos to its current position
+        //getEditor().setCaretPosition(w_cursor.getOffset());
+        foldOps.makeVisible(line);
     }
+
+
 
     @Override
     public void wordMatchOperation(WMOP op) {
@@ -859,7 +813,6 @@ public class NbTextView extends SwingTextView
         // "true" means target must touch this window
         NbAppView avTarget = (NbAppView)nav.getTarget(dir, av, 1, true);
 
-        TopComponent[] tcs = new TopComponent[] {tc};
         if(avTarget != null) {
             // move the av's tc to the avTarget's mode
             TopComponent tcTarget = avTarget.getTopComponent();

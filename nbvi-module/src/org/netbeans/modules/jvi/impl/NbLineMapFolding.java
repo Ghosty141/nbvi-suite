@@ -18,7 +18,7 @@
  * Contributor(s): Ernie Rael <err@raelity.com>
  */
 
-package org.netbeans.modules.jvi.util;
+package org.netbeans.modules.jvi.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +33,6 @@ import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldHierarchyEvent;
 import org.netbeans.api.editor.fold.FoldHierarchyListener;
 import org.netbeans.api.editor.fold.FoldUtilities;
-import org.netbeans.modules.jvi.impl.NbTextView;
 
 import com.raelity.jvi.lib.MutableBoolean;
 import com.raelity.jvi.lib.MutableInt;
@@ -300,6 +299,12 @@ public class NbLineMapFolding implements LineMap
         return sb.toString();
     }
 
+    private void invalidate(FoldHierarchyEvent evt)
+    {
+        valid = false;
+        tv.foldOps.invalidate(evt);
+    }
+
     private void setupListeners()
     {
         fh.addFoldHierarchyListener(new FoldHierarchyListener()
@@ -307,7 +312,7 @@ public class NbLineMapFolding implements LineMap
             @Override
             public void foldHierarchyChanged(FoldHierarchyEvent evt)
             {
-                valid = false;
+                invalidate(evt);
             }
         });
         tv.getEditor().getDocument().addDocumentListener(
@@ -324,7 +329,7 @@ public class NbLineMapFolding implements LineMap
 
     private void docEvent(DocumentEvent e)
     {
-        valid = false;
+        invalidate(null);
     }
 
 }

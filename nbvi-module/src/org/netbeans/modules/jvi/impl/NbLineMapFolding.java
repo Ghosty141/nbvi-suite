@@ -101,7 +101,7 @@ public class NbLineMapFolding implements LineMap
                               final MutableInt pDocFirst,
                               final MutableInt pDocLast)
     {
-        final MutableBoolean mb = new MutableBoolean();
+        final MutableBoolean isFolded = new MutableBoolean();
         runLocked(new Runnable()
         {
             @Override
@@ -112,7 +112,7 @@ public class NbLineMapFolding implements LineMap
                     int docLast = cf.getBaseDocLine()
                                   + cf.getFoldLineCount() - 1;
                     if(docLine <= docLast) {
-                        mb.setValue(true);
+                        isFolded.setValue(true);
                         if(pDocFirst != null)
                             pDocFirst.setValue(cf.getBaseDocLine());
                         if(pDocLast != null)
@@ -121,7 +121,7 @@ public class NbLineMapFolding implements LineMap
                 }
             }
         });
-        return mb.getValue();
+        return isFolded.getValue();
     }
 
     /** describe a closed fold and the non-folded lines that follow it */

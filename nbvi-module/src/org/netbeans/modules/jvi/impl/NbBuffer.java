@@ -57,6 +57,7 @@ import com.raelity.jvi.swing.SwingBuffer;
 import com.raelity.text.TextUtil;
 
 import static com.raelity.jvi.core.lib.Constants.*;
+import static com.raelity.jvi.core.lib.Constants.FDO.*;
 
 
 /**
@@ -430,6 +431,8 @@ public class NbBuffer extends SwingBuffer {
                     }
                 }
             } catch (ViBadLocationException ex) { }
+            if(G.fdo_flags().contains(FDO_UNDO) && G.getKeyTyped())
+                tv.foldOpenCursor(tv.w_cursor.getLine());
         } else
             Util.beep_flush();
         // ops.xact(SystemAction.get(UndoAction.class)); // in openide

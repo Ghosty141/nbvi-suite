@@ -75,6 +75,8 @@ import com.raelity.jvi.swing.SwingFactory;
 import com.raelity.jvi.swing.ViewMap;
 import com.raelity.jvi.swing.ViewMapSwitcher;
 
+import static com.raelity.jvi.core.lib.Constants.FDO.*;
+
 final public class NbFactory extends SwingFactory {
 
     private static final Logger LOG = Logger.getLogger(NbFactory.class.getName());
@@ -268,6 +270,8 @@ final public class NbFactory extends SwingFactory {
         //int fromLine;
         Line fromLine;
         String fromFile;
+
+        boolean old_KeyTyped;
     }
     
     private static Stack<Tag> tagStack = new Stack<Tag>();
@@ -398,6 +402,7 @@ final public class NbFactory extends SwingFactory {
         
         pushingTag = new Tag();
         pushingTag.toIdent = ident;
+        pushingTag.old_KeyTyped = G.getKeyTyped();
         
         fillTagFrom(pushingTag, tv);
         Scheduler.putKeyStrokeTodo(finishTagPush);
@@ -408,7 +413,7 @@ final public class NbFactory extends SwingFactory {
      * is in use, and if a tagPush is in progress, the target has been reached.
      */
     private static void finishTagPush(ActionEvent e) {
-        ViTextView tv = (ViTextView)e.getSource();
+        NbTextView tv = (NbTextView)e.getSource();
         if(pushingTag == null)
             return;
         
@@ -442,6 +447,9 @@ final public class NbFactory extends SwingFactory {
         tagStack.setSize(iActiveTag);
         tagStack.push(pushingTag);
         iActiveTag++;
+
+        if(G.fdo_flags().contains(FDO_TAG) && pushingTag.old_KeyTyped)
+            tv.foldOpenCursor(tv.w_cursor.getLine());
         
         pushingTag = null;
     }

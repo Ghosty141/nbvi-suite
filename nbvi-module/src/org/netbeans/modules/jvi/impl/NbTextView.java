@@ -18,6 +18,7 @@ import javax.swing.JEditorPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
+import javax.swing.text.Caret;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.StyleConstants;
@@ -168,8 +169,12 @@ public class NbTextView extends SwingTextView
         @Override
         public void set(int offset)
         {
-            // Do not open fold
-            ((BaseCaret)editorPane.getCaret()).setDot(offset, false);
+            Caret c = editorPane.getCaret();
+            // Do not open fold (if NB caret)
+            if(c instanceof BaseCaret)
+                ((BaseCaret)c).setDot(offset, false);
+            else
+                c.setDot(offset);
         }
     }
 
@@ -177,6 +182,19 @@ public class NbTextView extends SwingTextView
     public ViFPOS createWCursor()
     {
         return w_cursor == null ? new NbWCursor() : null;
+    }
+
+    @Override
+    public void setSelection( int dot, int mark )
+    {
+        w_cursor.set(mark);
+        editorPane.getCaret().moveDot(dot);
+    }
+
+    @Override
+    public void clearSelection()
+    {
+        w_cursor.set(w_cursor.getOffset());
     }
     
     @Override

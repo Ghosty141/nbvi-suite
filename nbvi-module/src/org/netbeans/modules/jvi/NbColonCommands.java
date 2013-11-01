@@ -51,6 +51,7 @@ import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.AbstractColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
+import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.core.lib.AbbrevLookup;
@@ -456,12 +457,29 @@ public class NbColonCommands {
         Mode mBottom = WindowManager.getDefault().findMode(M_BOTTOM_SLIDE);
 
         if(mOutput != null) {
-            boolean doHide = false;
-           // mOutput.getTopComponents().length > 0;
-            for(TopComponent tc : mOutput.getTopComponents()) {
-                if(tc.isOpened()) {
-                    doHide = true;
-                    break;
+            boolean doHide;
+
+            // The differnce between these two cases is if TC in both
+            // output mode and botton slider.
+            if(!G.False && mBottom != null) {
+                // default: hide OUTPUT windows to bottom slider
+                doHide = true;
+                // but if there's there's stuff in bottom slider, then restore
+                for(TopComponent tc : mBottom.getTopComponents()) {
+                    if(tc.isOpened()) {
+                        doHide = false;
+                        break;
+                    }
+                }
+            } else {
+                // default: restore to output window from the bottom slider
+                doHide = false;
+                // if stuff in both then hide OUTPUT windows to bottom slider
+                for(TopComponent tc : mOutput.getTopComponents()) {
+                    if(tc.isOpened()) {
+                        doHide = true;
+                        break;
+                    }
                 }
             }
             if(doHide) {

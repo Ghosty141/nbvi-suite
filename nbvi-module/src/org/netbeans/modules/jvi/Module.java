@@ -137,7 +137,7 @@ public class Module extends ModuleInstall
     private static TopComponentRegistryListener topComponentRegistryListener;
 
     // a SET
-    private static Map<TopComponent, Object> tcChecked
+    private static final Map<TopComponent, Object> tcChecked
             = new WeakHashMap<TopComponent, Object>();
 
     private static Runnable shutdownHook;
@@ -577,6 +577,7 @@ public class Module extends ModuleInstall
      * Check if it is a SystemAction, if not then try to create it.
      * @return an Action, null if couldn't get or create one
      */
+    @SuppressWarnings({"BroadCatchBlock", "TooBroadCatch", "UseSpecificCatch"})
     public static Action fetchFileSystemAction(FsAct fsAct)
     {
         String path = fsAct.path();
@@ -705,12 +706,11 @@ public class Module extends ModuleInstall
     {
         if (parent instanceof Container) {
             Component components[] = ((Container)parent).getComponents();
-            for (int i = 0 ; i < components.length ; i++) {
-                Component comp = components[i];
+            for(Component comp : components) {
                 if (comp != null) {
                     if(comp instanceof JEditorPane) {
                         if(skipNonJvi && !(((JEditorPane)comp).getCaret()
-                                            instanceof ViCaret))
+                                instanceof ViCaret))
                             continue;
                         l.add((JEditorPane)comp);
                     } else if (comp instanceof Container) {

@@ -103,15 +103,15 @@ public class Module extends ModuleInstall
     private static WeakReference<TopComponent> refOutput;
     // Could set init value from a system property, but they init very early
     private static DebugOption dbgNb = OptUtil.createBootDebugOption(false);
-    private static DebugOption dbgAct = OptUtil.createBootDebugOption(false);
+    private static DebugOption dbgTC = OptUtil.createBootDebugOption(false);
     private static DebugOption dbgHL = OptUtil.createBootDebugOption(false);
 
     public static DebugOption dbgNb() {
         return dbgNb;
     }
-    public static DebugOption dbgAct()
+    public static DebugOption dbgTC()
     {
-        return dbgAct;
+        return dbgTC;
     }
     public static DebugOption dbgHL()
     {
@@ -496,7 +496,7 @@ public class Module extends ModuleInstall
         dbgNb = OptUtil.createDebugOption(DBG_MODULE);
         OptUtil.setupOptionDesc(DBG_MODULE, "Module interface",
                                 "Module and editor kit install/install");
-        dbgAct = OptUtil.createDebugOption(DBG_TC);
+        dbgTC = OptUtil.createDebugOption(DBG_TC);
         OptUtil.setupOptionDesc(DBG_TC, "Top Component",
                                 "TopComponent activation/open");
         dbgHL = OptUtil.createDebugOption(DBG_HL);
@@ -615,8 +615,8 @@ public class Module extends ModuleInstall
         @SuppressWarnings("DeadBranch")
         public void propertyChange(PropertyChangeEvent evt) {
             assert(EventQueue.isDispatchThread());
-            if(false && dbgAct().getBoolean()) {
-                dbgAct().println("NbVi REG evt = " + evt.getPropertyName() + ": "
+            if(false && dbgTC().getBoolean()) {
+                dbgTC().println("NbVi REG evt = " + evt.getPropertyName() + ": "
                         + evt.getOldValue()
                         + " --> " + evt.getNewValue());
             }
@@ -740,22 +740,22 @@ public class Module extends ModuleInstall
     
     private static void tcDumpInfo(Object o, String tag)
     {
-        if(!dbgAct().getBoolean())
+        if(!dbgTC().getBoolean())
             return;
         if(!(o instanceof TopComponent))
             return;
         TopComponent tc = (TopComponent) o;
         List<JEditorPane> panes = getDescendentJep(tc); // with non jvi editors
         Mode mode = WindowManager.getDefault().findMode(tc);
-        if(dbgAct().getBoolean()) {
-            dbgAct().printf("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
+        if(dbgTC().getBoolean()) {
+            dbgTC().printf("trackTC: %s: %s:%s '%s' : nPanes = %d\n",
                     tag,
                     tc.getDisplayName(), cid(tc),
                     (mode == null ? "null" : mode.getName()),
                     panes.size());
             for (JEditorPane ep : panes) {
                 NbAppView av = NbAppView.fetchAvFromTC(tc, ep);
-                dbgAct().printf("\tep:%d %s tc: %s isEditable %b %s\n",
+                dbgTC().printf("\tep:%d %s tc: %s isEditable %b %s\n",
                         av != null ? av.getWNum() : 0,
                         cid(ep), ancestorStringTC(ep), ep.isEditable(),
                         !(ep.getCaret() instanceof ViCaret) ? "NOT-JVI" : "");

@@ -28,11 +28,15 @@
  */
 package org.netbeans.modules.jvi;
 
+import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.Action;
@@ -225,8 +229,10 @@ public class NbColonCommands {
         }
     }
 
-    private static ActionListener ACTION_tabnext = new TabNext(true);
-    private static ActionListener ACTION_tabprevious = new TabNext(false);
+    private static final ActionListener ACTION_tabnext
+            = new TabNext(true);
+    private static final ActionListener ACTION_tabprevious
+            = new TabNext(false);
 
     private static class TabNext implements ActionListener { // NEEDSWORK: count
         boolean goForward;
@@ -326,7 +332,7 @@ public class NbColonCommands {
                 for(int i = 1; i <= ce.getNArg(); i++) {
                     String a = ce.getArg(i);
                     int mkThing01 = MK_NONE;
-                    int mkOp01 = MK_NONE;
+                    int mkOp01;
                     //
                     // NOTE: debug and run are after doc and rebuild,
                     //       so they require two character match
@@ -344,8 +350,9 @@ public class NbColonCommands {
                     else if("run".startsWith(a))
                         mkOp01 = MK_RUN;
                     else if((mkThing01 = parseMkThing(a)) != MK_NONE)
-                        ;
+                        mkOp01 = MK_NONE;
                     else {
+                        mkOp01 = MK_NONE;
                         fError = true;
                         ce.getViTextView().getStatusDisplay().displayErrorMessage(
                             "syntax: mak[e]"
@@ -420,15 +427,18 @@ public class NbColonCommands {
             initToggleCommand();
             ColonEvent cev = (ColonEvent)ev;
 
-            if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP)
-                    && cev.getNArg() == 0) {
-                toggleOutputWindowGroup();
-            } else if( cev.getNArg() == 0 || cev.getNArg() == 1) {
+            if( cev.getNArg() == 0 || cev.getNArg() == 1) {
                 String arg = cev.getNArg() == 0 ? "output" : cev.getArg(1);
                 ColonCommandItem ce = toggles.lookupCommand(arg);
                 if(ce != null) {
-                    // pass on the same event that we got
-                    ((ActionListener)ce.getValue()).actionPerformed(ev);
+                    if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP))
+                        toggleOutputWindowGroup(cev);
+                    else
+                        ((ActionListener)ce.getValue()).actionPerformed(cev);
+                    Object source = cev.getSource();
+                    if(source instanceof Component) {
+                        ((Component)source).requestFocusInWindow();
+                    }
                 } else {
                     Msg.emsg("Unknown toggle argument: " + cev.getArg(1));
                     doBeep = true;
@@ -442,60 +452,102 @@ public class NbColonCommands {
         }
     };
 
+    // Mode: topSlidingSide
+    // Mode: navigator
+    // Mode: output
+    // Mode: leftSlidingSide
+    // Mode: rightSlidingSide
+    // Mode: bottomSlidingSide
+    // Mode: webpreview
+    // Mode: code_evaluator_js
+    // Mode: editor
+    // Mode: explorer
+    // Mode: commonpalette
+    // Mode: properties
+    // Mode: code_evaluator
+    // Mode: anonymousMode_1
+
+    // following are default grouping.
+    // Want to make it configurable and/or dynamic/automatic
     private static final String M_OUTPUT = "output";
     private static final String M_BOTTOM_SLIDE = "bottomSlidingSide";
-    private static void toggleOutputWindowGroup() {
-        Set<? extends Mode> modes = WindowManager.getDefault().getModes();
-        for(Mode mode : modes) {
-            System.err.println("Mode: " + mode.getName());
+
+    private static final String M_EXPLORER = "explorer";
+    private static final String M_NAVIGATOR = "navigator";
+    private static final String M_LEFT_SLIDE = "leftSlidingSide";
+
+    private static void toggleOutputWindowGroup(ColonEvent cev) {
+        String arg = cev.getNArg() == 0 ? "output" : cev.getArg(1);
+        ColonCommandItem ce = toggles.lookupCommand(arg);
+        String name = ce == null ? "output" : ce.getName();
+        if(name.equals("output"))
+            toggleOutputWindowGroup(M_BOTTOM_SLIDE, M_OUTPUT);
+        else if (name.equals("left"))
+            toggleOutputWindowGroup(M_LEFT_SLIDE, M_EXPLORER, M_NAVIGATOR);
+    }
+    /**
+     * It is assumed that the visible modes slide into the slider mode.
+     *
+     * @param slider mode that the visible modes slide into
+     * @param visible visible modes
+     */
+    private static void toggleOutputWindowGroup(String slider,
+                                                String... visible) {
+        if(Module.dbgTC().getBoolean(Level.INFO)) {
+            for(Mode mode : WindowManager.getDefault().getModes()) {
+                G.dbg.println("Mode: " + mode.getName());
+            }
         }
 
         WindowsProvider wp = Module.getWindowsProvider();
 
-        Mode mOutput = WindowManager.getDefault().findMode(M_OUTPUT);
-        // NEEDSWORK: just hardcode mBottom for now
-        Mode mBottom = WindowManager.getDefault().findMode(M_BOTTOM_SLIDE);
+        boolean hasSlider = false; // is some TC in the slider
+        boolean hasVisible = false; // is some TC in the visible modes
+        List<Mode> mVisible = new ArrayList<Mode>();
 
-        if(mOutput != null) {
-            boolean doHide;
-
-            // The differnce between these two cases is if TC in both
-            // output mode and botton slider.
-            if(!G.False && mBottom != null) {
-                // default: hide OUTPUT windows to bottom slider
-                doHide = true;
-                // but if there's there's stuff in bottom slider, then restore
-                for(TopComponent tc : mBottom.getTopComponents()) {
-                    if(tc.isOpened()) {
-                        doHide = false;
-                        break;
-                    }
-                }
-            } else {
-                // default: restore to output window from the bottom slider
-                doHide = false;
-                // if stuff in both then hide OUTPUT windows to bottom slider
-                for(TopComponent tc : mOutput.getTopComponents()) {
-                    if(tc.isOpened()) {
-                        doHide = true;
-                        break;
-                    }
-                }
-            }
-            if(doHide) {
-                wp.minimizeMode(mOutput);
-            } else {
-                if(mBottom != null)
-                    wp.restoreMode(mBottom, mOutput);
+        Mode mSlider = WindowManager.getDefault().findMode(slider);
+        if(mSlider == null)
+            return;
+        for(TopComponent tc : mSlider.getTopComponents()) {
+            if(tc.isOpened()) {
+                hasSlider = true;
+                break;
             }
         }
+
+        for(String mode : visible) {
+            Mode mVis = WindowManager.getDefault().findMode(mode);
+            if(mVis == null)
+                continue;
+            mVisible.add(mVis);
+            if(!hasVisible) {
+                for(TopComponent tc : mVis.getTopComponents()) {
+                    if(tc.isOpened()) {
+                        hasVisible = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // first check if anything is in the sliders
+        // ifso, make them all visible (like closing the slider)
+        // otherwise, stash into the slider
+        if(hasSlider) {
+            for(Mode mVis : mVisible) {
+                wp.restoreMode(mSlider, mVis);
+            }
+        } else if(hasVisible) {
+            for(Mode mVis : mVisible) {
+                wp.minimizeMode(mVis);
+            }
+        } // else ???
     }
 
 
 
     private static AbbrevLookup toggles;
 
-    private static final String M_OUT = "output";
     private static final String M_DBG = "debugger";
 
     /**
@@ -506,7 +558,12 @@ public class NbColonCommands {
             return;
         toggles = new AbbrevLookup();
 
-        toggles.add("ou", "output", new SimpleToggleOutput(), null);
+        if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP)) {
+            toggles.add("ou", "output", Module.HACK_WINDOW_GROUP, null);
+            toggles.add("l", "left", Module.HACK_WINDOW_GROUP, null);
+        } else {
+            toggles.add("ou", "output", new SimpleToggleOutput(), null);
+        }
         /*
         toggleOutput = new ToggleOutput(M_OUT);
 
@@ -552,7 +609,7 @@ public class NbColonCommands {
                 if(restoreToModeName != null)
                     restore = wm.findMode(restoreToModeName);
                 if(restore == null)
-                    restore = wm.findMode(M_OUT);
+                    restore = wm.findMode(M_OUTPUT);
                 if(restore != null) {
                     restoreToModeName = null;
                     restore.dockInto(tc);

@@ -286,7 +286,7 @@ public class NbAppView implements ViAppView
         if(tc != null && av != null)
             s.add(av);
 
-        if(logState || Module.dbgAct().getBoolean()) {
+        if(logState || Module.dbgTC().getBoolean()) {
             String msg = String.format(
                     "updateAppView: (%s:%s) %s tc='%s' ep='%s' doc='%s' isNomad=%b",
                     tag, info,
@@ -295,7 +295,7 @@ public class NbAppView implements ViAppView
                     ep != null ? Module.cid(ep) : "",
                     ep != null ? Module.cid(ep.getDocument()) : "",
                     av.isNomad);
-            Module.dbgAct().println(msg);
+            Module.dbgTC().println(msg);
             if(logState) {
                 LOG.log(Level.SEVERE, msg);
             }
@@ -303,8 +303,8 @@ public class NbAppView implements ViAppView
 
         if(isNomad != av.isNomad) {
             av.setIsNomad(isNomad);
-            if(Module.dbgAct().getBoolean())
-                Module.dbgAct().println("updateAppView: CONVERT: isNomad "
+            if(Module.dbgTC().getBoolean())
+                Module.dbgTC().println("updateAppView: CONVERT: isNomad "
                                         + av.isNomad);
         }
         AppViews.open(av, info);

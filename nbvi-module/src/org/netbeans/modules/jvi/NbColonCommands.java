@@ -34,9 +34,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.Action;
@@ -55,7 +55,6 @@ import com.raelity.jvi.core.ColonCommands;
 import com.raelity.jvi.core.ColonCommands.AbstractColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonAction;
 import com.raelity.jvi.core.ColonCommands.ColonEvent;
-import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Msg;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.core.lib.AbbrevLookup;
@@ -432,7 +431,7 @@ public class NbColonCommands {
                 ColonCommandItem ce = toggles.lookupCommand(arg);
                 if(ce != null) {
                     if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP))
-                        toggleOutputWindowGroup(cev);
+                        toggleOutputWindowGroup(ce.getName());
                     else
                         ((ActionListener)ce.getValue()).actionPerformed(cev);
                     Object source = cev.getSource();
@@ -470,61 +469,80 @@ public class NbColonCommands {
     // following are default grouping.
     // Want to make it configurable and/or dynamic/automatic
     private static final String M_OUTPUT = "output";
+
+    private static final String M_LEFT_SLIDE = "leftSlidingSide";
+    private static final String M_RIGHT_SLIDE = "rightSlidingSide";
+    private static final String M_TOP_SLIDE = "topSlidingSide";
     private static final String M_BOTTOM_SLIDE = "bottomSlidingSide";
 
-    private static final String M_EXPLORER = "explorer";
-    private static final String M_NAVIGATOR = "navigator";
-    private static final String M_LEFT_SLIDE = "leftSlidingSide";
-
-    private static void toggleOutputWindowGroup(ColonEvent cev) {
-        String arg = cev.getNArg() == 0 ? "output" : cev.getArg(1);
-        ColonCommandItem ce = toggles.lookupCommand(arg);
-        String name = ce == null ? "output" : ce.getName();
-        if(name.equals("output"))
-            toggleOutputWindowGroup(M_BOTTOM_SLIDE, M_OUTPUT);
-        else if (name.equals("left"))
-            toggleOutputWindowGroup(M_LEFT_SLIDE, M_EXPLORER, M_NAVIGATOR);
-    }
     /**
      * It is assumed that the visible modes slide into the slider mode.
      *
      * @param slider mode that the visible modes slide into
      * @param visible visible modes
      */
-    private static void toggleOutputWindowGroup(String slider,
-                                                String... visible) {
-        if(Module.dbgTC().getBoolean(Level.INFO)) {
-            for(Mode mode : WindowManager.getDefault().getModes()) {
-                G.dbg.println("Mode: " + mode.getName());
-            }
-        }
+    private static void toggleOutputWindowGroup(String slideSide) {
 
+        if("output".equals(slideSide))
+            slideSide = "bottom";
+
+        WindowManager wm = WindowManager.getDefault();
         WindowsProvider wp = Module.getWindowsProvider();
 
-        boolean hasSlider = false; // is some TC in the slider
-        boolean hasVisible = false; // is some TC in the visible modes
+        boolean hasSliderTC = false; // is some TC in the slider
+        boolean hasVisibleTC = false; // is some TC in the visible modes
         List<Mode> mVisible = new ArrayList<Mode>();
 
-        Mode mSlider = WindowManager.getDefault().findMode(slider);
+        // Set<TopComponent> tcOpened = new HashSet<TopComponent>();
+
+        // for(TopComponent tc : wm.getRegistry().getOpened()) {
+        //     tcOpened.add(tc);
+        // }
+
+        for(Mode m : wm.getModes()) {
+            String mSlideSide = wp.getSlideSideForMode(m);
+            String modeName = m.getName();
+            if(M_LEFT_SLIDE.equals(modeName)
+                    || M_RIGHT_SLIDE.equals(modeName)
+                    || M_TOP_SLIDE.equals(modeName)
+                    || M_BOTTOM_SLIDE.equals(modeName))
+                continue;
+            if(slideSide.equals(mSlideSide)
+                    && !wm.isEditorMode(m))
+                mVisible.add(m);
+        }
+        // mVisible is list of modes that hide into slide side
+
+        String slider;
+        if(slideSide.equals("left"))
+            slider = M_LEFT_SLIDE;
+        else if(slideSide.equals("right"))
+            slider = M_RIGHT_SLIDE;
+        else if(slideSide.equals("top"))
+            slider = M_TOP_SLIDE;
+        else if(slideSide.equals("bottom"))
+            slider = M_BOTTOM_SLIDE;
+        else
+            return;
+        Mode mSlider = wm.findMode(slider);
         if(mSlider == null)
             return;
+
         for(TopComponent tc : mSlider.getTopComponents()) {
             if(tc.isOpened()) {
-                hasSlider = true;
+                hasSliderTC = true;
                 break;
             }
         }
 
-        for(String mode : visible) {
-            Mode mVis = WindowManager.getDefault().findMode(mode);
-            if(mVis == null)
-                continue;
-            mVisible.add(mVis);
-            if(!hasVisible) {
-                for(TopComponent tc : mVis.getTopComponents()) {
-                    if(tc.isOpened()) {
-                        hasVisible = true;
-                        break;
+        checkVisible: {
+            for(Mode mVis : mVisible) {
+                if(!hasVisibleTC) {
+                    for(TopComponent tc : mVis.getTopComponents()) {
+                        if(tc.isOpened()) {
+                            hasVisibleTC = true;
+                            break checkVisible;
+                        }
                     }
                 }
             }
@@ -533,18 +551,16 @@ public class NbColonCommands {
         // first check if anything is in the sliders
         // ifso, make them all visible (like closing the slider)
         // otherwise, stash into the slider
-        if(hasSlider) {
+        if(hasSliderTC) {
             for(Mode mVis : mVisible) {
                 wp.restoreMode(mSlider, mVis);
             }
-        } else if(hasVisible) {
+        } else if(hasVisibleTC) {
             for(Mode mVis : mVisible) {
                 wp.minimizeMode(mVis);
             }
         } // else ???
     }
-
-
 
     private static AbbrevLookup toggles;
 
@@ -559,8 +575,12 @@ public class NbColonCommands {
         toggles = new AbbrevLookup();
 
         if(ViManager.getHackFlag(Module.HACK_WINDOW_GROUP)) {
+            // output not really used, turns into bottom
             toggles.add("ou", "output", Module.HACK_WINDOW_GROUP, null);
+            toggles.add("t", "top", Module.HACK_WINDOW_GROUP, null);
+            toggles.add("b", "bottom", Module.HACK_WINDOW_GROUP, null);
             toggles.add("l", "left", Module.HACK_WINDOW_GROUP, null);
+            toggles.add("r", "right", Module.HACK_WINDOW_GROUP, null);
         } else {
             toggles.add("ou", "output", new SimpleToggleOutput(), null);
         }

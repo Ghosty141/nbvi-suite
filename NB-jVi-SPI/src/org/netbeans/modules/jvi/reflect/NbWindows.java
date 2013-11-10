@@ -84,6 +84,13 @@ public class NbWindows
             {
                 userRestoredMode(slidingMode, modeToRestore);
             }
+
+            @Override
+            public String getSlideSideForMode(Mode m)
+            {
+                return NbWindows.getSlideSideForMode(m);
+            }
+
         };
     }
 
@@ -199,6 +206,19 @@ public class NbWindows
         }
     }
 
+    private static String getSlideSideForMode(Mode mode)
+    {
+        String s = null;
+        try {
+            Object wmi = WindowManager.getDefault();
+            Object central = meth_getCentral().invoke(wmi);
+            s = (String)meth_getSlideSideForMode().invoke(central, mode);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+        return s;
+    }
+
     /**
      * Invoke setWeights on splitter/MultiSplitPane.
      * See comment that follows for code that was tested in a NB patch.
@@ -273,6 +293,8 @@ public class NbWindows
     private static Method meth_userRestoredMode_71;
     private static Constructor<?> constr_topComponentDraggable_71;//TC
 
+    private static Method meth_getSlideSideForMode;
+
     private static Method meth_getCellCount_MSP;
     private static Method meth_cellAt_MSP;
     private static Field field_userMovedSplit_MSP;
@@ -318,6 +340,12 @@ public class NbWindows
         return is70()
                ? null
                : meth_userRestoredMode_71;
+    }
+    static Method meth_getSlideSideForMode() {
+        populateCoreWindowMethods();
+        return is70()
+               ? null
+               : meth_getSlideSideForMode;
     }
 
     private static void populateCoreWindowMethods() {
@@ -486,6 +514,14 @@ public class NbWindows
                         = c_wmi.getMethod(
                                 "userRestoredMode", c_modeImpl, c_modeImpl);
                 meth_userRestoredMode_71.setAccessible(true);
+                meths = c_central.getDeclaredMethods();
+                for(Method m : meths) {
+                    if(m.getName().equals("getSlideSideForMode")) {
+                        m.setAccessible(true);
+                        meth_getSlideSideForMode = m;
+                        break;
+                    }
+                }
             } catch(NoSuchMethodException ex) {
                 ex1 = ex;
             } catch(SecurityException ex) {

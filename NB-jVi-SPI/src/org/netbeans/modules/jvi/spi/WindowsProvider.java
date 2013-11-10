@@ -99,4 +99,7 @@ public interface WindowsProvider
     /** These are great for toggle */
     void minimizeMode(Mode m);
     void restoreMode(Mode slidingMode, Mode modeToRestore);
+
+    /** */
+    String getSlideSideForMode(Mode m);
 }

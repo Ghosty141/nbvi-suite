@@ -133,6 +133,7 @@ public class Module extends ModuleInstall
     public static final String HACK_SCROLL = "NB6.7 Text Scroll";
     public static final String HACK_WINDOW_GROUP = "NB7.1 MinimizeWindowGroup";
     public static final String HACK_CLONE_LOSE_EDITS = "NB7.1 Clone Lose Edits";
+    public static final String HACK_FOLD_ASYNC = "NB7.4 Fold Collapse Async";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
 
@@ -307,6 +308,13 @@ public class Module extends ModuleInstall
                         new SpecificationVersion("6.43.2")) < 0)
                 {
                     ViManager.putHackMap(HACK_CLONE_LOSE_EDITS, Boolean.TRUE);
+                }
+            } else if (mi.getCodeNameBase().equals(
+                    "org.netbeans.modules.editor.fold")) {
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("1.37.1")) >= 0) // NB-7.4
+                {
+                    ViManager.putHackMap(HACK_FOLD_ASYNC, Boolean.TRUE);
                 }
             }
         }

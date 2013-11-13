@@ -19,6 +19,9 @@
  */
 package org.netbeans.modules.jvi.impl;
 
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,15 +32,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.Timer;
+
 import org.netbeans.api.editor.fold.Fold;
 import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.api.editor.fold.FoldHierarchyEvent;
 import org.netbeans.api.editor.fold.FoldStateChange;
 import org.netbeans.api.editor.fold.FoldUtilities;
+import org.netbeans.modules.jvi.Module;
 
 import com.raelity.jvi.ViTextView.FOLDOP;
+import com.raelity.jvi.core.G;
 import com.raelity.jvi.core.Util;
 import com.raelity.jvi.lib.MutableInt;
+import com.raelity.jvi.manager.Scheduler;
+import com.raelity.jvi.manager.ViManager;
 
 
 /**
@@ -54,7 +63,10 @@ public class FoldOps {
     private final NbTextView tv;
     private final FoldHierarchy fh;
     // use WeakHashMap ???
-    Map<Fold, FoldLines> mapFolds = new HashMap<Fold, FoldLines>();
+    private final Map<Fold, FoldLines> mapFolds;
+    private static final boolean foldAsync
+            = ViManager.getHackFlag(Module.HACK_FOLD_ASYNC);
+    private static Timer needScrollTimer;
 
     enum SEARCH { COLLAPSED, EXPANDED, DEEPEST };
 
@@ -62,6 +74,7 @@ public class FoldOps {
     {
         this.tv = tv;
         fh = FoldHierarchy.get(tv.getEditor());
+        this.mapFolds = new HashMap<Fold, FoldLines>();
     }
 
     public void foldOperation(FOLDOP op, int arg1, int arg2, boolean isVisual) {
@@ -112,12 +125,12 @@ public class FoldOps {
             case CLOSE_ALL:
                 dot = tv.w_cursor.getOffset();
                 FoldUtilities.collapseAll(fh);
-                setCaretNoFoldOpen(dot);
+                setCaretAfterCollapse(dot);
                 break;
             case OPEN_ALL:
                 dot = tv.w_cursor.getOffset();
                 FoldUtilities.expandAll(fh);
-                setCaretNoFoldOpen(dot);
+                setCaretAfterExpand(dot);
                 break;
             default:
                 Util.beep_flush();
@@ -126,11 +139,50 @@ public class FoldOps {
     }
 
     /**
-     * Need this because the fold ops move the caret
-     * and want to reposition the caret WITHOUT opening a fold
+     * NB-7.4 requires the invokeLater after a fold close.
      */
-    private void setCaretNoFoldOpen(int offset) {
+    private void setCaretAfterCollapse(final int offset) {
+        if(foldAsync) {
+            EventQueue.invokeLater(new Runnable() {
+                @Override public void run() {
+                    tv.w_cursor.set(offset);
+                }
+            });
+        } else
+            tv.w_cursor.set(offset);
+    }
+
+    /**
+     * May take a while for view to be ready for scrolling after and expand.
+     * Any version of NB. With only a single CPU need to use a timer ;-)
+     */
+    private void setCaretAfterExpand(final int offset) {
         tv.w_cursor.set(offset);
+
+        class ScrollTimerAction implements ActionListener {
+            private final boolean doScroll;
+            public ScrollTimerAction(boolean doScroll) {
+                this.doScroll = doScroll;
+            }
+            @Override public void actionPerformed(ActionEvent e) {
+                if(doScroll)
+                    G.scrollToLine(tv, tv.w_cursor.getLine());
+                finishScrollTimer();
+            }
+        }
+
+        finishScrollTimer();
+        needScrollTimer = new Timer(100, new ScrollTimerAction(true));
+        needScrollTimer.setRepeats(false);
+        needScrollTimer.start();
+        // If a key gets pressed, kill the timer let the user handle things
+        Scheduler.putKeyStrokeTodo(new ScrollTimerAction(false));
+    }
+    private void finishScrollTimer() {
+        if(needScrollTimer != null) {
+            needScrollTimer.stop();
+            needScrollTimer = null;
+        }
     }
 
     private void collapseFold(final int count)
@@ -148,7 +200,7 @@ public class FoldOps {
                         break;
                     fh.collapse(folds);
                 }
-                setCaretNoFoldOpen(dot);
+                setCaretAfterCollapse(dot);
             }
         });
     }
@@ -168,7 +220,7 @@ public class FoldOps {
                         break;
                     fh.expand(folds);
                 }
-                setCaretNoFoldOpen(dot);
+                setCaretAfterExpand(dot);
             }
         });
     }
@@ -196,7 +248,7 @@ public class FoldOps {
                 List<Fold> folds = collectPartiallyContainedExpanded(
                         rangeStartLine, rangeEndLine, initialFolds);
                 fh.collapse(folds);
-                setCaretNoFoldOpen(dot);
+                setCaretAfterCollapse(dot);
             }
         });
     }
@@ -320,7 +372,7 @@ public class FoldOps {
                 }
                 fh.expand(folds);
 
-                setCaretNoFoldOpen(dot);
+                setCaretAfterExpand(dot);
             }
         });
     }
@@ -336,12 +388,14 @@ public class FoldOps {
                 Fold root = fh.getRootFold();
                 List<Fold> folds = new ArrayList<Fold>();
                 collectRec(root, rangeStartLine, rangeEndLine, search, folds);
-                if(search == SEARCH.EXPANDED)
+                if(search == SEARCH.EXPANDED) {
                     fh.collapse(folds);
-                else if(search == SEARCH.COLLAPSED)
+                    setCaretAfterCollapse(dot);
+                } else if(search == SEARCH.COLLAPSED) {
                     fh.expand(folds);
+                    setCaretAfterExpand(dot);
+                }
 
-                setCaretNoFoldOpen(dot);
             }
         });
     }
@@ -399,7 +453,7 @@ public class FoldOps {
                 Collections.reverse(folds);
                 fh.expand(folds);
 
-                setCaretNoFoldOpen(dot);
+                setCaretAfterExpand(dot);
             }
         });
     }

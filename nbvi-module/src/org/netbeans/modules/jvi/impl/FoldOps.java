@@ -450,10 +450,12 @@ public class FoldOps {
                         f = f.getParent();
                     }
                 }
-                Collections.reverse(folds);
-                fh.expand(folds);
+                if(!folds.isEmpty()) {
+                    Collections.reverse(folds);
+                    fh.expand(folds);
 
-                setCaretAfterExpand(dot);
+                    setCaretAfterExpand(dot);
+                }
             }
         });
     }

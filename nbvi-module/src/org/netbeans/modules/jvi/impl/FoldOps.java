@@ -193,14 +193,17 @@ public class FoldOps {
 
                 int line = tv.getBuffer().getLineNumber(dot);
 
+                boolean didCollapse = false;
                 for(int i = count; i > 0; i--) {
                     final Collection<Fold> folds = jViFindLineFolds(
                             line, SEARCH.EXPANDED);
                     if(folds.isEmpty())
                         break;
+                    didCollapse = true;
                     fh.collapse(folds);
                 }
-                setCaretAfterCollapse(dot);
+                if(didCollapse)
+                    setCaretAfterCollapse(dot);
             }
         });
     }
@@ -213,14 +216,17 @@ public class FoldOps {
 
                 final int line = tv.getBuffer().getLineNumber(dot);
 
+                boolean didExapnd = false;
                 for(int i = count; i > 0; i--) {
                     final Collection<Fold> folds = jViFindLineFolds(
                             line, SEARCH.COLLAPSED);
                     if(folds.isEmpty())
                         break;
+                    didExapnd = true;
                     fh.expand(folds);
                 }
-                setCaretAfterExpand(dot);
+                if(didExapnd)
+                    setCaretAfterExpand(dot);
             }
         });
     }
@@ -247,8 +253,10 @@ public class FoldOps {
                                   rangeStartLine, rangeEndLine, initialFolds);
                 List<Fold> folds = collectPartiallyContainedExpanded(
                         rangeStartLine, rangeEndLine, initialFolds);
-                fh.collapse(folds);
-                setCaretAfterCollapse(dot);
+                if(!folds.isEmpty()) {
+                    fh.collapse(folds);
+                    setCaretAfterCollapse(dot);
+                }
             }
         });
     }
@@ -370,9 +378,10 @@ public class FoldOps {
                         it.hasNext();) {
                     folds.add(it.next());
                 }
-                fh.expand(folds);
-
-                setCaretAfterExpand(dot);
+                if(!folds.isEmpty()) {
+                    fh.expand(folds);
+                    setCaretAfterExpand(dot);
+                }
             }
         });
     }
@@ -388,12 +397,14 @@ public class FoldOps {
                 Fold root = fh.getRootFold();
                 List<Fold> folds = new ArrayList<Fold>();
                 collectRec(root, rangeStartLine, rangeEndLine, search, folds);
-                if(search == SEARCH.EXPANDED) {
-                    fh.collapse(folds);
-                    setCaretAfterCollapse(dot);
-                } else if(search == SEARCH.COLLAPSED) {
-                    fh.expand(folds);
-                    setCaretAfterExpand(dot);
+                if(!folds.isEmpty()) {
+                    if(search == SEARCH.EXPANDED) {
+                        fh.collapse(folds);
+                        setCaretAfterCollapse(dot);
+                    } else if(search == SEARCH.COLLAPSED) {
+                        fh.expand(folds);
+                        setCaretAfterExpand(dot);
+                    }
                 }
 
             }

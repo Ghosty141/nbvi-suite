@@ -2,6 +2,7 @@ package org.netbeans.modules.jvi.impl;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
@@ -15,6 +16,7 @@ import java.util.WeakHashMap;
 
 import javax.swing.Action;
 import javax.swing.JEditorPane;
+import javax.swing.JScrollPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
@@ -86,12 +88,14 @@ public class NbTextView extends SwingTextView
 {
     private static WindowsProvider wp;
     final FoldOps foldOps;
+    final FoldHierarchy fh;
 
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
         wp = Module.getWindowsProvider();
         foldOps = new FoldOps(this);
+        fh = FoldHierarchy.get(editorPane);
     }
     
     @Override
@@ -159,6 +163,48 @@ public class NbTextView extends SwingTextView
     {
         String s = !w_p_wrap ? "none" : w_p_lbr ? "words" : "chars";
         map.put(SimpleValueNames.TEXT_LINE_WRAP, s);
+    }
+
+    //
+    // HACK
+    //
+    @Override
+    protected void endVisualBell()
+    {
+        Container parent = editorPane.getParent();
+        while(parent != null) {
+            if(parent instanceof JScrollPane) {
+                break;
+            }
+            parent = parent.getParent();
+        }
+
+        // Workaround a bug in the diff sidebar.
+        // If there is a Brace Match Tooltip,
+        // and you enter escape (dismiss the tooltip)
+        // then the diff side bar redraws using the
+        // editor's background color (which is currently inverted).
+        // Seems like a timing thing that we always catch the wrong background...
+        if(parent != null) {
+            //Module.dumpComponnentHierarchy(parent);
+            Component c = findComponentByName(parent, "DiffSidebar");
+            if(c != null)
+                c.repaint();
+        }
+    }
+
+    private Component findComponentByName(Component c, String name)
+    {
+        if(c.getClass().getSimpleName().contains(name))
+            return c;
+        if(c instanceof Container) {
+            for(Component child : ((Container)c).getComponents()) {
+                Component c01 = findComponentByName(child, name);
+                if(c01 != null)
+                    return c01;
+            }
+        }
+        return null;
     }
 
     //
@@ -301,7 +347,6 @@ public class NbTextView extends SwingTextView
         // Check out the fold situation
         boolean inCollapsedFold = false;
         if(!afterEOF) { // folding doesn't matter if at end of file
-            FoldHierarchy fh = FoldHierarchy.get(editorPane);
             fh.lock();
             try {
                 // Is the line before where the newly opened line goes

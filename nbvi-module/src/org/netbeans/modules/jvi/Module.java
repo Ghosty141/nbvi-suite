@@ -728,6 +728,25 @@ public class Module extends ModuleInstall
             }
         }
     }
+
+    public static void dumpComponnentHierarchy(Component c) {
+        System.err.println("Component Hierarcy");
+        dumpComponnentHierarchy1(c, 1);
+    }
+
+    private static void dumpComponnentHierarchy1(Component c, int depth) {
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < depth; i++) {
+            sb.append("    ");
+        }
+        sb.append(c.getClass().getName());
+        System.err.println(sb.toString());
+        if(c instanceof Container) {
+            for(Component child : ((Container)c).getComponents()) {
+                dumpComponnentHierarchy1(child, depth+1);
+            }
+        }
+    }
     
     private static String ancestorStringTC(Object o)
     {

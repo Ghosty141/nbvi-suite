@@ -186,25 +186,10 @@ public class NbTextView extends SwingTextView
         // editor's background color (which is currently inverted).
         // Seems like a timing thing that we always catch the wrong background...
         if(parent != null) {
-            //Module.dumpComponnentHierarchy(parent);
-            Component c = findComponentByName(parent, "DiffSidebar");
+            Component c = Module.findComponentByName(parent, "DiffSidebar");
             if(c != null)
                 c.repaint();
         }
-    }
-
-    private Component findComponentByName(Component c, String name)
-    {
-        if(c.getClass().getSimpleName().contains(name))
-            return c;
-        if(c instanceof Container) {
-            for(Component child : ((Container)c).getComponents()) {
-                Component c01 = findComponentByName(child, name);
-                if(c01 != null)
-                    return c01;
-            }
-        }
-        return null;
     }
 
     //
@@ -428,8 +413,6 @@ public class NbTextView extends SwingTextView
     @Override
     public void foldOpenCursor(int line)
     {
-        // just set the caret pos to its current position
-        //getEditor().setCaretPosition(w_cursor.getOffset());
         foldOps.makeVisible(line);
     }
 
@@ -1288,8 +1271,8 @@ public class NbTextView extends SwingTextView
     }
 
     private static class VisualSelectHighlighter extends BlocksHighlighter {
-        private ColorOption selectColorOption;
-        private ColorOption selectFgColorOption;
+        private final ColorOption selectColorOption;
+        private final ColorOption selectFgColorOption;
         private Color selectColor;
         private Color selectFgColor;
         private AttributeSet selectAttribs;
@@ -1358,8 +1341,8 @@ public class NbTextView extends SwingTextView
             implements HighlightsChangeListener,
                        DocumentListener {
         
-        private ColorOption searchColorOption;
-        private ColorOption searchFgColorOption;
+        private final ColorOption searchColorOption;
+        private final ColorOption searchFgColorOption;
         private Color searchColor;
         private Color searchFgColor;
         private AttributeSet searchAttribs;
@@ -1426,7 +1409,7 @@ public class NbTextView extends SwingTextView
         //
         // Is there a way to get active highlight container
         //
-        private OffsetsBag bag; // not final, not created in contructor
+        private final OffsetsBag bag;
         protected final JEditorPane ep;
         protected final Document document;
         protected final String name;

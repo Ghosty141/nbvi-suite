@@ -729,11 +729,13 @@ public class Module extends ModuleInstall
         }
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void dumpComponnentHierarchy(Component c) {
         System.err.println("Component Hierarcy");
         dumpComponnentHierarchy1(c, 1);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void dumpComponnentHierarchy1(Component c, int depth) {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < depth; i++) {
@@ -746,6 +748,23 @@ public class Module extends ModuleInstall
                 dumpComponnentHierarchy1(child, depth+1);
             }
         }
+    }
+
+    /**
+     * Search the component hierarchy for a component that contains name.
+     */
+    public static Component findComponentByName(Component c, String name)
+    {
+        if(c.getClass().getSimpleName().contains(name))
+            return c;
+        if(c instanceof Container) {
+            for(Component child : ((Container)c).getComponents()) {
+                Component c01 = findComponentByName(child, name);
+                if(c01 != null)
+                    return c01;
+            }
+        }
+        return null;
     }
     
     private static String ancestorStringTC(Object o)

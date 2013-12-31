@@ -86,14 +86,15 @@ import static com.raelity.jvi.core.lib.Constants.*;
  */
 public class NbTextView extends SwingTextView
 {
-    private static WindowsProvider wp;
+    private static final WindowsProvider wp = Module.getWindowsProvider();
+    private static final boolean diffSidebarDirty = ViManager.getHackFlag(Module.HACK_DIFF_SIDEBAR_DIRTY);
+    private static final boolean hackScroll = ViManager.getHackFlag(Module.HACK_SCROLL);
     final FoldOps foldOps;
     final FoldHierarchy fh;
 
     NbTextView(JEditorPane editorPane) {
         super(editorPane);
         statusDisplay = new NbStatusDisplay(this);
-        wp = Module.getWindowsProvider();
         foldOps = new FoldOps(this);
         fh = FoldHierarchy.get(editorPane);
     }
@@ -171,6 +172,9 @@ public class NbTextView extends SwingTextView
     @Override
     protected void endVisualBell()
     {
+        if(!diffSidebarDirty)
+            return;
+
         Container parent = editorPane.getParent();
         while(parent != null) {
             if(parent instanceof JScrollPane) {
@@ -242,7 +246,7 @@ public class NbTextView extends SwingTextView
     public int getRequiredVpLines()
     {
         int nLines = getVpLines();
-        if(ViManager.getHackFlag(Module.HACK_SCROLL))
+        if(hackScroll)
             nLines = nLines / 2;
         return nLines;
     }

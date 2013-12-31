@@ -134,6 +134,7 @@ public class Module extends ModuleInstall
     public static final String HACK_WINDOW_GROUP = "NB7.1 MinimizeWindowGroup";
     public static final String HACK_CLONE_LOSE_EDITS = "NB7.1 Clone Lose Edits";
     public static final String HACK_FOLD_ASYNC = "NB7.4 Fold Collapse Async";
+    public static final String HACK_DIFF_SIDEBAR_DIRTY = "NB7.4 DiffSidebar ui artifact";
     
     private static TopComponentRegistryListener topComponentRegistryListener;
 
@@ -315,6 +316,13 @@ public class Module extends ModuleInstall
                         new SpecificationVersion("1.37.1")) >= 0) // NB-7.4
                 {
                     ViManager.putHackMap(HACK_FOLD_ASYNC, Boolean.TRUE);
+                }
+            } else if (mi.getCodeNameBase().equals(
+                    "org.netbeans.modules.versioning.ui")) {
+                if (mi.getSpecificationVersion().compareTo(
+                        new SpecificationVersion("1.16.0")) < 0) // <= NB-7.4
+                {
+                    ViManager.putHackMap(HACK_DIFF_SIDEBAR_DIRTY, Boolean.TRUE);
                 }
             }
         }

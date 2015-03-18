@@ -274,11 +274,11 @@ final public class NbFactory extends SwingFactory {
         boolean old_KeyTyped;
     }
     
-    private static Stack<Tag> tagStack = new Stack<Tag>();
+    private static final Stack<Tag> tagStack = new Stack<Tag>();
     private static int iActiveTag;
     
     private static Tag pushingTag;
-    private static ActionListener finishTagPush = new ActionListener()
+    private static final ActionListener finishTagPush = new ActionListener()
             {
                 @Override
                 public void actionPerformed(ActionEvent e)
@@ -417,7 +417,7 @@ final public class NbFactory extends SwingFactory {
         if(pushingTag == null)
             return;
         
-        Document doc = ((JEditorPane)tv.getEditor()).getDocument();
+        Document doc = tv.getEditor().getDocument();
         if(doc == null)
             return;
                 

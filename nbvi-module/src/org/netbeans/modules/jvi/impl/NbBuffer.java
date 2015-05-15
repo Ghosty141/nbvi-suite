@@ -10,10 +10,12 @@
 package org.netbeans.modules.jvi.impl;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
@@ -28,6 +30,9 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoableEdit;
 
 import org.netbeans.api.editor.settings.SimpleValueNames;
+import org.netbeans.api.project.FileOwnerQuery;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.editor.BaseDocument;
 import org.netbeans.editor.BaseDocumentEvent;
 import org.netbeans.editor.GuardedDocument;
@@ -35,12 +40,15 @@ import org.netbeans.editor.GuardedException;
 import org.netbeans.modules.editor.NbEditorKit;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.netbeans.modules.editor.indent.api.Indent;
+import org.netbeans.modules.editor.indent.api.IndentUtils;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.actions.UndoAction;
 import org.openide.awt.UndoRedo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
 import org.openide.text.CloneableEditorSupport;
+import org.openide.util.Exceptions;
 import org.openide.util.WeakListeners;
 import org.openide.util.actions.SystemAction;
 
@@ -98,9 +106,49 @@ public class NbBuffer extends SwingBuffer {
         }
     };
 
+    // from ProjectAwareCodeStylePreferences
+    private static Preferences findProjectPreferences(FileObject file) {
+        if (file != null) {
+            Project p = FileOwnerQuery.getOwner(file);
+            if (p != null) {
+                return ProjectUtils.getPreferences(p, IndentUtils.class, true);
+            }
+        }
+        return null;
+    }
+
+    private static FileObject findFileObject(Document doc) {
+        if (doc != null) {
+            Object sdp = doc.getProperty(Document.StreamDescriptionProperty);
+            if (sdp instanceof DataObject) {
+                return ((DataObject) sdp).getPrimaryFile();
+            } else if (sdp instanceof FileObject) {
+                return (FileObject) sdp;
+            }
+        }
+        return null;
+    }
+
+    private static String[] findProjectCodeStylePrefs(Document doc) {
+        Preferences prefs = findProjectPreferences(findFileObject(doc));
+        try {
+            String[] keys = prefs.node("CodeStyle").node("project").keys();
+            return keys;
+        } catch(BackingStoreException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        return null;
+    }
+
     @Override
     public void activateOptions(ViTextView tv) {
         super.activateOptions(tv);
+
+        // String[] keys = findProjectCodeStylePrefs(getDocument());
+        // if(keys != null)
+        //     System.err.println("ProjectCodeStyle: "+Arrays.asList(keys).toString());
+        // else
+        //     System.err.println("ProjectCodeStyle: NULL");
 
         Map<String, Object> map = new HashMap<String, Object>();
         map.put(SimpleValueNames.EXPAND_TABS, b_p_et);

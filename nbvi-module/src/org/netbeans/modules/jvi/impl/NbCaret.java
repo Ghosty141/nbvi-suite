@@ -28,17 +28,17 @@ public class NbCaret extends ExtCaret implements ViCaret {
                           = "nbeditor-bracesMatching-searchDirection"; //NOI18N
   public static final String D_BACKWARD = "backward-preferred"; //NOI18N
   public static final String D_FORWARD = "forward-preferred"; //NOI18N
-  
+
   public static final String PROP_CARET_BIAS
                           = "nbeditor-bracesMatching-caretBias"; //NOI18N
   public static final String B_BACKWARD = "backward"; //NOI18N
   public static final String B_FORWARD = "forward"; //NOI18N
-  
+
   public static final String PROP_MAX_BACKWARD_LOOKAHEAD
                     = "nbeditor-bracesMatching-maxBackwardLookahead"; //NOI18N
   public static final String PROP_MAX_FORWARD_LOOKAHEAD
                     = "nbeditor-bracesMatching-maxForwardLookahead"; //NOI18N
-  
+
   SwingPaintCaret viDelegate;
 
   public NbCaret() {
@@ -58,7 +58,7 @@ public class NbCaret extends ExtCaret implements ViCaret {
   @Override
   public void setCursor(ViCaretStyle cursor) {
     viDelegate.setCursor(cursor);
-    
+
     int offset = cursor.getMatchBraceOffset();
     if(G.p_pbm()) {
       if(offset == 0) { // command mode
@@ -70,10 +70,8 @@ public class NbCaret extends ExtCaret implements ViCaret {
       }
       getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
               D_FORWARD);
-      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
-              new Integer(250));
-      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
-              new Integer(250));
+      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD, 250);
+      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD, 250);
 
     } else {
       if(offset == 0) { // command mode
@@ -85,10 +83,8 @@ public class NbCaret extends ExtCaret implements ViCaret {
       }
       getTextComponent().putClientProperty(PROP_SEARCH_DIRECTION,
               D_FORWARD);
-      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD,
-              new Integer(0));
-      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD,
-              new Integer(0));
+      getTextComponent().putClientProperty(PROP_MAX_BACKWARD_LOOKAHEAD, 0);
+      getTextComponent().putClientProperty(PROP_MAX_FORWARD_LOOKAHEAD, 0);
     }
   }
 

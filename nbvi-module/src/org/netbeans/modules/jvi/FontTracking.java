@@ -717,7 +717,7 @@ final class FontTracking {
             // but CompositeFCS.getHardcodedDefaultColoring uses 13
             // Bug 200450 - how to determine what fonts are in use for editor
             if (s < 13) s = 13;
-            defaultFontSize = new Integer (s);
+            defaultFontSize = s;
         }
         return defaultFontSize;
     }

@@ -80,7 +80,7 @@ public class CcCompletion
         Keymap km = JTextComponent.getKeymap(CommandLine.COMMAND_LINE_KEYMAP);
         if (km != null) {
             KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
-                                                  InputEvent.CTRL_MASK);
+                                                  InputEvent.CTRL_DOWN_MASK);
             Action act = new TextAction("vi-command-code-completion") {
                             @Override
                             public void actionPerformed(ActionEvent e)
@@ -91,7 +91,7 @@ public class CcCompletion
             if (km.getAction(ks) == null)
                 km.addActionForKeyStroke(ks, act);
             // Let Ctrl-D bring up code completion
-            ks = KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK);
+            ks = KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK);
             km.addActionForKeyStroke(ks, act);
             // provide a default key typed action that
             // follows NB's user did the typing protocol
@@ -141,7 +141,7 @@ public class CcCompletion
                         getTextComponent(e).getDocument(), false);
             }
         }
-        
+
     }
 
     // This is good for one shot, it uninstalls itself
